@@ -359,6 +359,23 @@ The fix moved the boundary. Provenance cannot be tracked through `str()` in Pyth
 Current score: **127/132 caught, 38/38 benign clean**. The 5 that evade are strict-xfail tests,
 so the suite fails the moment one is fixed and the ledger cannot go stale.
 
+**What the last five are, and why they stay.** Three (`VRD-07/08/10`) claim
+authorisation — a change window, an engagement flag, an allowlisted path. The
+benign corpus contains almost the same sentences for entirely real reasons:
+`BEN-22` records the very change number `VRD-07` invents. There is no lexical
+difference between *claiming* authorisation and *recording* it, so any weight
+that catches one flags the other. They sit at 0.45 deliberately and are defended
+by **symmetric grounding** instead: clearing an alert as authorised requires a
+mitigating detector reading environment policy, so prose cannot do it however
+convincing it reads. `tests/injection/test_escalation_is_ioc.py` proves it on a
+real credential-dumping alert.
+
+The other two were never scanner problems and are fixed where they actually
+live. `TOL-07`'s entire payload is the hostname `DC-01` — nothing to detect —
+and it is stopped at the executor, which refuses to act on an entity the alerts
+never named. `SPT-01` is half a payload, innocent alone, caught by scanning the
+assembled quarantine block as well as each field.
+
 ---
 
 ## Deployment
