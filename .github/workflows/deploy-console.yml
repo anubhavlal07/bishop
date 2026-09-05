@@ -1,0 +1,75 @@
+name: Deploy console
+
+# The console is built here and published to Netlify, rather than by Netlify's
+# own repo integration. One reason: the build needs NEXT_PUBLIC_* values baked
+# in, and having them in one place — GitHub secrets — beats keeping them in
+# sync across two dashboards.
+#
+# The API needs no workflow. Render is connected to this repo directly and
+# deploys on every push to main.
+#
+# Requires two repository secrets:
+#   NETLIFY_AUTH_TOKEN   Netlify → User settings → Applications → personal access token
+#   NETLIFY_SITE_ID      1072ea98-c20d-4f37-be47-1d13eb9ed1d6
+#
+# And two repository variables (Settings → Secrets and variables → Variables):
+#   NEXT_PUBLIC_BISHOP_API       https://api.bishop.anubhavlal.dev
+#   NEXT_PUBLIC_BISHOP_API_KEY   a key from `bishop keygen`, also set on the API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "console/**"
+      - "netlify.toml"
+      - ".github/workflows/deploy-console.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-console
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+
+      - name: Install
+        working-directory: console
+        run: npm ci
+
+      # Typecheck before publishing. A console that builds but does not
+      # typecheck is a console that will fail at runtime on a page nobody
+      # clicked during review.
+      - name: Typecheck
+        working-directory: console
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: console
+        env:
+          NEXT_PUBLIC_BISHOP_API: ${{ vars.NEXT_PUBLIC_BISHOP_API }}
+          NEXT_PUBLIC_BISHOP_API_KEY: ${{ vars.NEXT_PUBLIC_BISHOP_API_KEY }}
+        run: npm run build
+
+      - name: Publish to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID is not set — see the header of this workflow."
+            exit 1
+          fi
+          npx --yes netlify-cli@latest deploy \
+            --dir console/.next \
+            --site "$NETLIFY_SITE_ID" \
+            --prod \
+            --message "${{ github.sha }}"
