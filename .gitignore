@@ -60,3 +60,8 @@ Thumbs.db
 # One of these is ~300MB and it must never reach a commit.
 deploy-*.zip
 .netlify/
+
+# Scratch space used when deploying: the Netlify upload has to exclude
+# node_modules, so it is parked here rather than deleted. Never committed.
+.node_modules_parked/
+.next_parked/

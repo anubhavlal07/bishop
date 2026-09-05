@@ -1,0 +1,10 @@
+name = "bishop-api-proxy"
+main = "bishop-api-proxy.js"
+compatibility_date = "2026-09-01"
+
+# The custom domain for Bishop's API. Cloudflare terminates TLS here and the
+# Worker forwards to Render with the Host header Render recognises, so the
+# origin needs no custom-domain configuration of its own.
+[[routes]]
+pattern = "api.bishop.anubhavlal.dev"
+custom_domain = true

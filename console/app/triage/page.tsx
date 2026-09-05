@@ -147,7 +147,7 @@ export default function TriagePage() {
     setBusy("run");
     try {
       const started = await api.startRunFromAlert(payload);
-      router.push(`/runs/${started.run_id}`);
+      router.push(`/runs?id=${started.run_id}`);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : String(cause));
       setBusy(null);

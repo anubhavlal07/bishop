@@ -1,27 +1,25 @@
 name: Deploy console
 
-# The console is built here and published to Netlify, rather than by Netlify's
-# own repo integration. One reason: the build needs NEXT_PUBLIC_* values baked
-# in, and having them in one place — GitHub secrets — beats keeping them in
-# sync across two dashboards.
+# The console is a static export, so this builds it and uploads the files to
+# Cloudflare Pages. Nothing runs server-side: every page is a client component
+# that talks to Bishop's API directly, which is why `output: "export"` works
+# and why the whole thing is 1.1 MB of files rather than a Node server.
 #
-# The API needs no workflow. Render is connected to this repo directly and
-# deploys on every push to main.
+# The API needs no workflow. Render is connected to this repo and deploys on
+# every push to main.
 #
-# Requires two repository secrets:
-#   NETLIFY_AUTH_TOKEN   Netlify → User settings → Applications → personal access token
-#   NETLIFY_SITE_ID      1072ea98-c20d-4f37-be47-1d13eb9ed1d6
+# Requires one repository secret:
+#   CLOUDFLARE_API_TOKEN   scoped to Cloudflare Pages: Edit
+#   CLOUDFLARE_ACCOUNT_ID  the account the Pages project lives in
 #
-# And two repository variables (Settings → Secrets and variables → Variables):
-#   NEXT_PUBLIC_BISHOP_API       https://api.bishop.anubhavlal.dev
-#   NEXT_PUBLIC_BISHOP_API_KEY   a key from `bishop keygen`, also set on the API
+# And one repository variable:
+#   NEXT_PUBLIC_BISHOP_API   https://api.bishop.anubhavlal.dev
 
 on:
   push:
     branches: [main]
     paths:
       - "console/**"
-      - "netlify.toml"
       - ".github/workflows/deploy-console.yml"
   workflow_dispatch:
 
@@ -46,8 +44,7 @@ jobs:
         run: npm ci
 
       # Typecheck before publishing. A console that builds but does not
-      # typecheck is a console that will fail at runtime on a page nobody
-      # clicked during review.
+      # typecheck will fail at runtime on a page nobody clicked during review.
       - name: Typecheck
         working-directory: console
         run: npx tsc --noEmit
@@ -56,20 +53,15 @@ jobs:
         working-directory: console
         env:
           NEXT_PUBLIC_BISHOP_API: ${{ vars.NEXT_PUBLIC_BISHOP_API }}
-          NEXT_PUBLIC_BISHOP_API_KEY: ${{ vars.NEXT_PUBLIC_BISHOP_API_KEY }}
         run: npm run build
 
-      - name: Publish to Netlify
+      - name: Publish to Cloudflare Pages
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "::error::NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID is not set — see the header of this workflow."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set — see the header of this workflow."
             exit 1
           fi
-          npx --yes netlify-cli@latest deploy \
-            --dir console/.next \
-            --site "$NETLIFY_SITE_ID" \
-            --prod \
-            --message "${{ github.sha }}"
+          npx --yes wrangler@latest pages deploy console/out             --project-name bishop-console             --branch main             --commit-hash "${{ github.sha }}"

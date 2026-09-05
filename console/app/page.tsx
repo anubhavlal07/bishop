@@ -32,7 +32,7 @@ export default function AlertsPage() {
     setStarting(alertId);
     try {
       const { run_id } = await api.startRun(alertId);
-      router.push(`/runs/${run_id}`);
+      router.push(`/runs?id=${run_id}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setStarting(null);
