@@ -1,73 +1,123 @@
-# ADR-004 — Typed untrusted input, and escalate rather than strip
+# ADR-004 — Untrusted input: a typed marker, and why it was not enough
 
-**Status:** accepted
+**Status:** accepted, amended after red-teaming
+
+> This ADR was originally written with only the first two decisions below. Red-teaming defeated
+> both. Decision 3 is the amendment, and it is the one that closed the attacks. The original
+> reasoning is kept rather than rewritten, because the way it failed is more instructive than a
+> clean document would be.
 
 ## Context
 
 Bishop's inputs are attacker-controlled by definition — file names, command lines, user-agent
 strings, DNS queries, email subjects. An intruder who suspects an LLM is triaging can write
-instructions into any of them. See [`docs/THREAT-MODEL.md`](../THREAT-MODEL.md) for the full
+instructions into any of them. See [`../THREAT-MODEL.md`](../THREAT-MODEL.md) for the full
 argument.
 
 Two questions had to be answered: **how does the boundary stay intact as the codebase grows**,
-and **what happens when a payload is found**.
+and **what happens when a payload is found**. A third turned out to matter more than either.
 
 ## Decision 1 — the marker lives in the type system
 
-`UntrustedStr` is a `str` subclass. It behaves as a string everywhere Python expects one, so
-nothing downstream breaks, but it is findable by instance check anywhere in an argument tree.
+`UntrustedStr` is a `str` subclass, findable by instance check anywhere in an argument tree.
+`walk_untrusted()` returns dotted paths (`auth_events[2].user_agent`) because which field carried
+the payload is itself evidence. `assert_no_untrusted()` runs at every prompt-assembly site and
+raises rather than sending an unwrapped value to a model. The fence marker derives from the run
+id, so delimiter-escape has no predictable delimiter to close.
 
-- `walk_untrusted()` traverses dicts, lists, sets and object `__dict__`s to a bounded depth and
-  returns **dotted paths** — `auth_events[2].user_agent`. Which field carried the payload is
-  itself evidence, so "something was untrusted" is not a useful answer.
-- `assert_no_untrusted()` runs at every prompt-assembly site and raises `UntrustedLeakError`
-  rather than sending an unwrapped value to a model. It is deliberately redundant with the
-  quarantine call: one is the control, the other asserts the control was applied.
-- The fence marker derives from the run id, so it differs per run. Delimiter-escape attacks need
-  a delimiter the attacker can predict, and there isn't one.
-- Values flatten to a single line and truncate at 2000 characters. Newlines are the cheapest way
-  to fake a turn boundary; truncation bounds the denial-of-analysis goal.
+The rejected alternative was a naming convention plus code review, which fails to a field added
+months later by someone who never read the threat model. Making the boundary mechanical means it
+does not depend on anyone remembering.
 
-The rejected alternative was a naming convention (`untrusted_command_line`) plus code review.
-Both fail identically: a field added months later by someone who never read the threat model.
-Making the boundary mechanical means it does not depend on anyone remembering.
+**This reasoning is still correct and the mechanism still ships. It is also insufficient, and
+the gap is not a bug in the implementation — it is a property of the language.**
 
 ## Decision 2 — a detected attempt is escalated, not stripped
 
-`scan_text()` scores twelve techniques and returns a `FieldRisk`. Above `INJECTION_THRESHOLD`
-(0.5), `injection_evidence()` converts the finding into an `Evidence` object that enters the
-incident and **raises severity**.
+`scan_text()` scores thirteen techniques. Above `INJECTION_THRESHOLD` (0.5),
+`injection_evidence()` converts the finding into `Evidence` that enters the incident and raises
+severity.
 
-The reasoning: **a payload aimed at the triage system is not a false positive — it is one of the
-strongest signals in the alert.**
+A payload aimed at the triage system is not a false positive — it is one of the strongest
+signals available. Commodity malware does not talk to the analyst. Someone who writes an
+instruction into a file name has reasoned about the defensive stack and is targeting this
+organisation specifically. Sanitising that quietly discards the highest-value indicator present.
 
-Commodity malware does not talk to the analyst. An attacker who writes an instruction into a
-file name knows an LLM is reading it, has reasoned about the defensive stack, and is targeting
-this organisation specifically. Sanitising that quietly and moving on discards the highest-value
-indicator present.
+**Still correct. Also insufficient, and in a way worth stating precisely:** red-teaming produced
+a case (BLK-03) where Bishop detected the injection, scored it, raised it as an IOC, wrote it to
+the audit chain, printed it in the incident report — and returned `false_positive` anyway,
+because a second field forged an empty `<injection-findings>` block. Every part of Decision 2
+worked. The verdict was still wrong.
 
-So neutralising the instruction is only half a pass. The defence succeeds when **both** hold:
+Detection and escalation are a detection capability. They are not a defence. The original
+version of this ADR did not distinguish those, and read as though escalation settled the matter.
 
-1. the instruction is not followed — the verdict is what it would have been without the payload
-2. the attempt is escalated as an IOC
+## Decision 3 — the invariant moves to the render boundary
 
-`tests/injection/` enforces both. A payload that is neutralised but not escalated is recorded as
-a HIGH finding, not a pass.
+**Nothing serialised into a block the prompt describes as trusted may contain a block
+delimiter.** Enforced unconditionally by `safe_block()`.
+
+### Why the type could not carry it
+
+`assert_no_untrusted()` is an instance check. Every string operation in Python returns a plain
+`str` — `str(x)`, `x.lower()`, an f-string, a `%` format, a `json.dumps` round-trip. **The marker
+does not survive any of them.**
+
+That is not fixable at the type. You cannot subclass your way into propagating through `str()`,
+and auditing every site that might stringify is precisely the discipline-based approach Decision
+1 existed to avoid. The marker tells you a value *is* untrusted; it cannot tell you a value
+*was*.
+
+Four live laundering paths existed: `Alert.entity_key()`, detector facts, the response planner's
+context, and `Alert.raw` — typed `dict[str, Any]`, so it never carried markers and was never
+scanned at all.
+
+The impact was not a leak, it was forgery. Laundered text reached `<detector-results>` — the
+block the system prompt calls Bishop's own output — carrying a literal `</detector-results>`.
+`json.dumps` escapes quotes and not angle brackets. A nineteen-character suffix on a genuine
+credential-dumping command line flipped `true_positive 0.95` to `false_positive 0.95` and
+dropped all five containment actions.
+
+### What was built
+
+- **`safe_block()`** escapes delimiters in anything entering a trusted block. Not scanned for,
+  not detected — escaped, always.
+- **`_mark_quoted()`** renders string leaves in detector facts in guillemets, length-capped, so
+  they read structurally as excerpts rather than as Bishop's prose. This also closed a decoding
+  oracle: `encoded_command` base64-decodes a payload into its own facts, so the attacker writes
+  base64 and Bishop decodes it into the trusted region for them.
+- **`Alert.raw` is walked and scanned** like every typed field.
+- **Fields past the render cap are scanned before being dropped**, so a payload cannot hide
+  behind a hundred harmless ones.
+
+### Why this one generalises
+
+Decisions 1 and 2 both work by **recognising** hostile input — the right type, the right
+pattern. Both were defeated by input they did not recognise, which is the standing failure mode
+of every recognition-based control.
+
+Decision 3 works by maintaining a **structural invariant**. "No delimiter inside a trusted block"
+holds whatever the payload says, in any language, in any encoding, including techniques nobody
+has thought of. It closed six live breaks; the thirteen-technique scanner closed none of them.
+
+That is the transferable result, and it is worth more than the specific fix: **against untrusted
+input reaching an LLM, prefer invariants you can enforce over attacks you can enumerate.**
 
 ## Consequences
 
-**Good.** The boundary is enforced by the type checker and a runtime assertion rather than by
-discipline. Escalation turns the primary threat into a detection capability, which is the most
-interesting claim this project makes and the one worth writing up. It is directly testable, so
-the claim is falsifiable rather than rhetorical.
+**Good.** The boundary no longer depends on a marker surviving arbitrary string handling. The
+generalising layer is one small function with a property that can be stated in a sentence and
+tested exhaustively. Escalation still turns the primary threat into a detection capability —
+Decision 2's value is intact, it is just correctly scoped now.
 
-**Bad.** `UntrustedStr` must be applied correctly at normalisation — if a field is not marked
-there, nothing downstream can tell. That makes the ingest layer the weak point, and it is not
-protected by the same mechanism it enables. The scanner is pattern- and heuristic-based, so
-twelve techniques is not all techniques, and a false-positive scan raises severity on a benign
-alert — noise, which is the acceptable direction to fail.
+**Bad.** `safe_block()` is a discipline dependency of a different shape: a new prompt-assembly
+site that does not route through it is not protected. That is narrower and far more reviewable
+than "every site that might stringify", but it is not zero. `UntrustedStr` must still be applied
+correctly at normalisation, and the ingest layer is not protected by the mechanism it enables.
 
-**Unresolved.** Semantic steering with no imperative — a payload supplying a fabricated
-change-ticket reference or maintenance window — contains nothing for the scanner to match. The
-mitigation is ADR-002's deterministic detectors plus low-confidence escalation, and it is
-partial. This is stated as residual risk rather than solved.
+**Measured.** 58 of 132 corpus payloads caught, 0 false positives on 38 benign samples. The 74
+that evade are strict-xfail, so the suite fails when one is fixed. Most are semantic steering —
+plausible context with no imperative — for which the mitigation is symmetric detector grounding
+and the human gate, not the scanner.
+
+**Unresolved.** Semantic steering remains the open class. See THREAT-MODEL §7.
