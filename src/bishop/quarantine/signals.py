@@ -26,6 +26,7 @@ from bishop.quarantine.text import (
     analysis_forms,
     invisible_characters,
     mixed_script_words,
+    presentation_abuse,
 )
 from bishop.schema.alert import BishopModel
 
@@ -99,6 +100,175 @@ def _rx(*patterns: str) -> re.Pattern[str]:
     return re.compile("|".join(f"(?:{p})" for p in patterns), re.IGNORECASE | re.DOTALL)
 
 
+# ── multilingual instruction detection ──────────────────────────────────────
+#
+# The first version of this enumerated whole phrases per language, and the
+# red-team corpus walked through it 18 times out of 19 — a different verb, a
+# synonym, an intervening word, a language nobody listed. Enumerating sentences
+# in every language is not a defence, it is a list.
+#
+# This matches on **co-occurrence** instead: a verb meaning "ignore" or
+# "disregard" near a noun meaning "instructions" or "rules". Both lists are far
+# smaller than the space of sentences they cover, and adding a language means
+# adding two words rather than a paragraph.
+
+_IGNORE_VERBS = (
+    # English and Romance
+    "ignore",
+    "pay no attention",
+    "take no notice",
+    "disregard",
+    "overlook",
+    "ignora",
+    "ignorez",
+    "ignoriere",
+    "ignoruj",
+    "zignoruj",
+    "no tengas en cuenta",
+    "omite",
+    "pasa por alto",
+    "haz caso omiso",
+    "desconsidere",
+    "desconsidera",
+    "non tenere conto",
+    "trascura",
+    "ne tenez pas compte",
+    "negeer",
+    "bortse fra",
+    "bortse från",
+    "ignorer",
+    # Germanic and Turkic
+    "yoksay",
+    "gormezden gel",
+    "görmezden gel",
+    "dikkate alma",
+    # Slavic
+    "игнорируй",
+    "игнорируйте",
+    "не обращай внимания",
+    "не обращайте внимания",
+    "пренебрегай",
+    "проигноруй",
+    "ігноруй",
+    # CJK
+    "忽略",
+    "无视",
+    "無視",
+    "不要理会",
+    "不要理會",
+    "略过",
+    "略過",
+    "무시",
+    "무시하고",
+    "무시하십시오",
+    # Indic, Semitic, SEA, other
+    "अनदेखा",
+    "उपेक्षा",
+    "नजरअंदाज",
+    "ध्यान मत",
+    "تجاهل",
+    "لا تلتفت",
+    "أهمل",
+    "התעלם",
+    "אל תשים לב",
+    "abaikan",
+    "bo qua",
+    "bỏ qua",
+    "puuza",
+    "เพิกเฉย",
+    "ละเลย",
+    "αγνόησε",
+    "αγνοήστε",
+    "παράβλεψε",
+)
+
+_INSTRUCTION_NOUNS = (
+    "instruction",
+    "instructions",
+    "instrucciones",
+    "indicaciones",
+    "instrucoes",
+    "instruções",
+    "istruzioni",
+    "anweisungen",
+    "instructies",
+    "instrukcje",
+    "talimat",
+    "talimatlari",
+    "talimatları",
+    "huong dan",
+    "hướng dẫn",
+    "instruksi",
+    "maagizo",
+    "regels",
+    "reglas",
+    "rules",
+    "инструкции",
+    "инструкций",
+    "указания",
+    "правила",
+    "інструкції",
+    "指令",
+    "指示",
+    "规则",
+    "規則",
+    "命令",
+    "지시",
+    "지침",
+    "명령",
+    "निर्देश",
+    "निर्देशों",
+    "नियम",
+    "التعليمات",
+    "الاوامر",
+    "الأوامر",
+    "הוראות",
+    "ההוראות",
+    "คำสั่ง",
+    "กฎ",
+    "οδηγίες",
+    "εντολές",
+)
+
+
+def _alt(words: tuple[str, ...]) -> str:
+    return "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+
+
+def _cooccurrence(verbs: tuple[str, ...], nouns: tuple[str, ...]) -> re.Pattern[str]:
+    """A verb and a noun within 40 characters, in either order.
+
+    The window is what keeps this from matching a long document that happens to
+    contain both words far apart.
+    """
+    return re.compile(
+        rf"(?:{_alt(verbs)}).{{0,40}}?(?:{_alt(nouns)})"
+        rf"|(?:{_alt(nouns)}).{{0,40}}?(?:{_alt(verbs)})",
+        re.IGNORECASE | re.DOTALL,
+    )
+
+
+def _ascii_only(words: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(w for w in words if w.isascii())
+
+
+def _non_ascii(words: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(w for w in words if not w.isascii())
+
+
+#: Two patterns from one lexicon. An English payload is an instruction override
+#: and reporting it as "multilingual" as well is just wrong — the technique
+#: means "instruction-shaped text in a script the analyst may not read".
+_ENGLISH_COOCCURRENCE = _cooccurrence(_ascii_only(_IGNORE_VERBS), _ascii_only(_INSTRUCTION_NOUNS))
+_MULTILINGUAL = (
+    _cooccurrence(
+        _non_ascii(_IGNORE_VERBS) + _ascii_only(_IGNORE_VERBS),
+        _non_ascii(_INSTRUCTION_NOUNS),
+    )
+    if _non_ascii(_INSTRUCTION_NOUNS)
+    else _cooccurrence(_non_ascii(_IGNORE_VERBS), _INSTRUCTION_NOUNS)
+)
+
 # Each entry: technique -> (compiled pattern, weight, note).
 # Patterns are deliberately phrase-shaped rather than keyword-shaped. "ignore"
 # appears in benign log text constantly; "ignore the above instructions" does not.
@@ -108,12 +278,33 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
         _rx(
             r"ignore\s+(?:all\s+|any\s+)?(?:the\s+)?(?:previous|prior|above|preceding|earlier|foregoing)\s+"
             r"(?:instruction|prompt|direction|rule|guideline|context)",
-            r"disregard\s+(?:all\s+|any\s+)?(?:the\s+)?(?:previous|prior|above|preceding|earlier|system)",
+            r"disregard\s+(?:all\s+|any\s+)?(?:the\s+)?(?:\w+\s+)?(?:previous|prior|above|preceding|earlier|system|foregoing)",
             r"forget\s+(?:everything|all\s+(?:previous|prior)|what\s+you\s+were\s+told)",
             r"(?:new|updated|revised)\s+(?:instruction|directive|system\s+prompt)s?\s*[:\-]",
             r"override\s+(?:your|the|all)\s+(?:previous\s+)?(?:instruction|directive|rule|safety)",
-            r"instead\s+of\s+(?:analy[sz]ing|investigating|the\s+above)\s*,?\s*(?:you\s+(?:should|must)|do)",
+            # `.{0,40}?` rather than an immediate imperative: the old pattern
+            # demanded the verb right after "instead of", which almost no
+            # natural sentence does.
+            r"instead\s+of\s+\w+ing\b.{0,40}?(?:you\s+(?:should|must|will)|do\s+the|just\s+)",
+            # Override by supersession or reframing rather than by negation.
+            r"supersed(?:es?|ing)\s+(?:anything|any|all|everything|the)\b",
+            r"(?:everything|all|the\s+text)\s+(?:before|above|preceding)\b.{0,40}?"
+            r"(?:example|placeholder|template|sample|test\s+data|not\s+real)",
+            r"treat\s+(?:the\s+)?\w+\s+above\s+as\s+(?:an?\s+)?(?:\w+\s+)?(?:example|placeholder|template|sample)",
+            r"new\s+task\s*[:\-]",
+            r"your\s+(?:real|actual|true|only)\s+task\s+is\b",
+            r"from\s+now\s+on[, ]+you\s+(?:only\s+|must\s+|will\s+)?"
+            r"(?:output|respond|reply|say|return|answer)",
+            r"(?:priority\s+)?directive\s+from\s+(?:the\s+)?\w+",
+            r"suspend\s+(?:the\s+)?(?:triage|analysis|heuristic|check|rule|detection)",
+            r"stop\s+(?:your\s+)?(?:analysis|triage|investigation)\s+(?:here|now)",
         ),
+        0.6,
+        "text instructs the reader to discard its own instructions",
+    ),
+    (
+        InjectionTechnique.INSTRUCTION_OVERRIDE,
+        _ENGLISH_COOCCURRENCE,
         0.6,
         "text instructs the reader to discard its own instructions",
     ),
@@ -123,8 +314,14 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"you\s+are\s+(?:now|no\s+longer)\s+(?:a|an|the)\b",
             r"(?:act|behave|respond)\s+as\s+(?:if\s+you\s+(?:are|were)|a|an)\b",
             r"^\s*(?:system|assistant|developer|user)\s*:",
-            r"\n\s*(?:system|assistant|developer)\s*:",
+            r"\n\s*(?:system|assistant|developer|user|human)\s*:",
             r"<\|?\s*(?:im_start|im_end|endoftext|system|assistant)\s*\|?>",
+            # Chat-template control tokens across model families. Llama-2 uses
+            # `<<SYS>>`, Llama-3 uses `<|start_header_id|>`; a pattern written
+            # for one family silently misses the others.
+            r"<<\s*/?\s*SYS\s*>>",
+            r"<\|\s*(?:start|end)_header_id\s*\|>",
+            r"<\|\s*(?:eot_id|eom_id|begin_of_text|end_of_text|reserved_special_token)\w*\s*\|>",
             r"\[/?INST\]",
             r"###\s*(?:instruction|system|response)",
             r"</\s*(?:system|instructions?|context|untrusted[\w-]*)\s*>",
@@ -141,6 +338,13 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             # immediately after the tag name missed the exact shape an attacker
             # copying the fence would write.
             r"</\s*untrusted[\w-]*(?:\s[^>]*)?>",
+            # Opening a second fence is as good as closing the first: the model
+            # sees a new block header and the region after it looks fresh.
+            r"<\s*untrusted[\w-]*(?:\s[^>]*)?>",
+            # Forging the renderer's own flag marker, to make a flagged field
+            # read as one Bishop already cleared.
+            r"\[!!\s*flagged",
+            r"\[\s*(?:cleared|reviewed|dismissed)\s+by\s+analyst",
             # Bishop's own trusted block names. A field containing one is trying
             # to forge the region the prompt describes as Bishop's own output.
             # `safe_block` stops the forgery from working; this makes it visible.
@@ -235,6 +439,18 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"approve\s+(?:the\s+)?(?:containment|response|action|plan)\s+(?:automatically|without)",
             r"(?:skip|bypass|disable)\s+(?:the\s+)?(?:human|approval|hitl|review|gate|confirmation)",
             r"set\s+(?:require_approval|requires_approval|approval)\s*[:=]\s*(?:false|no|0)",
+            # Arguing the containment plan down. Bishop proposes actions; a
+            # field arguing against one is steering the response, which is
+            # attacker goal 2 in the threat model.
+            r"(?:containment|isolation|remediation|quarantine)\s+is\s+"
+            r"(?:unnecessary|not\s+(?:needed|required|warranted))",
+            r"propose\s+no\s+(?:actions|containment|response)",
+            r"do\s+not\s+(?:isolate|disable|block|contain|quarantine|revoke|reset)\b",
+            r"(?:isolation|disabling|blocking)\s+would\s+cause\b",
+            r"(?:will|would)\s+cause\s+(?:a\s+)?(?:company|estate|org)[\s-]?wide\s+outage",
+            r"pre[\s-]?approv(?:al|ed)\b.{0,60}?(?:already\s+approved|record(?:ed)?\s+as)",
+            r"(?:the\s+)?(?:affected|real|actual|correct)\s+"
+            r"(?:asset|host|machine|target|account)\s+is\b.{0,40}?\bnot\b",
         ),
         0.7,
         "text attempts to drive Bishop's tools or its approval gate",
@@ -248,6 +464,16 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:curl|wget|Invoke-WebRequest|fetch)\s+[\"']?https?://",
             r"(?:include|append|embed)\s+(?:the\s+)?(?:api[\s_-]?key|secret|token|password)\b",
             r"email\s+(?:this|the\s+\w+)\s+to\s+\S+@",
+            # Exfiltration by asking Bishop to *write* the secret somewhere it
+            # will be read, rather than to send it. A markdown image renders as
+            # a GET the moment a console displays it.
+            r"!\[[^\]]*\]\(\s*https?://",
+            r"(?:append|include|add|attach)\s+(?:your\s+)?(?:full\s+|entire\s+|complete\s+)?"
+            r"(?:prior\s+|previous\s+)?(?:context|conversation|history|prompt|transcript)",
+            r"(?:restate|repeat|list|include)\s+(?:every|all|each)\b.{0,40}?"
+            r"(?:other|previous|related)\s+(?:alert|incident|ticket|case)",
+            r"(?:list|show|include|return)\b.{0,30}?\b(?:for\s+tenant|another\s+tenant|"
+            r"other\s+tenants?|across\s+tenants?)\b",
         ),
         0.7,
         "text directs output or secrets to an attacker-chosen destination",
@@ -259,32 +485,34 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:system\s+prompt|instructions|rules|configuration|guidelines)",
             r"what\s+(?:are|were)\s+your\s+(?:original\s+)?instructions",
             r"verbatim\s+(?:copy\s+of\s+)?(?:your|the)\s+(?:prompt|instructions)",
+            r"what\s+(?:is|was)\s+your\s+(?:system\s+)?(?:prompt|instruction)",
         ),
         0.5,
         "text asks for Bishop's own instructions",
     ),
     (
         InjectionTechnique.MULTILINGUAL_INSTRUCTION,
-        _rx(
-            # Spanish / French / German / Portuguese / Italian
-            r"ignor[ae]\s+(?:todas\s+)?las\s+instrucciones",
-            r"ignorez\s+(?:toutes\s+)?les\s+instructions",
-            r"ignoriere\s+(?:alle\s+)?(?:vorherigen\s+)?anweisungen",
-            r"ignore\s+todas\s+as\s+instru",
-            r"ignora\s+(?:tutte\s+)?le\s+istruzioni",
-            # Russian / Ukrainian
-            r"игнорируй(?:те)?\s+(?:все\s+)?(?:предыдущие\s+)?инструкции",
-            # Chinese / Japanese / Korean
-            r"忽略(?:以上|之前|所有)?(?:的)?(?:指令|指示)",
-            r"以前の指示を無視",
-            r"이전\s*지시를?\s*무시",
-            # Hindi / Arabic
-            r"पिछले\s+निर्देशों?\s+को\s+अनदेखा",
-            r"تجاهل\s+(?:كل\s+)?التعليمات",
-        ),
+        _MULTILINGUAL,
         0.6,
         "instruction-shaped text in a non-English script",
     ),
+]
+
+
+#: The same patterns with every `\s+` relaxed to `\s*`, for the fully-collapsed
+#: form. Compiled once rather than per scan.
+#:
+#: Only applied to `tight`, which `text.tighten()` returns exclusively when a
+#: split run was actually present. Running these against ordinary prose would
+#: match across word boundaries and invent findings.
+_TIGHT_PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
+    (
+        technique,
+        re.compile(pattern.pattern.replace(r"\s+", r"\s*"), pattern.flags),
+        weight,
+        note,
+    )
+    for technique, pattern, weight, note in _PATTERNS
 ]
 
 #: Instruction keywords that make a *decoded* payload interesting. Applied only
@@ -337,9 +565,15 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
             "despaced",
             "normalised",
             "normalised-despaced",
+            "tight",
+            "depig",
         }
+        # The tight form has had every separator removed, so a pattern
+        # requiring `\s+` between words can never match it. Run the
+        # whitespace-optional copies against it instead.
+        patterns = _TIGHT_PATTERNS if form_name == "tight" else _PATTERNS
 
-        for technique, pattern, weight, note in _PATTERNS:
+        for technique, pattern, weight, note in patterns:
             if quoted_field and technique is InjectionTechnique.FORGED_PROVENANCE:
                 continue
             for match in pattern.finditer(form_text):
@@ -382,9 +616,9 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
             # has no legitimate use in a Windows path. It stands on its own.
             weight, note = 0.5, f"{len(overrides)} bidirectional override characters"
         else:
-            # A stray soft hyphen is not an attack. Weighted below the threshold
-            # alone; combined with anything else it pushes the field over.
-            weight = 0.35 if len(hidden) < 4 else 0.55
+            # A stray soft hyphen is not an attack. Three of them inside one
+            # value is not a stray anything — that is a keyword being split.
+            weight = 0.35 if len(hidden) < 3 else 0.55
             note = f"{len(hidden)} zero-width characters splitting the visible text"
         risk.signals.append(
             InjectionSignal(
@@ -393,6 +627,21 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
                 excerpt=" ".join(f"U+{ord(c):04X}" for c in hidden[:8]),
                 weight=weight,
                 note=note,
+            )
+        )
+
+    if (folded := presentation_abuse(value)) >= 4:
+        risk.signals.append(
+            InjectionSignal(
+                technique=InjectionTechnique.ENCODING_EVASION,
+                form="raw",
+                excerpt=value[:60],
+                weight=0.5,
+                note=(
+                    f"{folded} letters written in a non-standard Unicode presentation form "
+                    f"(mathematical, fullwidth or small-capital), which folds to ordinary "
+                    f"text for a model and has no legitimate use in this field"
+                ),
             )
         )
 
