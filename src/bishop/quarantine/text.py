@@ -150,6 +150,36 @@ _CONFUSABLES = str.maketrans(
         "\u041c": "M",
         "\u0422": "T",
         "\u0412": "B",
+        # Latin small capitals. These are letters in their own right rather than
+        # case variants, so NFKC leaves them untouched and `presentation_abuse`
+        # counts zero \u2014 the phrase patterns never see a word they can match. A
+        # payload spelled entirely in them reads as ordinary English to a person
+        # and as nothing at all to the scanner, which is why they were chosen.
+        "\u1d00": "a",
+        "\u0299": "b",
+        "\u1d04": "c",
+        "\u1d05": "d",
+        "\u1d07": "e",
+        "\ua730": "f",
+        "\u0262": "g",
+        "\u029c": "h",
+        "\u026a": "i",
+        "\u1d0a": "j",
+        "\u1d0b": "k",
+        "\u029f": "l",
+        "\u1d0d": "m",
+        "\u0274": "n",
+        "\u1d0f": "o",
+        "\u1d18": "p",
+        "\ua7af": "q",
+        "\u0280": "r",
+        "\ua731": "s",
+        "\u1d1b": "t",
+        "\u1d1c": "u",
+        "\u1d20": "v",
+        "\u1d21": "w",
+        "\u028f": "y",
+        "\u1d22": "z",
         "\u03b1": "a",
         "\u03bf": "o",
         "\u03c1": "p",
@@ -179,6 +209,14 @@ _CONFUSABLES = str.maketrans(
 )
 
 
+#: Latin small capitals only. Separate from `_CONFUSABLES` because the two
+#: answer different questions: this set is "Latin written in a disguised
+#: presentation form", while the wider table is "a letter that could be
+#: mistaken for a Latin one", which legitimate Cyrillic and Greek text is full
+#: of.
+_SMALL_CAPITALS = frozenset("ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘꞯʀꜱᴛᴜᴠᴡʏᴢ")
+
+
 def nfkc(text: str) -> str:
     """Compatibility-normalise.
 
@@ -193,17 +231,34 @@ def nfkc(text: str) -> str:
 def presentation_abuse(text: str) -> int:
     """Count letters written in a non-standard Unicode presentation form.
 
-    Mathematical bold, fullwidth Latin and small-capital letterforms all fold to
-    plain ASCII under NFKC, and a model reads every one of them as ordinary
-    words. None of them has any business in a command line or a file name, so
-    the *presence* of them is a signal even when the folded text is too short
-    to match a phrase pattern — `\U0001d422\U0001d420\U0001d427\U0001d428\U0001d42b\U0001d41e all previous` carries no
-    "instructions" for a pattern to find, and is still obviously an attempt.
+    Mathematical bold and fullwidth Latin fold to plain ASCII under NFKC, and a
+    model reads every one of them as ordinary words. None of them has any
+    business in a command line or a file name, so the *presence* of them is a
+    signal even when the folded text is too short to match a phrase pattern —
+    `\U0001d422\U0001d420\U0001d427\U0001d428\U0001d42b\U0001d41e all previous` carries no "instructions" for a pattern
+    to find, and is still obviously an attempt.
+
+    **Small capitals need the second check.** They are distinct letters rather
+    than presentation variants, so NFKC leaves `ɪɢɴᴏʀᴇ` exactly as it is and an
+    NFKC-only count returns zero — while a reader sees "ignore" and a model
+    reads it as "ignore". This function used to promise small capitals in its
+    own docstring and not detect them.
+
+    Only the small capitals, though — not the whole confusable table. Cyrillic
+    and Greek letters are in that table so a *mixed*-script word can be folded,
+    but a word written entirely in Cyrillic is simply Russian:
+    `результаты-отчёт.docx` is a filename, not an attack, and counting its
+    letters here made it score 0.5. Cross-alphabet substitution is
+    `mixed_script_words`'s job, and it requires the mixing.
     """
     return sum(
         1
         for c in text
-        if c.isalpha() and (folded := unicodedata.normalize("NFKC", c)) != c and folded.isascii()
+        if c.isalpha()
+        and (
+            ((folded := unicodedata.normalize("NFKC", c)) != c and folded.isascii())
+            or c in _SMALL_CAPITALS
+        )
     )
 
 

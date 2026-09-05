@@ -326,7 +326,12 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:do\s+not|don't|never)\s+(?:escalate|alert|notify|report)\b",
             r"(?:whitelist|allowlist)(?:ed)?\s+(?:by|per|process|binary|host)",
             r"confidence\s*[:=]\s*(?:0(?:\.0+)?|low)\b",
-            r"(?:the\s+)?(?:correct\s+|final\s+|previous\s+)?verdict\s+(?:for\s+\w+(?:\s+\w+)?\s+)?is\s+"
+            # `(?:\w+\s+){0,3}` rather than only `for <thing>`: the phrase turns
+            # up as "verdict here is", "verdict in this case is", "verdict for
+            # this alert is". Enumerating the connectives misses the next one,
+            # and a bounded window of any three words does not.
+            r"(?:the\s+)?(?:correct\s+|final\s+|previous\s+|right\s+|expected\s+)?verdict\s+"
+            r"(?:\w+\s+){0,3}is\s+"
             r"(?:an?\s+)?(?:benign|false[\s_-]?positive|true[\s_-]?positive|authoris?zed|approved)",
             r"this\s+(?:alert|incident|event|activity|detection)\s+is\s+(?:an?\s+)?"
             r"(?:false[\s_-]?positive|benign|expected|routine|authoris?zed|approved|known[\s-]good)",

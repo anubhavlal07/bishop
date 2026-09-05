@@ -278,8 +278,8 @@ The boundary is the headline, but it is not the only control.
 Stating these plainly is the point of the document. A threat model that finds no residual risk
 has not been written honestly.
 
-- **12 of 132 payloads in our own corpus still evade the scanner.** Caught: 120/132, with 0/38
-  false positives on the benign samples. The 12 are recorded as strict-xfail tests, so the suite
+- **8 of 132 payloads in our own corpus still evade the scanner.** Caught: 124/132, with 0/38
+  false positives on the benign samples. The 8 are recorded as strict-xfail tests, so the suite
   fails the moment one starts passing and the ledger cannot silently go stale. They are the
   semantic class described below. This number is published rather than buried because a
   regression corpus is a demonstration of the classes we thought of, never a proof.
@@ -313,7 +313,7 @@ has not been written honestly.
 The realistic worst case is unchanged by red-teaming, and red-teaming is why we can say that
 with any confidence: a targeted attacker uses **semantic steering** — no imperative, no
 delimiter play, no encoding, just plausible operational context — to push a true positive below
-the escalation threshold. All 12 evading payloads are this class. There is nothing for a
+the escalation threshold. All 8 evading payloads are this class. There is nothing for a
 pattern scanner to match, because there is no attack pattern; there is only a lie that reads
 like an ordinary fact.
 
