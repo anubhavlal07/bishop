@@ -1,0 +1,49 @@
+# Netlify configuration for Bishop's analyst console.
+#
+# The console is a **static export** (`output: "export"` in next.config.mjs), so
+# there is no Next.js runtime here and no adapter plugin. Every page is a client
+# component that talks to Bishop's API directly, which means the build produces
+# plain files and Netlify only has to serve them.
+#
+# `publish` is "out" and it is relative to `base`, so the resolved path is
+# console/out. Writing "console/out" here resolves to console/console/out and
+# fails the deploy.
+#
+# One build-time variable, set in the Netlify UI:
+#
+#   NEXT_PUBLIC_BISHOP_API   https://api.bishop.anubhavlal.dev
+#
+# It is baked into the client bundle at build time, so changing it needs a
+# rebuild rather than a restart.
+
+[build]
+  base = "console"
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# A static export writes /triage/index.html, and Next is configured with
+# `trailingSlash: true` to match. These redirects mean a visitor who types the
+# path without the slash still lands on the page rather than a 404.
+[[redirects]]
+  from = "/runs"
+  to = "/runs/"
+  status = 301
+
+[[redirects]]
+  from = "/triage"
+  to = "/triage/"
+  status = 301
+
+# Security headers. The API sets its own; these cover the console's own origin,
+# which is where an XSS bug would put a visitor's model key at risk — the key
+# lives in this origin's localStorage.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

@@ -1,0 +1,10 @@
+name = "bishop-console-proxy"
+main = "bishop-console-proxy.js"
+compatibility_date = "2026-09-01"
+
+# Netlify only serves hostnames registered against the site, so this Worker
+# rewrites the Host header. Cloudflare terminates TLS for bishop.anubhavlal.dev,
+# which is a third-level name and covered by the zone's universal certificate.
+[[routes]]
+pattern = "bishop.anubhavlal.dev"
+custom_domain = true

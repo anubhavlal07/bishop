@@ -11,9 +11,23 @@ import type {
   Scorecard,
 } from "./types";
 
+/**
+ * Where the API lives.
+ *
+ * `NEXT_PUBLIC_BISHOP_API` overrides it, which is what a fork or a local build
+ * against a different backend uses. Absent that, the default depends on the
+ * build: a production build points at the deployed API, a development build at
+ * localhost.
+ *
+ * The fallback is deliberate rather than lazy. A deployed console whose
+ * default is `localhost:8000` looks perfectly healthy and fails for every
+ * visitor, because the one machine where it works is the one that built it.
+ */
+export const PRODUCTION_API = "https://api.bishop.anubhavlal.dev";
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_BISHOP_API?.replace(/\/$/, "") ??
-  "http://localhost:8000";
+  (process.env.NODE_ENV === "production" ? PRODUCTION_API : "http://localhost:8000");
 
 const API_KEY = process.env.NEXT_PUBLIC_BISHOP_API_KEY ?? "";
 

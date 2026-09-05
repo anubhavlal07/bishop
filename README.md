@@ -38,13 +38,16 @@ It is built around four claims that are each **individually checkable**:
 **Live:** [bishop.anubhavlal.dev](https://bishop.anubhavlal.dev) · API at
 [api.bishop.anubhavlal.dev](https://api.bishop.anubhavlal.dev/health)
 
-The console is a static export on Cloudflare Pages — every page is a client
-component that talks to the API directly, so there is no server rendering to
-do and the whole thing is 1.1 MB of files. The API is a Docker container on
-Render, fronted by a small Cloudflare Worker that rewrites the Host header,
-because Render only serves hostnames registered against the service. The
-Worker passes the SSE body through as a stream rather than awaiting it, which
-is what keeps the live topology view live.
+The console is a **static export on Netlify** — every page is a client
+component that talks to the API directly, so there is no server rendering to do
+and the build is 1.1 MB of files. The API is a **Docker container on Render**,
+with **Postgres in a Supabase schema**.
+
+Both custom domains are served by small **Cloudflare Workers** that rewrite the
+Host header, because Netlify and Render each only answer for hostnames
+registered against them. The API proxy passes the SSE body through as a stream
+rather than awaiting it — buffer that and the live topology view shows nothing
+for twenty seconds and then everything at once.
 
 > **Bring your own key.** The deployment stores no model credential. Pick Anthropic, OpenAI,
 > Gemini or Azure OpenAI in the console, paste your key, and it stays in your browser. Or pick
