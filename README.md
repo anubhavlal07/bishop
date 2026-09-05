@@ -69,7 +69,7 @@ for twenty seconds and then everything at once.
   that can argue **against** malice. No model, no network, no clock read, no randomness —
   enforced by AST checks and double-run tests.
 - **Indirect prompt-injection defence** — 13 techniques scored across a
-  **132-payload red-team corpus**, currently **124 caught with 0 false positives** on 38 benign
+  **132-payload red-team corpus**, currently **127 caught with 0 false positives** on 38 benign
   samples. Defence sits at the *render boundary*, because provenance cannot survive `str()`.
 - **Validated ATT&CK mapping** — a technique ID reaches a report only after it is confirmed in
   the committed STIX bundle (823 techniques, v17.1). A model-proposed ID that fails validation
@@ -356,7 +356,7 @@ the audit chain — and still returned `false_positive`, because a second field 
 The fix moved the boundary. Provenance cannot be tracked through `str()` in Python; refusing to
 *emit* a delimiter can be. `safe_block()` escapes `<` and `>` unconditionally.
 
-Current score: **124/132 caught, 38/38 benign clean**. The 8 that evade are strict-xfail tests,
+Current score: **127/132 caught, 38/38 benign clean**. The 5 that evade are strict-xfail tests,
 so the suite fails the moment one is fixed and the ledger cannot go stale.
 
 ---

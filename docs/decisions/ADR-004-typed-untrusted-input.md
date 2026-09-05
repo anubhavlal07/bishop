@@ -131,7 +131,7 @@ site that does not route through it is not protected. That is narrower and far m
 than "every site that might stringify", but it is not zero. `UntrustedStr` must still be applied
 correctly at normalisation, and the ingest layer is not protected by the mechanism it enables.
 
-**Measured.** 124 of 132 corpus payloads caught, 0 false positives on 38 benign samples. The 8
+**Measured.** 127 of 132 corpus payloads caught, 0 false positives on 38 benign samples. The 5
 that evade are strict-xfail, so the suite fails when one is fixed. They are semantic steering —
 plausible context with no imperative — for which the mitigation is symmetric detector grounding
 and the human gate, not the scanner.

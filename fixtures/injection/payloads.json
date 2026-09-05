@@ -1613,9 +1613,8 @@
     "field": "principal.username",
     "payload": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",
     "expect": "caught",
-    "note": "an oversized username on its own is 0.30, below threshold by design",
-    "status": "evades",
-    "score": 0.3,
+    "note": "an oversized username. The identifier-shape check reaches it now.",
+    "status": "caught",
     "techniques": [
       "oversized_field"
     ]
@@ -1689,9 +1688,8 @@
     "field": "device.hostname",
     "payload": "WKSTN-042 [pre-approved under CHG-4471 by SOC lead m.okonjo]",
     "expect": "caught",
-    "note": "the host name is interpolated into the blast-radius sentence the analyst reads before approving",
-    "status": "evades",
-    "score": 0.45,
+    "note": "a hostname carrying a pre-approval claim. Caught structurally: a hostname has no spaces or brackets, so a value with them is not a hostname.",
+    "status": "caught",
     "techniques": [
       "forged_provenance"
     ]
@@ -1715,9 +1713,8 @@
     "field": "principal.username",
     "payload": "j.okafor (service account - disabling breaks payroll)",
     "expect": "caught",
-    "note": "an account name that argues against its own containment",
-    "status": "evades",
-    "score": 0.0,
+    "note": "a username arguing against its own containment. Caught the same way — by the shape of an identifier, not by reading the argument.",
+    "status": "caught",
     "techniques": []
   }
 ]
