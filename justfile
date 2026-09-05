@@ -30,6 +30,16 @@ eval-holdout *args:
 alerts:
     uv run bishop alerts
 
+# Triage an alert of your own — Sysmon, ECS, or any JSON with usable field
+# names. Prints what Bishop understood before what it concluded.
+#   just triage path/to/alert.json
+triage path *args:
+    uv run bishop triage {{path}} {{args}}
+
+# The alert shapes the normaliser recognises.
+formats:
+    uv run bishop formats
+
 # Triage one alert by id, e.g. `just run TP-01`.
 run alert *args:
     uv run bishop run {{alert}} {{args}}

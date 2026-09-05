@@ -282,3 +282,26 @@ export interface RunEvent {
   at?: string;
   [key: string]: unknown;
 }
+
+/**
+ * What the normaliser understood about a submitted alert.
+ *
+ * `detectors_with_jurisdiction` is the field worth reading first: it is
+ * computed by running the detectors and asking which had data in their remit,
+ * so an empty list means Bishop will escalate whatever the alert says because
+ * it has nothing to measure.
+ */
+export interface MappingReport {
+  detected_format: string;
+  mapped: { from: string; to: string }[];
+  ignored: string[];
+  defaulted: { field: string; value: string; why: string }[];
+  warnings: string[];
+  detectors_with_jurisdiction: string[];
+}
+
+export interface IngestPreview {
+  alert: Record<string, unknown>;
+  mapping: MappingReport;
+  usable: boolean;
+}

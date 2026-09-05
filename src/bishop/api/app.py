@@ -48,7 +48,28 @@ runs = RunManager()
 
 
 class StartRun(BaseModel):
-    alert_id: str = Field(..., description="An id from the labelled corpus.")
+    """Start a run from the corpus, or from an alert the caller supplies.
+
+    Exactly one of the two. Being able to submit your own alert is what makes
+    this a tool rather than a replay of the committed fixtures.
+    """
+
+    alert_id: str | None = Field(None, description="An id from the labelled corpus.")
+    alert: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "A raw alert in any recognised shape — Bishop's own schema, ECS, "
+            "Sysmon/Windows event JSON, or flat JSON with common field names. "
+            "Normalised on the way in; POST /ingest/preview to see the mapping "
+            "without starting a run."
+        ),
+    )
+
+
+class IngestPreview(BaseModel):
+    """An alert to map without running anything."""
+
+    alert: dict[str, Any] = Field(..., description="The raw alert payload.")
 
 
 class Decision(BaseModel):
@@ -198,8 +219,59 @@ def list_runs() -> dict[str, Any]:
     }
 
 
+@app.post("/ingest/preview")
+def ingest_preview(body: IngestPreview) -> dict[str, Any]:
+    """Map an alert and report what Bishop understood, without running it.
+
+    The useful half is `mapping.detectors_with_jurisdiction`. It is computed by
+    running the detectors and asking which had data in their remit, so it says
+    whether a run can produce anything before you wait for one. An empty list
+    means Bishop will escalate whatever the alert says, because it has nothing
+    it can measure.
+    """
+    from bishop.ingest import normalise
+
+    try:
+        alert, report = normalise(body.alert)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {
+        "alert": alert.model_dump(mode="json"),
+        "mapping": report.to_dict(),
+        "usable": report.usable,
+    }
+
+
+@app.get("/ingest/formats")
+def ingest_formats() -> dict[str, Any]:
+    from bishop.ingest import supported_formats
+
+    return {"formats": supported_formats()}
+
+
 @app.post("/runs", status_code=202)
 def start_run(body: StartRun) -> dict[str, Any]:
+    if body.alert is not None:
+        from bishop.ingest import normalise
+
+        try:
+            alert, report = normalise(body.alert)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+        run = runs.start(alert, alert_id=alert.alert_id)
+        # The mapping travels with the run so the console can show what Bishop
+        # read alongside what it concluded. A verdict without that is a verdict
+        # you cannot audit.
+        return {
+            "run_id": run.run_id,
+            "status": run.status,
+            "alert_id": alert.alert_id,
+            "mapping": report.to_dict(),
+        }
+
+    if body.alert_id is None:
+        raise HTTPException(422, "supply either alert_id or alert")
+
     for item in load_corpus():
         if item.alert_id == body.alert_id:
             run = runs.start(item.alert, alert_id=item.alert_id)

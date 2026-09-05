@@ -9,6 +9,7 @@ import type { Health } from "@/lib/types";
 
 const LINKS = [
   { href: "/", label: "Alerts" },
+  { href: "/triage", label: "Triage yours" },
   { href: "/coverage", label: "Coverage" },
   { href: "/detectors", label: "Detectors" },
   { href: "/scorecard", label: "Scorecard" },

@@ -614,6 +614,110 @@ def _wrap_text(text: str, width: int) -> list[str]:
     return _wrap(text, width) if text else []
 
 
+def cmd_triage(args: argparse.Namespace) -> int:
+    """Triage an alert the user supplied, from a file or from stdin.
+
+    The mapping report prints before the verdict on purpose. Bishop reads a
+    subset of any real alert, and knowing which subset is the difference
+    between a verdict you can act on and one you have to take on faith.
+    """
+    import sys
+
+    from bishop.ingest import load_payload, normalise
+
+    if args.path == "-":
+        text = sys.stdin.read()
+        origin = "stdin"
+    else:
+        source = Path(args.path)
+        if not source.exists():
+            print(red(f"  no file at {source}"))
+            return 1
+        text = source.read_text(encoding="utf-8")
+        origin = str(source)
+
+    try:
+        payload = load_payload(text)
+        alert, report = normalise(payload)
+    except (TypeError, ValueError) as exc:
+        print(red(f"  could not read an alert from {origin}: {exc}"))
+        return 1
+
+    if not args.quiet:
+        _print_mapping(report, origin)
+
+    if not report.usable and not args.force:
+        print(red("  No detector can examine this alert."))
+        print(dim("  Bishop would escalate it without measuring anything. Run with"))
+        print(dim("  --force to do that anyway, or add a command line, connections"))
+        print(dim("  or auth events so there is something to assess."))
+        print()
+        return 2
+
+    incident, runtime, _ = _run_alerts(
+        [alert],
+        incident_id=f"INC-{alert.alert_id}",
+        approve=args.approve,
+        audit_path=Path(args.audit) if args.audit else None,
+    )
+    _print_incident(incident, verbose=args.verbose)
+    _persist(incident, runtime)
+    print(dim(f"  audit chain: {len(runtime.chain)} entries, verified {runtime.chain.is_intact()}"))
+    print()
+    return 0
+
+
+def _print_mapping(report, origin: str) -> None:
+    print()
+    print(f"  {bold('WHAT BISHOP READ')}  {dim(origin)}")
+    print(f"    format detected             {report.detected_format}")
+    print(f"    fields understood           {len(report.mapped)}")
+    print(f"    fields ignored              {len(report.ignored)}")
+    if report.ignored:
+        print(dim(f"      {', '.join(report.ignored[:12])}"))
+        print(dim("      (kept in raw and injection-scanned, but not interpreted)"))
+
+    if report.defaulted:
+        print()
+        print(f"    {yellow('defaulted')}")
+        for name, value, why in report.defaulted:
+            print(f"      {name} = {value}")
+            for line in _wrap_text(why, 64):
+                print(dim(f"        {line}"))
+
+    print()
+    detectors = report.detectors_with_jurisdiction
+    if detectors:
+        print(f"    {green(f'{len(detectors)} detectors can examine this')}")
+        print(dim(f"      {', '.join(detectors)}"))
+    else:
+        print(f"    {red('no detector can examine this alert')}")
+
+    for warning in report.warnings:
+        print()
+        lines = _wrap_text(warning, 66)
+        for index, line in enumerate(lines):
+            prefix = f"    {yellow('!')} " if index == 0 else "      "
+            print(f"{prefix}{line}" if index == 0 else dim(f"{prefix}{line}"))
+    print()
+
+
+def cmd_formats(args: argparse.Namespace) -> int:
+    from bishop.ingest import supported_formats
+
+    print()
+    print(f"  {bold('ALERT FORMATS BISHOP ACCEPTS')}")
+    print()
+    for name, detail in supported_formats().items():
+        print(f"    {name:10} {detail}")
+    print()
+    print(dim("  Detection is advisory — every payload is tried against every"))
+    print(dim("  alias table, so a hybrid or partial shape still maps as far as"))
+    print(dim("  it can. `bishop triage <file>` prints exactly what was read."))
+    print()
+    return 0
+
+
 def cmd_coverage(args: argparse.Namespace) -> int:
     from bishop.attck import build_matrix, render_markdown
     from bishop.eval import corpus_techniques
@@ -715,6 +819,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="run the held-out set instead — reported separately, never gated",
     )
     ev.set_defaults(func=cmd_eval)
+
+    tr = sub.add_parser("triage", help="triage an alert of your own, from a file or stdin")
+    tr.add_argument("path", help="path to a JSON alert, or - for stdin")
+    tr.add_argument("--approve", help="comma-separated action ids to approve at the gate")
+    tr.add_argument("--audit", help="write the audit chain to this path")
+    tr.add_argument("-v", "--verbose", action="store_true", help="show every detector result")
+    tr.add_argument("--quiet", action="store_true", help="skip the mapping report")
+    tr.add_argument(
+        "--force",
+        action="store_true",
+        help="run even when no detector can examine the alert",
+    )
+    tr.set_defaults(func=cmd_triage)
+
+    fm = sub.add_parser("formats", help="the alert shapes Bishop accepts")
+    fm.set_defaults(func=cmd_formats)
 
     cov = sub.add_parser("coverage", help="regenerate the coverage matrix")
     cov.add_argument("--output", default="docs/COVERAGE.md")

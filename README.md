@@ -185,6 +185,46 @@ just eval-holdout          # the held-out set — the number that means somethin
 just test                  # 949 tests, 12 of them xfail (open injection gaps)
 ```
 
+### Triage an alert of your own
+
+The corpus above is synthetic and mine. To point Bishop at something of yours:
+
+```bash
+just triage my-alert.json     # or:  cat alert.json | uv run bishop triage -
+just formats                  # the shapes it recognises
+```
+
+It accepts Bishop's own schema, Elastic Common Schema, raw Sysmon/Windows event
+JSON, or flat JSON with recognisable field names — `CommandLine`, `ParentImage`,
+`host.hostname`, `user.name` and the usual aliases. Nested and dotted keys both
+resolve, because exporters disagree about which they emit.
+
+**It prints what it read before what it concluded**, and that order is the point.
+Bishop reads a subset of any real alert, and a verdict is only worth as much as
+the fields behind it:
+
+```
+  WHAT BISHOP READ  my-alert.json
+    format detected             sysmon
+    fields understood           9
+    fields ignored              3
+      EventID, Hashes, IntegrityLevel
+      (kept in raw and injection-scanned, but not interpreted)
+
+    12 detectors can examine this
+      credential_dumping, encoded_command, lolbin_abuse, masquerading, …
+```
+
+That detector list is computed by *running* them and asking which had data in
+their remit — it is a fact about your alert, not a claim about the tool. When it
+comes back empty, `triage` says so and exits rather than producing a verdict
+with nothing behind it, because Bishop would escalate whatever the alert said.
+`--force` runs it anyway.
+
+The normaliser never invents structure. An unrecognised field goes to `raw`
+uninterpreted — still injection-scanned, but it does not become a hostname
+because it looked like one.
+
 Then the console, if you want to watch it:
 
 ```bash
@@ -196,6 +236,7 @@ Other things worth typing:
 
 ```bash
 just alerts                # the labelled corpus
+just triage FILE           # triage an alert of your own
 just detectors             # every detector and what it measures
 just run TP-01             # triage one alert by id
 just coverage              # regenerate docs/COVERAGE.md from the code

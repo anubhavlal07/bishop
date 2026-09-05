@@ -12,6 +12,8 @@ import type {
   Coverage,
   DetectorSpec,
   Health,
+  IngestPreview,
+  MappingReport,
   RunState,
   Scorecard,
 } from "./types";
@@ -71,6 +73,24 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ alert_id: alertId }),
     }),
+
+  /** Map a submitted alert and report what Bishop understood, without running. */
+  previewIngest: (alert: unknown) =>
+    get<IngestPreview>("/ingest/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alert }),
+    }),
+
+  /** Triage an alert the user supplied rather than one from the corpus. */
+  startRunFromAlert: (alert: unknown) =>
+    get<{ run_id: string; status: string; alert_id: string; mapping: MappingReport }>("/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alert }),
+    }),
+
+  ingestFormats: () => get<{ formats: Record<string, string> }>("/ingest/formats"),
 
   decide: (
     runId: string,
