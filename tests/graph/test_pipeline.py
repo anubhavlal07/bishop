@@ -353,9 +353,7 @@ class TestTheCriticMustBackItsOwnEscalation:
         assert "does not rule out" in (verdict.escalation_reason or "")
 
     def test_escalation_still_happens_when_confidence_falls_below_threshold(self):
-        verdict, _ = self.critique(
-            should_escalate=True, adjustment=-0.05, base_confidence=0.46
-        )
+        verdict, _ = self.critique(should_escalate=True, adjustment=-0.05, base_confidence=0.46)
         assert verdict.label is VerdictLabel.ESCALATE
 
     def test_the_counter_arguments_survive_a_refused_escalation(self):
