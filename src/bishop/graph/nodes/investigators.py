@@ -192,6 +192,7 @@ def investigate(task: InvestigatorTask, config: Optional[RunnableConfig] = None)
         investigator=f"{surface}_investigator",
         summary=summary,
         evidence=evidence,
+        examined=[r.detector for r in results if r.examined],
         skipped=not results,
         skip_reason=None if results else f"no detectors registered for {surface}",
         duration_ms=duration_ms,

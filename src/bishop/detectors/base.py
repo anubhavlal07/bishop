@@ -105,9 +105,18 @@ def miss(detector: str, reason: str) -> DetectorResult:
 
 
 def clear(detector: str, rationale: str, **facts) -> DetectorResult:
-    """A detector that ran and found nothing suspicious."""
+    """A detector that ran and found nothing suspicious.
+
+    `examined=True` is the load-bearing part. A verdict of "false positive"
+    means someone looked; this is the record that someone did.
+    """
     return DetectorResult(
-        detector=detector, fired=False, score=0.0, rationale=rationale, facts=facts
+        detector=detector,
+        fired=False,
+        score=0.0,
+        rationale=rationale,
+        facts=facts,
+        examined=True,
     )
 
 

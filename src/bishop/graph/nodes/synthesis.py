@@ -54,6 +54,30 @@ def _fired_detectors(reports: list[InvestigatorReport]) -> list[DetectorResult]:
     return [r for r in _all_results(reports) if r.fired]
 
 
+#: The one surface that argues *against* malice rather than for it.
+_MITIGATING_INVESTIGATOR = "context_investigator"
+
+
+def _accusatory_examination(reports: list[InvestigatorReport]) -> list[str]:
+    """Detectors that could have accused, and looked.
+
+    The context surface is excluded on purpose. A context detector reporting
+    that nothing in environment policy authorises this actor has examined
+    something, but what it found argues *towards* suspicion, not away from it —
+    it cannot be the basis for closing an alert. Counting it would have made
+    the grounding rule below fire almost never, since `authorised_activity`
+    reaches a conclusion on any alert naming an account.
+    """
+    return sorted(
+        {
+            name
+            for report in reports
+            if report.investigator != _MITIGATING_INVESTIGATOR
+            for name in report.examined
+        }
+    )
+
+
 def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> dict[str, Any]:
     runtime = get_runtime(config)
     reports = state.get("reports") or []
@@ -189,6 +213,7 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
         validation=validation,
         fired=fired,
         mitigating=[r for r in results if r.fired and r.mitigating],
+        examined=_accusatory_examination(reports),
         injections=injections,
         threshold=runtime.settings.escalation_threshold,
         catalogue=catalogue,
@@ -234,6 +259,7 @@ def _build_verdict(
     validation,
     fired: list[DetectorResult],
     mitigating: list[DetectorResult],
+    examined: list[str],
     injections: list[Evidence],
     threshold: float,
     catalogue,
@@ -247,7 +273,7 @@ def _build_verdict(
     confidence = float(data.get("confidence") or 0.0)
     escalation_reason = data.get("escalation_reason")
 
-    # Grounding, in both directions. A malicious verdict needs a measurement
+    # Grounding, in all three directions. A malicious verdict needs a measurement
     # behind it — an injection attempt counts, being a deterministic finding
     # from the quarantine scan.
     if label is VerdictLabel.TRUE_POSITIVE and not fired and not injections:
@@ -270,6 +296,29 @@ def _build_verdict(
             "the model called this an authorised activity, but no mitigating detector "
             "found anything in environment policy that authorises it. Bishop does not "
             "clear an alert on a model's reading alone."
+        )
+        confidence = min(confidence, threshold)
+
+    # And the third direction, which was missing until the held-out set found
+    # it. `false_positive` is the verdict that closes the ticket, and it was the
+    # one verdict needing no evidence at all: when no detector had jurisdiction
+    # over an alert — a Kerberoasting ticket count, a cloud token replay,
+    # nothing in Bishop's remit — every detector returned `miss`, none fired,
+    # and the model, seeing an empty evidence table, concluded there was nothing
+    # wrong. It read "nobody checked" as "nothing to find".
+    #
+    # `run_surface`'s own docstring has always insisted those are different
+    # things. This is where the difference finally changes an outcome: closing
+    # an alert is a claim that someone looked, so at least one detector has to
+    # have actually reached a conclusion. Absence of evidence is not evidence
+    # of absence, and on a tool whose 31 techniques cover a fraction of ATT&CK
+    # it is the most common situation there is.
+    if label is VerdictLabel.FALSE_POSITIVE and not examined:
+        label = VerdictLabel.ESCALATE
+        escalation_reason = (
+            "no detector had anything to work with on this alert, so there is no basis "
+            "for closing it. Bishop has no coverage for what this alert describes; that "
+            "is a gap in Bishop, not evidence that the alert is benign."
         )
         confidence = min(confidence, threshold)
 

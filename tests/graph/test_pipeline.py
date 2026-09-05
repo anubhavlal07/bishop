@@ -10,12 +10,14 @@ from __future__ import annotations
 from bishop.audit import AuditAction
 from bishop.graph.nodes.investigators import _ground
 from bishop.graph.nodes.report import build_incident
+from bishop.graph.nodes.synthesis import _accusatory_examination
 from bishop.graph.runtime import Settings
 from bishop.schema import DetectorResult, EvidenceKind, VerdictLabel
 from tests.graph.conftest import (
     credential_theft_alert,
     injection_only_alert,
     quiet_alert,
+    uncovered_alert,
 )
 
 
@@ -206,6 +208,60 @@ class TestGrounding:
             if e.payload.get("kind") == "ungrounded_finding_dropped"
         ]
         assert refusals == []
+
+
+class TestClosingIsAlsoAClaim:
+    """`false_positive` needs grounding too — the third direction.
+
+    Bishop already refused to *accuse* without a detector, and refused to
+    *clear as authorised* without a mitigating detector. Closing an alert as a
+    false positive needed nothing at all, which meant an alert type Bishop has
+    no coverage for came back "nothing wrong" rather than "I cannot see this".
+    The held-out set found it; this is what keeps it found.
+    """
+
+    def test_an_alert_nothing_examined_is_escalated_not_closed(self, run):
+        graph, state, config, runtime = run(uncovered_alert())
+        result = graph.invoke(state, config=config)
+
+        verdict = result["verdict"]
+        assert verdict.label is VerdictLabel.ESCALATE
+        assert "no detector had anything to work with" in (verdict.escalation_reason or "")
+
+    def test_the_reason_blames_bishop_rather_than_the_alert(self, run):
+        """Wording matters here. An analyst reading "no coverage" triages it
+        themselves; one reading "nothing suspicious" does not look again."""
+        graph, state, config, runtime = run(uncovered_alert())
+        result = graph.invoke(state, config=config)
+        reason = result["verdict"].escalation_reason or ""
+        assert "gap in Bishop" in reason
+
+    def test_an_examined_alert_can_still_be_closed(self, run):
+        """The rule must not turn every false positive into an escalation."""
+        graph, state, config, runtime = run(quiet_alert())
+        result = graph.invoke(state, config=config)
+        assert result["verdict"].label is VerdictLabel.FALSE_POSITIVE
+
+    def test_a_cleared_detector_counts_as_examination(self, run):
+        graph, state, config, runtime = run(quiet_alert())
+        result = graph.invoke(state, config=config)
+        examined = {name for report in result["reports"] for name in report.examined}
+        assert examined, "a quiet alert should still have been looked at"
+
+    def test_no_accusing_detector_examines_an_uncovered_alert(self, run):
+        """Context is excluded deliberately.
+
+        `authorised_activity` reaches a conclusion on any alert naming an
+        account, but "nothing authorises this actor" argues towards suspicion,
+        not away from it. Letting it count would make the rule fire almost
+        never, which is the same as not having it.
+        """
+        graph, state, config, runtime = run(uncovered_alert())
+        result = graph.invoke(state, config=config)
+
+        assert _accusatory_examination(result["reports"]) == []
+        context = [r for r in result["reports"] if r.investigator == "context_investigator"]
+        assert context and context[0].examined, "context did look; it just cannot clear"
 
 
 class TestEscalation:

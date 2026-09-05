@@ -92,6 +92,19 @@ def impossible_travel(alert: Alert) -> DetectorResult:
     grouped = _located_by_principal(alert.auth_events)
     comparable = {user: events for user, events in grouped.items() if len(events) >= 2}
     if not comparable:
+        if grouped:
+            # There *were* geolocated logins; they just did not stack up on any
+            # one account. That is a conclusion, not an absence of one — it is
+            # precisely the finding that exonerates an alert which correlated
+            # two different people's sessions on tenant rather than on account.
+            # Reporting it as "nothing to work with" threw away the answer.
+            plural = "" if len(grouped) == 1 else "s"
+            return clear(
+                "impossible_travel",
+                f"{len(grouped)} account{plural} had geolocated logins, but no single "
+                f"account had two, so no journey is implied by this alert",
+                accounts_with_geolocation=sorted(grouped),
+            )
         return miss(
             "impossible_travel",
             "no single account had two successful logins carrying geolocation, "

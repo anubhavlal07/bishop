@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from bishop.schema.alert import BishopModel
 
@@ -57,6 +57,22 @@ class DetectorResult(BishopModel):
     mitigating: bool = False
     #: Techniques this detector *suggests*. Validated before any of them ship.
     technique_hints: list[str] = Field(default_factory=list)
+    #: Whether the detector had data in its remit and reached a conclusion, as
+    #: opposed to having nothing to work with. `run_surface` has always
+    #: described this as "the difference between 'no beaconing' and 'nobody
+    #: checked for beaconing'" — this is the field that carries the distinction
+    #: as far as the verdict, which is the only place it changes an outcome.
+    #: `clear()` sets it; `miss()` does not.
+    examined: bool = False
+
+    @model_validator(mode="after")
+    def _firing_implies_examining(self) -> DetectorResult:
+        # A detector that fired plainly looked at something. Deriving it here
+        # rather than asking every detector to remember means the flag cannot
+        # drift out of agreement with `fired`.
+        if self.fired and not self.examined:
+            object.__setattr__(self, "examined", True)
+        return self
 
     def __bool__(self) -> bool:
         return self.fired

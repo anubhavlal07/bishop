@@ -103,10 +103,13 @@ def lolbin_abuse(alert: Alert) -> DetectorResult:
         )
 
     if not examined:
+        processes = sum(1 for _ in _all_processes(alert))
+        if not processes:
+            return miss("lolbin_abuse", "the alert carries no process tree to examine")
         return clear(
             "lolbin_abuse",
             "no living-off-the-land binaries in the process tree",
-            processes_examined=sum(1 for _ in _all_processes(alert)),
+            processes_examined=processes,
         )
 
     with_tells = [f for f in findings if f["tells"]]
@@ -340,10 +343,20 @@ def credential_dumping(alert: Alert) -> DetectorResult:
             )
 
     if not findings:
+        examined = sum(1 for _ in _all_processes(alert))
+        # Not "is raw non-empty" — raw carries whatever the sensor sent, and
+        # most of it is nothing to do with this detector. Only the two keys it
+        # actually reads count as having had something to read; otherwise
+        # "no credential-dumping observed" claims a check that never happened.
+        if not examined and not (target or granted):
+            return miss(
+                "credential_dumping",
+                "the alert carries neither a process tree nor process-access data",
+            )
         return clear(
             "credential_dumping",
             "no credential-dumping tools, command patterns or LSASS handles observed",
-            processes_examined=sum(1 for _ in _all_processes(alert)),
+            processes_examined=examined,
         )
 
     strongest = max(findings, key=lambda f: float(f["weight"]))  # type: ignore[arg-type]
@@ -493,6 +506,18 @@ def persistence(alert: Alert) -> DetectorResult:
                     break
 
     if not findings:
+        surfaces = (
+            len(alert.registry_changes)
+            + len(alert.scheduled_tasks)
+            + len(alert.service_installs)
+            + sum(1 for _ in _all_processes(alert))
+        )
+        if not surfaces:
+            return miss(
+                "persistence",
+                "the alert carries no registry changes, scheduled tasks, service "
+                "installs or processes to examine",
+            )
         return clear(
             "persistence",
             "no reboot-surviving changes observed in this alert",
@@ -602,6 +627,12 @@ def encoded_command(alert: Alert) -> DetectorResult:
         findings.append(finding)
 
     if not findings:
+        if not any(text for _, text in carriers):
+            return miss(
+                "encoded_command",
+                "the alert carries no command lines, registry values, task actions "
+                "or service paths to decode",
+            )
         return clear(
             "encoded_command",
             "no obfuscation or encoded payloads in the observed commands, registry "
@@ -838,6 +869,8 @@ def data_staging(alert: Alert) -> DetectorResult:
             )
 
     if not findings:
+        if not any(_cmd_of(p) for _, p in _all_processes(alert)) and alert.file is None:
+            return miss("data_staging", "the alert carries no commands or files to examine")
         return clear("data_staging", "no archive creation observed in this alert")
 
     strongest = max(findings, key=lambda f: float(f["weight"]))  # type: ignore[arg-type]

@@ -78,6 +78,9 @@ class TestImpossibleTravel:
         )
         assert not result.fired
         assert "no single account" in result.rationale
+        # It looked and concluded, rather than having nothing to look at — the
+        # difference decides whether the alert can be closed at all.
+        assert result.examined
 
     def test_one_account_moving_is_still_caught_among_several_users(self):
         result = impossible_travel(
@@ -163,6 +166,9 @@ class TestImpossibleTravel:
         )
         assert not result.fired
         assert "no single account" in result.rationale
+        # It looked and concluded, rather than having nothing to look at — the
+        # difference decides whether the alert can be closed at all.
+        assert result.examined
 
     def test_events_out_of_order_still_compare_correctly(self):
         forwards = impossible_travel(

@@ -29,6 +29,14 @@ class InvestigatorReport(BishopModel):
     investigator: str
     summary: str = ""
     evidence: list[Evidence] = Field(default_factory=list)
+    #: Detectors that had data in their remit and reached a conclusion,
+    #: including the ones that concluded "nothing here". Only *firing*
+    #: detectors produce evidence, so without this the report cannot
+    #: distinguish "we checked for beaconing and there is none" from "nobody
+    #: looked for beaconing" — and closing an alert is a claim that someone
+    #: looked. Names rather than results: the results that matter are already
+    #: in `evidence`, and this only has to answer whether anyone checked.
+    examined: list[str] = Field(default_factory=list)
     #: Set when the investigator had nothing relevant to look at.
     skipped: bool = False
     skip_reason: str | None = None

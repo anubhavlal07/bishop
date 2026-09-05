@@ -411,6 +411,14 @@ def routine_software(alert: Alert) -> DetectorResult:
                 )
 
     if not findings:
+        nothing_named = not any(
+            (p.command_line or p.name or p.path) for _, p in _all_processes(alert)
+        )
+        if nothing_named and not alert.connections and alert.file is None:
+            return miss(
+                "routine_software",
+                "the alert names no software, path or destination to recognise",
+            )
         return clear(
             "routine_software",
             "nothing here matches a trusted publisher, install path or sanctioned destination",
