@@ -42,6 +42,12 @@ def _approval_request(plan: ResponsePlan, state: BishopState) -> dict[str, Any]:
             "counter_arguments": verdict.counter_arguments if verdict else [],
             "technique_ids": verdict.technique_ids if verdict else [],
         },
+        # `proposes` first, and separate from `strategy`, because they are
+        # different kinds of claim. One is computed from the action list and
+        # cannot disagree with it; the other is what the model wrote and can.
+        # Showing both lets a human see the disagreement rather than trusting
+        # whichever Bishop decided to keep.
+        "proposes": plan.proposes,
         "strategy": plan.strategy,
         "actions": [
             {

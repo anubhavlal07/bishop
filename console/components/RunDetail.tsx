@@ -262,7 +262,14 @@ export function RunDetail({ runId }: { runId: string }) {
             <Panel title="Proposed response">
               {incident.response_plan.actions.length > 0 ? (
                 <>
-                  <p className="text-xs leading-relaxed">
+                  {/* "Proposed" and not "performed": after a modified decision
+                      the execution log below shows fewer actions than this
+                      sentence names, and the distinction is the whole point of
+                      the gate. Labelled rather than left to be inferred. */}
+                  <p className="text-xs font-medium leading-relaxed">
+                    {incident.response_plan.proposes}
+                  </p>
+                  <p className="muted mt-2 text-xs leading-relaxed">
                     {incident.response_plan.strategy}
                   </p>
                   <ExecutionLog log={incident.execution_log} />

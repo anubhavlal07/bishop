@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -113,3 +114,52 @@ class TestThePublishedNumberMatchesTheCorpus:
         )
         readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
         assert f"| Alerts | {baseline['corpus_size']} |" in readme
+
+
+class TestTheCommittedSuffixListIsIntact:
+    """184 KB of third-party data on a control path.
+
+    `registrable()` derives a parent from this file and puts it into the set of
+    destinations Bishop will offer to block, so a rule missing from it is a
+    registry silently available to cut off. Three hand-written subsets each
+    looked complete enough; these are the properties that make the real list
+    checkable rather than trusted.
+    """
+
+    def suffixes(self) -> dict:
+        return json.loads(
+            (REPO_ROOT / "src" / "bishop" / "graph" / "public_suffixes.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+    def test_it_is_the_whole_list_and_not_a_subset(self):
+        data = self.suffixes()
+        assert len(data["rules"]) > 9000
+        assert len(data["wildcards"]) > 250
+        assert len(data["exceptions"]) >= 8
+
+    def test_the_internationalised_rules_survived_the_parser(self):
+        """The PSL writes IDN suffixes in Unicode only. A parser that skipped
+        non-ASCII lines dropped 459 rules, 260 of them second-level registries
+        that then derived as blockable domains."""
+        punycode = [rule for rule in self.suffixes()["rules"] if "xn--" in rule]
+        assert len(punycode) > 400
+        for expected in ("xn--55qx5d.cn", "xn--io0a7i.cn", "xn--mgba3a4f16a.ir"):
+            assert expected in punycode
+
+    def test_every_rule_is_a_plain_hostname(self):
+        """A mangled rule is a missing rule. The PSL's line format is 'read up
+        to the first whitespace', and a rule stored as `com.pl // ICANN` matches
+        nothing while `com.pl` goes missing."""
+        label = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+        pattern = re.compile(rf"^{label}(?:\.{label})*$")
+        data = self.suffixes()
+        for kind in ("rules", "wildcards", "exceptions"):
+            for entry in data[kind]:
+                assert pattern.match(entry), f"{kind}: {entry!r} is not a hostname"
+
+    def test_it_carries_its_source_and_licence(self):
+        data = self.suffixes()
+        assert "publicsuffix.org" in data["_source"]
+        assert "Mozilla Public License" in data["_licence"]

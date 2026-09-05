@@ -44,6 +44,9 @@ packages = ["src/bishop"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+# `record_property` (used by the injection corpus) is rejected by xunit2, and CI
+# writes a JUnit report to check the README badge against the run.
+junit_family = "xunit1"
 markers = [
     "live: requires a live model provider; skipped by default",
 ]

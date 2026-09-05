@@ -185,8 +185,11 @@ def _print_incident(incident, *, verbose: bool = False) -> None:
         print(rule("PROPOSED RESPONSE"))
         print()
         if plan.actions:
+            for line in wrap(plan.proposes):
+                print(bold(line))
+            print()
             for line in wrap(plan.strategy):
-                print(line)
+                print(dim(line))
             print()
             for action in plan.actions:
                 flag = red(" IRREVERSIBLE") if action.is_irreversible else ""
@@ -284,8 +287,16 @@ def _print_gate(request: dict[str, Any]) -> None:
     print()
     print(rule("HUMAN APPROVAL REQUIRED"))
     print()
+    # `proposes` first and in bold: it is computed from the action list, so it
+    # is the one line here that cannot disagree with what follows. `strategy` is
+    # the model's own account, dimmed to say so. Printing only the second is how
+    # the terminal gate spent a while telling an analyst a plan contained a host
+    # and an account when it opened a ticket.
+    for line in wrap(request.get("proposes", "")):
+        print(bold(line))
+    print()
     for line in wrap(request.get("strategy", "")):
-        print(line)
+        print(dim(line))
     print()
     for action in request["actions"]:
         flag = red(" IRREVERSIBLE") if action["irreversible"] else ""

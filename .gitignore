@@ -70,3 +70,6 @@ deploy-*.zip
 # files of content-hashed JSON. graph.html and graph.json are ~5MB of derived
 # data that a reader gets by running the tool, not by cloning it.
 graphify-out/
+
+# Written by `pytest --junitxml`; CI reads it to check the README badge.
+.pytest-report*.xml

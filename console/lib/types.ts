@@ -127,7 +127,10 @@ export interface ResponseAction {
 
 export interface ResponsePlan {
   actions: ResponseAction[];
+  // What the model wrote. Shown, never edited.
   strategy: string;
+  // Computed from `actions` by the planner, so it cannot disagree with them.
+  proposes: string;
   no_action_rationale: string | null;
 }
 
@@ -183,6 +186,7 @@ export interface ApprovalRequest {
     counter_arguments: string[];
     technique_ids: string[];
   };
+  proposes: string;
   strategy: string;
   actions: Array<{
     action_id: string;

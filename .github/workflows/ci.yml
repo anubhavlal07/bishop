@@ -27,7 +27,13 @@ jobs:
           uv run ruff format --check src tests scripts
 
       - name: Test
-        run: uv run pytest -q
+        run: uv run pytest -q --junitxml=.pytest-report.xml
+
+      # The badge is a claim about the suite and it drifts silently. It said
+      # 1050 while 1355 passed. Read from the run that just happened, so it
+      # costs nothing and cannot disagree with it.
+      - name: Test-count badge is current
+        run: uv run python scripts/check_test_badge.py .pytest-report.xml
 
       # A red eval fails the build. The gate compares against the committed
       # baseline in eval/results/baseline.json and fails on a regression, not on

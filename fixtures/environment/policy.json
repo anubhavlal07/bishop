@@ -87,6 +87,71 @@
     "10.20.5.99": "Authenticated vulnerability scanner. Weekly credentialed sweep; failed logins against test accounts are expected and the rule should exclude this source."
   },
 
+  "_never_block_readme": [
+    "Destinations that may never be blocked estate-wide, whatever an alert says.",
+    "",
+    "The executor already refuses to block a destination this incident never",
+    "contacted. That bounds the shape of the target and not the harm, because the",
+    "dangerous case is well-formed: an adversary on a host they already own emits",
+    "thirty high-entropy DNS queries under the identity provider's domain. The",
+    "tunnelling detector fires, correctly reports the registrable parent, and the",
+    "plan proposes blocking it. An analyst reading thirty encoded queries under",
+    "that name approves, and the estate loses single sign-on.",
+    "",
+    "Nothing has malfunctioned there — the guard has been used as designed. The",
+    "only bound that holds is one the adversary cannot write into an alert, which",
+    "is why it lives in this file with everything else that comes from the CMDB",
+    "rather than from a payload. Blocking one of these is a decision a human takes",
+    "outside Bishop.",
+    "",
+    "A registrable domain here also covers its subdomains, and its superdomains:",
+    "blocking a parent cuts every child, so listing `update.microsoft.com` also",
+    "refuses `microsoft.com`.",
+    "",
+    "NAMES DO NOT COVER THEIR ADDRESSES. Bishop does not resolve - a lookup is a",
+    "network call on a control path, and the answer is steerable by an adversary",
+    "who controls DNS for a name they own. An entry that is an address or a CIDR",
+    "range is matched against `block_ip`; a name is not. List the ranges that",
+    "matter."
+  ],
+
+  "never_block": [
+    "okta.com",
+    "microsoftonline.com",
+    "microsoft.com",
+    "windowsupdate.com",
+    "amazonaws.com",
+    "cloudfront.net",
+    "akamaiedge.net",
+    "corp.internal",
+    "monitoring.example",
+    "192.0.2.50",
+    "198.51.100.0/24"
+  ],
+
+  "_public_suffixes_readme": [
+    "Registry boundaries this organisation adds to the committed Public Suffix",
+    "List in src/bishop/graph/public_suffixes.json.",
+    "",
+    "The world's boundaries come from the PSL and no deployment should be editing",
+    "them. This list is for the ones only this organisation has: an internal TLD,",
+    "a lab namespace, anything delegated inside the estate. Blocking one of those",
+    "is the same outage as blocking `com`.",
+    "",
+    "Adding a suffix here refuses that name and PERMITS names under it: with",
+    "`mycorp` listed, `mycorp` stops being blockable and `db.mycorp` starts. That",
+    "is the intent - it is how an internal TLD gets treated as a registry - but it",
+    "is not the one-directional guarantee an earlier draft of this note claimed,",
+    "and a claim about a control property the code does not have is exactly what",
+    "went wrong three times in src/bishop/graph/containment.py. Add only",
+    "boundaries this organisation actually operates."
+  ],
+
+  "public_suffixes": [
+    "corp.internal",
+    "lab.internal"
+  ],
+
   "sanctioned_destinations": {
     "intake.monitoring.example": "Monitoring vendor intake endpoint. Agents check in on a fixed interval by design.",
     "artifacts.corp.internal": "Internal artefact server.",

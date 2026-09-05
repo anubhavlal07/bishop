@@ -100,7 +100,20 @@ export function ApprovalModal({ request, onDecide }: Props) {
         </header>
 
         <div className="px-5 py-4">
-          <p className="text-xs leading-relaxed">{request.strategy}</p>
+          {/* `proposes` is computed from the plan's action list; `strategy` is
+              what the model wrote about it. Shown separately, and in that
+              order, because the first cannot disagree with the *proposal* and
+              the second can — a plan once claimed to contain a host and an
+              account while proposing only a ticket. Showing both lets the
+              analyst see that disagreement rather than trusting whichever one
+              Bishop decided to keep.
+
+              It describes the proposal, not the current selection: untick two
+              of three isolations and this line still counts three, while the
+              footer counts what is actually approved. That is the honest split
+              — this sentence is about what Bishop asked for. */}
+          <p className="text-xs font-medium leading-relaxed">{request.proposes}</p>
+          <p className="muted mt-2 text-xs leading-relaxed">{request.strategy}</p>
 
           <ul className="mt-4 space-y-2">
             {request.actions.map((action) => {

@@ -26,9 +26,23 @@ from typing import Any, Optional, Protocol
 from langchain_core.runnables import RunnableConfig
 
 from bishop.audit import AuditAction
+from bishop.graph.containment import (
+    Destinations,
+    EgressPolicy,
+    egress_target_is_allowed,
+    is_egress,
+    load_egress_policy,
+    observed_destinations,
+)
 from bishop.graph.runtime import get_runtime
 from bishop.graph.state import BishopState
-from bishop.schema import Decision, HumanDecision, ResponseAction, ResponsePlan
+from bishop.schema import (
+    UNSUPPORTED_ACTIONS,
+    Decision,
+    HumanDecision,
+    ResponseAction,
+    ResponsePlan,
+)
 
 
 class ExecutionRefused(RuntimeError):
@@ -84,6 +98,12 @@ _TARGETED_ACTIONS = {
     "quarantine_file",
 }
 
+#: Refused as policy, whatever they name. The set and the reasons live with
+#: the schema so the planner refuses at proposal time from the same source:
+#: a gate that asks a human to approve something Bishop will then decline is
+#: a worse failure than either answer on its own.
+_UNSUPPORTED_ACTIONS = UNSUPPORTED_ACTIONS
+
 
 def _known_entities(alerts: list[Any]) -> set[str]:
     """Every host and account the alerts actually name, lowercased."""
@@ -105,7 +125,12 @@ def _known_entities(alerts: list[Any]) -> set[str]:
     return known
 
 
-def _targets_a_known_entity(action: ResponseAction, known: set[str]) -> tuple[bool, str]:
+def _targets_a_known_entity(
+    action: ResponseAction,
+    known: set[str],
+    destinations: Destinations,
+    policy: EgressPolicy,
+) -> tuple[bool, str]:
     """Refuse to act on something the alert never mentioned.
 
     The containment target reaches here from the response plan, which a model
@@ -118,8 +143,19 @@ def _targets_a_known_entity(action: ResponseAction, known: set[str]) -> tuple[bo
     Scanning the hostname cannot fix this: `DC-01` is a perfectly ordinary name
     and there is nothing in it to detect. What is checkable is the relationship
     — you cannot isolate a host that is not in the incident.
+
+    Two action types have no such relationship to check and are refused as
+    policy first, so the refusal says *why* rather than reading like a gap in
+    the entity list that someone should go and fill.
     """
-    if str(action.action_type) not in _TARGETED_ACTIONS:
+    if (refusal := _UNSUPPORTED_ACTIONS.get(str(action.action_type))) is not None:
+        return False, refusal
+
+    kind = str(action.action_type)
+    if is_egress(kind):
+        return egress_target_is_allowed(kind, action.target, destinations, policy)
+
+    if kind not in _TARGETED_ACTIONS:
         return True, ""
     target = (action.target or "").strip().lower()
     if not target:
@@ -166,12 +202,15 @@ def response_execute(
 
     log: list[dict[str, Any]] = []
 
-    known = _known_entities(state.get("alerts") or [])
+    alerts = state.get("alerts") or []
+    known = _known_entities(alerts)
+    policy = load_egress_policy()
+    destinations = observed_destinations(alerts, policy)
 
     for action in plan.actions:
         allowed, reason = _authorised(action, decision)
         if allowed:
-            allowed, reason = _targets_a_known_entity(action, known)
+            allowed, reason = _targets_a_known_entity(action, known, destinations, policy)
         if not allowed:
             record = {
                 "action_id": action.action_id,

@@ -89,7 +89,7 @@ class TestQuietAlert:
     def test_no_containment_is_proposed(self, run):
         graph, state, config, runtime = run(quiet_alert())
         result = graph.invoke(state, config=config)
-        assert result["response_plan"].actions == []
+        assert not result["response_plan"].actions
         assert result["response_plan"].no_action_rationale
 
 
@@ -272,7 +272,7 @@ class TestEscalation:
         result = graph.invoke(state, config=config)
         assert result["verdict"].label is VerdictLabel.ESCALATE
         assert result["verdict"].escalation_reason
-        assert result["response_plan"].actions == []
+        assert not result["response_plan"].actions
 
     def test_the_critic_runs_and_records_counter_arguments(self, run):
         graph, state, config, runtime = run(credential_theft_alert())

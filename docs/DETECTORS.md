@@ -365,6 +365,25 @@ Without the file Bishop still runs — it simply cannot tell authorised from
 malicious, so everything authorised reads as an intrusion. That is the correct
 failure direction.
 
+The same file carries two lists no detector reads and the executor does.
+
+`never_block` is the only bound on one specific attack: an adversary who sends
+high-entropy DNS queries to a domain they do **not** own gets the tunnelling
+detector to name it, and Bishop proposes cutting the estate off from it. The
+evidence is real, the detector is right, and the analyst approving is being
+reasonable — so the answer cannot come from the alert. It has to come from here,
+where an attacker cannot write.
+
+`public_suffixes` names any registry boundaries specific to this organisation —
+an internal TLD, a lab namespace. The world's boundaries come from the committed
+Public Suffix List in `src/bishop/graph/public_suffixes.json`.
+
+That file exists because `_registrable_parts` above was briefly used as an
+authorisation boundary, and its seven-entry two-part-TLD table made `x.y.co.za`
+parent to `co.za` — so blocking a national registry passed the check. It is fine
+for grouping queries, which is what it says it is for; it was never meant to
+decide what may be cut off. See `docs/THREAT-MODEL.md` §6.
+
 ---
 
 ## The injection scanner

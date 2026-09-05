@@ -302,6 +302,130 @@ has not been written honestly.
   alerts to check against. Scanning enumerates attacks; this checks a
   relationship, which is finite.
 
+- **An egress block is checked against what the incident contacted, and then
+  against a list the attacker cannot write.** The bullet above was written as
+  though every containment target is an asset the organisation owns, and for a
+  while the code agreed with it: `block_domain` and `block_ip` were checked
+  against nothing at all. Their target does not come from inventory — it comes
+  from a fired detector's facts, which come from DNS queries and connection
+  destinations, which §1 lists as attacker-controlled. Blocking egress applies
+  to the whole estate, so a laundered destination is a denial of service on the
+  organisation with an analyst's approval attached.
+
+  The relationship is checkable against a different set: the names this incident
+  observed, plus each one's **registrable domain** — because that is what a
+  detector reports, sixty queries to `*.tun.example` summarising as
+  `tun.example`. Addresses are compared exactly after normalisation, because an
+  IP has no hierarchy a suffix test can read.
+
+  **Where the registrable domain ends took four attempts, and three of them
+  shipped.** The first accepted any label-boundary suffix of an observed name —
+  a rule with no floor, since `com` is a label-boundary suffix of
+  `a1b2.cdn-telemetry.com`; its own docstring claimed bare public suffixes were
+  rejected and nothing implemented that sentence. The second borrowed
+  `_registrable_parts` from the tunnelling detector, whose two-part-TLD table
+  has seven entries — so `x.y.co.za` parents to `co.za`, and blocking an entire
+  national registry executed end to end. The third was a 127-entry hand-written
+  list, which permitted `com.pl`, `github.io` and `herokuapp.com`.
+
+  The third shipped with a claim worth quoting, because the mistake in it is the
+  general one: *"the list is consulted to permit, so an incomplete list
+  over-refuses and never over-permits."* True of the test that asks whether a
+  target has a label of its own. **False** of the function that computes the
+  parent, which does not permit a name — it *derives* one and puts it into the
+  permitted set. A missing `com.pl` makes the parent of `a1b2.evil.com.pl` come
+  out as `com.pl`. Consulted to derive, a subset over-permits, and the
+  reassuring sentence was doing the work of a check nobody had written.
+
+  The list is now the real [Public Suffix List](https://publicsuffix.org),
+  committed under `src/bishop/graph/` and regenerable by
+  `scripts/build_public_suffixes.py`. Its wildcards and exceptions are applied
+  rather than flattened, which matters more than it sounds: an exception rule is
+  the *prevailing* rule, and reading `!city.kobe.jp` as merely "not a suffix"
+  derived `kobe.jp` — a municipal namespace — as something blockable. The
+  builder also IDNA-encodes rather than skipping non-ASCII lines; the PSL writes
+  internationalised suffixes in Unicode only, and skipping them dropped 260
+  second-level registries that then derived as blockable domains.
+
+  **The residual limitation is staleness, and it is asymmetric** — which is the
+  sentence this boundary was missing through four attempts. A new *TLD* absent
+  from the snapshot makes names under it un-parentable: Bishop over-refuses, and
+  someone blocks by hand. A new *second-level delegation* absent from it makes
+  the computed parent one label too broad: Bishop over-permits, and offers to cut
+  off a registry. Only one direction costs an outage, and it is the one a stale
+  file produces without saying anything.
+
+  **That bounds the shape and not the harm, and the second bound is the
+  interesting one.** The dangerous case is not malformed. An adversary who wants
+  the estate cut off from its identity provider does not need to control
+  `okta.com` — they make a host they already own emit thirty high-entropy DNS
+  queries under it. The tunnelling detector fires, correctly reports the
+  registrable parent, and the plan proposes blocking it. An analyst looking at
+  thirty encoded queries approves, because on that evidence approving is the
+  *reasonable* read. Nothing has malfunctioned; the guard has been used as
+  designed.
+
+  No string rule closes that, so the bound comes from `never_block` in the
+  committed environment policy — the same trusted file the context detectors
+  read, sourced from the CMDB rather than from a payload. It matches **both
+  directions**: a target beneath a listed entry and a target above one, because
+  blocking a parent cuts every child and `microsoft.com` is exactly what a
+  detector reports when the queries are under `update.microsoft.com`. Suffix
+  matching is safe here precisely because it only ever refuses more — the
+  inverse of why it was fatal when used to permit. Addresses on the list are
+  checked against `block_ip` too.
+
+  **Names do not cover their addresses.** Bishop does not resolve: a lookup is a
+  network call on a control path, the answer is steerable by an adversary who
+  controls DNS for a name they own, and CDN fronting makes the mapping
+  many-to-many and time-varying. So `okta.com` being listed does not refuse a
+  `block_ip` naming an address that serves it. The remedy is a lever rather than
+  a shrug — a `never_block` entry may be an address or a **CIDR range**, matched
+  against `block_ip` — but an organisation that lists only names has only half
+  the protection it looks like it has.
+
+  Cutting the estate off from something on that list is a decision a human takes
+  outside Bishop. Two more limitations, stated rather than implied: the list has
+  to be maintained, so a dependency nobody wrote down is one Bishop will offer to
+  block; and **without a usable policy file no egress block is allowed at all**,
+  because not knowing what the organisation depends on is not a licence to
+  guess. An entry that does not round-trip exactly — `*.okta.com`, or two names
+  on one line — refuses the whole policy rather than being quietly repaired.
+
+- **Two action types are refused as policy, and that is a real limitation.**
+  Some targets have no such set to check against at all. A **process name** and
+  a **file path** arrive only in the payload, so checking one against the
+  incident is checking a string the attacker wrote against itself.
+  `kill_process` and `quarantine_file` are therefore refused whatever they name,
+  and the refusal says so rather than reporting a missing entity — because the
+  obvious repair, adding process names and paths to the known-entity set, is
+  precisely the change that would turn a relationship test into a
+  self-consistency test and hand the misdirection goal a rubber stamp.
+
+  Before this was explicit they were *mostly* refused by accident, since a
+  process name is rarely also a hostname. `quarantine_file` naming the alert's
+  own IP passed the membership test and executed against the mock with a human
+  approval attached — an incoherent action that no one had decided to allow.
+  They stay in `ActionType` so a model that wants process containment gets a
+  refusal that explains itself, rather than inventing a spelling of its own; and
+  they are refused at *proposal* time as well as at the executor, so the gate
+  never asks a human to approve something Bishop will decline.
+
+- **The plan states what it does, in Bishop's voice, not the model's.** A
+  response plan carries two sentences: `strategy`, which the model wrote and
+  which is never edited, and `proposes`, which is computed from the action list
+  and cannot disagree with it. The second exists because the first can be wrong
+  about its own plan — a confirmed token replay came back with *"contain the
+  account and the host together"* above one action, open a ticket.
+
+  The first fix read the strategy for containment words and replaced it when the
+  actions did not support them, which was the wrong shape: it deleted prose an
+  analyst needed (*"do not isolate the file server"*), it matched ordinary
+  English (*"an isolated incident"*, *"the kill chain"*, *"container"*), and the
+  nine characters `no action` anywhere in the string disabled it. §4.5's rule
+  applies here too — recognising hostile input fails to novel input. Computing
+  the sentence has no vocabulary to evade.
+
 - **A new laundering path.** §4.5 fixed four. The invariant is enforced at the render boundary,
   so a *fifth* path that stringifies attacker text is contained by `safe_block()` — but a new
   prompt-assembly site that does not route through `safe_block()` would not be. That is a

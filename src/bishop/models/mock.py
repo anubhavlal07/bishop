@@ -26,6 +26,7 @@ import re
 from typing import Any
 
 from bishop.models.base import ModelResponse, Usage
+from bishop.schema.response import ESTATE_WIDE_ACTIONS
 
 DETECTOR_BLOCK = re.compile(r"<detector-results>\s*(.*?)\s*</detector-results>", re.DOTALL)
 INJECTION_BLOCK = re.compile(r"<injection-findings>\s*(.*?)\s*</injection-findings>", re.DOTALL)
@@ -79,6 +80,57 @@ def _sentence(text: str) -> str:
     if not text:
         return ""
     return text[0].upper() + text[1:] + ("" if text.endswith((".", "!", "?")) else ".")
+
+
+#: Only isolation contains a host. Forensic collection is read-only, so a plan
+#: holding nothing but a collection has not contained anything and must not say
+#: it has.
+_HOST_ACTIONS = {"isolate_host"}
+_ACCOUNT_ACTIONS = {"revoke_sessions", "force_password_reset", "disable_account"}
+_EGRESS_ACTIONS = {str(action) for action in ESTATE_WIDE_ACTIONS}
+
+
+def _strategy_for(actions: list[dict]) -> str:
+    """Describe the plan that was actually built.
+
+    The strategy used to be one fixed sentence about containing the account and
+    the host together, which was true of most plans and false of the rest — a
+    plan proposing only a ticket still promised containment. The planner states
+    what the plan does regardless, in `ResponsePlan.proposes`, but that is a
+    backstop for prose Bishop did not write. This one it did write, so each
+    clause here is emitted only when the actions it describes are present.
+    """
+    kinds = {str(action["action_type"]) for action in actions}
+    clauses: list[str] = []
+
+    if kinds & _HOST_ACTIONS and kinds & _ACCOUNT_ACTIONS:
+        clauses.append(
+            "Contain the account and the host together. Credential theft answered by "
+            "isolating the host alone leaves the adversary holding a working token, and "
+            "answering it by resetting the password alone leaves them on the endpoint"
+        )
+    elif kinds & _ACCOUNT_ACTIONS:
+        clauses.append(
+            "Contain the account. The evidence is about a credential rather than a "
+            "machine, and revoking the sessions is what invalidates what the adversary "
+            "holds"
+        )
+    elif kinds & _HOST_ACTIONS:
+        clauses.append(
+            "Contain the host. The evidence is about what ran on this machine, and "
+            "isolation stops the next step while the image is taken"
+        )
+
+    if kinds & _EGRESS_ACTIONS:
+        clauses.append("Cut the channel at the egress proxy so the destination stops answering")
+
+    if not clauses:
+        return (
+            "No containment proposed. The plan is a record: nothing here names a host or "
+            "account that containment would act on"
+        ) + "."
+
+    return ". ".join(clauses) + "."
 
 
 class MockModel:
@@ -294,10 +346,27 @@ class MockModel:
             }
 
         detectors_fired = {str(r.get("detector")) for r in fired}
-        actions: list[dict] = []
+
+        # Keyed by action and target, because several branches below reach the
+        # same conclusion by different routes: credential access and a
+        # masquerading binary both say isolate this host. Appending blind left
+        # the planner to merge them, which is a repair the planner should be
+        # doing for a *model's* output, not cleaning up after this one. The
+        # first reason wins the slot and the rest are folded into it.
+        by_target: dict[tuple[str, str], dict] = {}
+
+        def propose(action: dict) -> None:
+            key = (action["action_type"], action["target"].lower())
+            if (existing := by_target.get(key)) is None:
+                by_target[key] = action
+                return
+            addition = action["rationale"]
+            if addition not in existing["rationale"]:
+                existing["rationale"] = f"{existing['rationale']} Also: {addition}"
+            existing["priority"] = min(existing["priority"], action["priority"])
 
         if detectors_fired & {"credential_dumping", "persistence", "encoded_command"}:
-            actions.append(
+            propose(
                 {
                     "action_type": "isolate_host",
                     "target": str(host),
@@ -309,7 +378,7 @@ class MockModel:
                     "rollback": "Remove the network isolation policy from the EDR console.",
                 }
             )
-            actions.append(
+            propose(
                 {
                     "action_type": "collect_forensics",
                     "target": str(host),
@@ -323,8 +392,10 @@ class MockModel:
             "impossible_travel",
             "password_spray",
             "mfa_fatigue",
+            "kerberoasting",
+            "token_replay",
         }:
-            actions.append(
+            propose(
                 {
                     "action_type": "revoke_sessions",
                     "target": str(user),
@@ -336,7 +407,7 @@ class MockModel:
                     "rollback": "The user signs in again; no administrative action needed.",
                 }
             )
-            actions.append(
+            propose(
                 {
                     "action_type": "force_password_reset",
                     "target": str(user),
@@ -345,8 +416,80 @@ class MockModel:
                     "rollback": "Cannot be undone; the user must set a new password.",
                 }
             )
+        if detectors_fired & {"recovery_destruction", "data_staging"}:
+            # Recovery destruction is ransomware clearing the way, and staging
+            # is the archive built before it leaves. Both are the last quiet
+            # moment before something loud, and both are answered on the host.
+            propose(
+                {
+                    "action_type": "collect_forensics",
+                    "target": str(host),
+                    "rationale": (
+                        "Capture the host while the staged data and the deleted "
+                        "recovery points can still be reasoned about."
+                    ),
+                    "priority": 5,
+                    "rollback": "None needed; collection is read-only.",
+                }
+            )
+            propose(
+                {
+                    "action_type": "isolate_host",
+                    "target": str(host),
+                    "rationale": (
+                        "Recovery mechanisms were destroyed or data was staged for "
+                        "removal. Isolation is what stops the next step."
+                    ),
+                    "priority": 10,
+                    "rollback": "Remove the network isolation policy from the EDR console.",
+                }
+            )
+        if detectors_fired & {"account_manipulation"}:
+            propose(
+                {
+                    "action_type": "revoke_sessions",
+                    "target": str(user),
+                    "rationale": (
+                        "The account that made the change is the one to hold still. "
+                        "Sessions go first because they cost nothing to take back."
+                    ),
+                    "priority": 20,
+                    "rollback": "The user signs in again; no administrative action needed.",
+                }
+            )
+            propose(
+                {
+                    "action_type": "notify_owner",
+                    "target": str(user),
+                    "rationale": (
+                        "A privilege change has an owner who can say in one sentence "
+                        "whether they asked for it."
+                    ),
+                    "priority": 40,
+                    "rollback": "None needed.",
+                }
+            )
+        if detectors_fired & {"masquerading", "suspicious_execution_path"}:
+            # A binary wearing a system name, or running from a directory
+            # nothing is installed into, is contained at the host rather than at
+            # the process: `kill_process` names a process, and the executor only
+            # accepts an entity the incident identifies. See the note in
+            # `response_execute._known_entities`.
+            propose(
+                {
+                    "action_type": "isolate_host",
+                    "target": str(host),
+                    "rationale": (
+                        "A binary is impersonating a system component or running "
+                        "from a directory software is not installed into. Isolation "
+                        "holds the machine still while it is identified."
+                    ),
+                    "priority": 12,
+                    "rollback": "Remove the network isolation policy from the EDR console.",
+                }
+            )
         if detectors_fired & {"beaconing", "dns_exfiltration", "ioc_reputation", "outbound_volume"}:
-            actions.append(
+            propose(
                 {
                     "action_type": "block_domain",
                     "target": str(context.get("c2_indicator") or "the observed destination"),
@@ -356,7 +499,7 @@ class MockModel:
                 }
             )
 
-        actions.append(
+        propose(
             {
                 "action_type": "open_ticket",
                 "target": str(context.get("incident_id") or "incident"),
@@ -366,13 +509,9 @@ class MockModel:
             }
         )
 
+        actions = sorted(by_target.values(), key=lambda action: action["priority"])
         return {
-            "strategy": (
-                "Contain the account and the host together. Credential theft that is "
-                "answered by isolating the host alone leaves the adversary holding a "
-                "working token, and answering it by resetting the password alone leaves "
-                "them on the endpoint."
-            ),
+            "strategy": _strategy_for(actions),
             "actions": actions,
             "no_action_rationale": None,
         }
