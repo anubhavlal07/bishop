@@ -25,6 +25,19 @@ export interface Health {
     error?: string;
   };
   live?: LiveReadiness;
+  deployment?: DeploymentInfo;
+}
+
+/** The redacted deployment configuration. Never carries a secret. */
+export interface DeploymentInfo {
+  environment: "development" | "production";
+  auth_required: boolean;
+  api_keys_configured: number;
+  cors_origins: string[];
+  rate_limit_per_minute: number;
+  max_request_bytes: number;
+  database: string;
+  json_logs: boolean;
 }
 
 /** What it would take to run against a real model, rather than just that it isn't. */

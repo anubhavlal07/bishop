@@ -40,6 +40,22 @@ triage path *args:
 formats:
     uv run bishop formats
 
+# Generate an API key for a deployment. Printed once, never stored.
+keygen *args:
+    uv run bishop keygen {{args}}
+
+# Show the resolved deployment configuration, and whether it would serve.
+config:
+    uv run bishop config
+
+# Check the configuration a production deploy would run under.
+check-production:
+    BISHOP_ENVIRONMENT=production uv run bishop config
+
+# Build the container image.
+image:
+    docker build -t bishop:latest .
+
 # Triage one alert by id, e.g. `just run TP-01`.
 run alert *args:
     uv run bishop run {{alert}} {{args}}

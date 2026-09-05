@@ -76,9 +76,37 @@ export function Nav() {
               API unreachable — start it with <code>just api</code>
             </span>
           ) : health ? (
-            <span className="muted">
-              {health.offline ? "offline · mock model" : `live · ${health.model}`} · v
-              {health.version}
+            <span className="muted flex items-center gap-2">
+              {health.deployment?.environment === "production" ? (
+                <span style={{ color: "var(--color-btp)" }}>production</span>
+              ) : (
+                <span title="Laptop defaults: auth optional, CORS open, SQLite.">
+                  development
+                </span>
+              )}
+              <span>·</span>
+              {health.offline ? (
+                <span title="Detectors, ATT&CK validation, injection scanning and the audit chain are the same code either way. The deterministic model replaces the model's judgement, not the detection.">
+                  deterministic model
+                </span>
+              ) : (
+                <span style={{ color: "var(--color-btp)" }}>
+                  {health.model}
+                </span>
+              )}
+              {health.deployment && !health.deployment.auth_required && (
+                <>
+                  <span>·</span>
+                  <span
+                    style={{ color: "var(--color-escalate)" }}
+                    title="No API keys configured."
+                  >
+                    unauthenticated
+                  </span>
+                </>
+              )}
+              <span>·</span>
+              <span>v{health.version}</span>
             </span>
           ) : (
             <span className="muted">checking…</span>

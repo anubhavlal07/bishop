@@ -1,6 +1,6 @@
 [project]
 name = "bishop"
-version = "0.1.0"
+version = "0.3.0"
 description = "An autonomous SOC analyst: parallel investigation, ATT&CK-mapped verdicts, human-gated response."
 readme = "README.md"
 requires-python = ">=3.12"

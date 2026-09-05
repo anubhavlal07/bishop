@@ -71,7 +71,10 @@ async function get<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   if (response.status === 429) {
-    throw new ApiError("Rate limited by the API. Wait a minute and try again.", 429);
+    throw new ApiError(
+      "Rate limited by the API. Wait a minute and try again.",
+      429,
+    );
   }
   if (!response.ok) {
     const body = await response.text().catch(() => "");
