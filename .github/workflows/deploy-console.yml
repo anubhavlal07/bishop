@@ -8,12 +8,17 @@ name: Deploy console
 # The API needs no workflow. Render is connected to this repo and deploys on
 # every push to main.
 #
-# Requires one repository secret:
-#   NETLIFY_AUTH_TOKEN   Netlify -> User settings -> Applications -> new access token
-#   NETLIFY_SITE_ID      1072ea98-c20d-4f37-be47-1d13eb9ed1d6
+# Requires exactly one repository secret:
 #
-# And one repository variable:
-#   NEXT_PUBLIC_BISHOP_API   https://api.bishop.anubhavlal.dev
+#   NETLIFY_AUTH_TOKEN   Netlify -> User settings -> Applications -> Personal
+#                        access tokens -> New access token
+#
+#   gh secret set NETLIFY_AUTH_TOKEN --repo anubhavlal07/bishop
+#
+# Nothing else. The site id below is an identifier rather than a credential, so
+# it lives in the file. And the API URL needs no variable: a production build
+# defaults to the deployed API in lib/api.ts, precisely so a missing dashboard
+# setting cannot ship a console pointing at localhost.
 
 on:
   push:
@@ -51,17 +56,15 @@ jobs:
 
       - name: Build
         working-directory: console
-        env:
-          NEXT_PUBLIC_BISHOP_API: ${{ vars.NEXT_PUBLIC_BISHOP_API }}
         run: npm run build
 
       - name: Publish to Netlify
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID: 1072ea98-c20d-4f37-be47-1d13eb9ed1d6
         run: |
-          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "::error::NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID is not set - see the header of this workflow."
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN is not set - see the header of this workflow."
             exit 1
           fi
           npx --yes netlify-cli@latest deploy --dir console/out --site "$NETLIFY_SITE_ID" --prod --no-build --message "${{ github.sha }}"
