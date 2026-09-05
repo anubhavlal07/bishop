@@ -195,7 +195,7 @@ def parse(
         raise CredentialError(f"{spec.label} needs an API key ({spec.key_hint}).")
     if not re.match(spec.key_pattern, key):
         raise CredentialError(
-            f"That does not look like a {spec.label} key — it should {spec.key_hint}. "
+            f"That does not look like a {spec.label} key — it {spec.key_hint}. "
             f"Nothing was sent to {spec.label}."
         )
 
