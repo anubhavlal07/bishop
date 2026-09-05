@@ -43,9 +43,11 @@ export default function AlertsPage() {
         subtitle={alerts ? `${alerts.length} labelled alerts` : "loading…"}
       >
         <p className="muted mb-4 text-xs leading-relaxed">
-          These twenty alerts are synthetic and hand-labelled. They exist so Bishop&apos;s
-          behaviour can be measured against known ground truth — they are not evidence that it
-          works on real-world noise, because they contain none. The expected verdict is shown
+          These alerts are synthetic and hand-labelled. They exist so Bishop&apos;s behaviour
+          can be measured against known ground truth — they are not evidence that it works on
+          real-world noise, because they contain none. This is also the set the thresholds were
+          tuned against, so it flatters; the held-out set in{" "}
+          <code>fixtures/holdout/</code> is the honest number. The expected verdict is shown
           here for reading the demo; Bishop never sees it.
         </p>
 
