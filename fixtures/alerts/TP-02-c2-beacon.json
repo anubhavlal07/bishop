@@ -505,10 +505,10 @@
     "verdict": "true_positive",
     "techniques": [
       "T1071.001",
-      "T1102"
+      "T1573"
     ],
     "should_escalate": false,
-    "why": "48 connections at 300 s ± 8% with near-identical request sizes, to a host listed as malicious in the indicator cache. That is a check-in, not browsing.",
+    "why": "48 connections at 300 s ± 8% with near-identical request sizes over TLS, to a host listed as malicious in the indicator cache. That is a check-in, not browsing. Labelled T1102 originally, which was wrong — the destination is not a legitimate web service being abused, it is attacker infrastructure.",
     "synthetic": true
   }
 }

@@ -459,12 +459,16 @@ def persistence(alert: Alert) -> DetectorResult:
                 }
             )
         if "sc.exe" in command and ("create" in command or "config" in command):
+            # `sc.exe \\HOST create` installs a service on *another* machine.
+            # That is lateral movement as much as persistence, and labelling it
+            # only as persistence loses the half an analyst chases.
+            remote = "\\\\" in command
             findings.append(
                 {
                     "where": where,
                     "kind": "service",
-                    "mechanism": "sc create",
-                    "technique": "T1543.003",
+                    "mechanism": "sc create on a remote host" if remote else "sc create",
+                    "technique": "T1021.002" if remote else "T1543.003",
                     "action": _cmd_of(process)[:300],
                     "points_at_staging_directory": any(d in command for d in STAGING_DIRECTORIES),
                     "weight": 0.65,
@@ -560,8 +564,21 @@ def encoded_command(alert: Alert) -> DetectorResult:
     """
     findings: list[dict[str, object]] = []
 
-    for where, process in _all_processes(alert):
-        raw_command = _cmd_of(process)
+    #: Command lines are not the only place a payload runs from. A Run key
+    #: value, a scheduled task action and a service image path are all
+    #: executed, and all three were going unexamined — TP-12 hid an encoded
+    #: PowerShell one-liner in a registry value and this detector saw nothing.
+    carriers: list[tuple[str, str]] = [
+        (where, _cmd_of(process)) for where, process in _all_processes(alert)
+    ]
+    for index, change in enumerate(alert.registry_changes):
+        carriers.append((f"registry_changes[{index}].value_data", str(change.value_data or "")))
+    for index, task in enumerate(alert.scheduled_tasks):
+        carriers.append((f"scheduled_tasks[{index}].action", str(task.action or "")))
+    for index, service in enumerate(alert.service_installs):
+        carriers.append((f"service_installs[{index}].image_path", str(service.image_path or "")))
+
+    for where, raw_command in carriers:
         if not raw_command:
             continue
         command = raw_command.lower()
@@ -587,8 +604,9 @@ def encoded_command(alert: Alert) -> DetectorResult:
     if not findings:
         return clear(
             "encoded_command",
-            "no obfuscation or encoded payloads in the observed command lines",
-            processes_examined=sum(1 for _ in _all_processes(alert)),
+            "no obfuscation or encoded payloads in the observed commands, registry "
+            "values, task actions or service paths",
+            carriers_examined=len(carriers),
         )
 
     tell_total = sum(len(f["tells"]) for f in findings)  # type: ignore[arg-type]
@@ -615,7 +633,13 @@ def encoded_command(alert: Alert) -> DetectorResult:
     hints = ["T1027"]
     if decoded_any:
         hints.append("T1140")
-    if any("powershell" in _name_of(p) for _, p in _all_processes(alert)):
+    # The interpreter may be named in the carrier rather than run directly —
+    # a Run key that launches `powershell.exe -enc …` is PowerShell execution
+    # even though the alert's own process is the installer that wrote it.
+    everything = " ".join(
+        [_name_of(p) for _, p in _all_processes(alert)] + [c for _, c in carriers]
+    ).lower()
+    if "powershell" in everything or "pwsh" in everything:
         hints.append("T1059.001")
 
     return DetectorResult(
@@ -673,7 +697,10 @@ def masquerading(alert: Alert) -> DetectorResult:
     for where, name, path in candidates:
         if not name:
             continue
-        display = path or name
+        # Both, not `path or name`. Checking only the path meant a file with a
+        # right-to-left override in its *name* was never examined whenever the
+        # sensor also supplied a path — and the name is the thing a human reads.
+        display = f"{name} {path}".strip()
         lowered_path = path.lower().replace("/", "\\")
 
         overrides = [
@@ -693,7 +720,7 @@ def masquerading(alert: Alert) -> DetectorResult:
                 }
             )
 
-        if _DOUBLE_EXTENSION.search(name):
+        if _DOUBLE_EXTENSION.search(name) or _DOUBLE_EXTENSION.search(_basename(path)):
             findings.append(
                 {
                     "where": where,
@@ -946,6 +973,12 @@ def abused_hosting_contact(alert: Alert) -> DetectorResult:
         )
 
     domains = sorted({str(h["domain"]) for h in hits})
+    uploaded = sum(int(h.get("bytes_out") or 0) for h in hits)
+    hints = ["T1102"]
+    if uploaded > 1_000_000:
+        # Contact is T1102. Contact carrying a megabyte outbound is T1567.
+        hints.append("T1567")
+
     return DetectorResult(
         detector="abused_hosting_contact",
         fired=True,
@@ -955,5 +988,5 @@ def abused_hosting_contact(alert: Alert) -> DetectorResult:
             f"contact with {', '.join(domains[:3])} — services that host arbitrary content and "
             f"are commonly used to front command and control, though most traffic to them is benign"
         ),
-        technique_hints=["T1102"],
+        technique_hints=hints,
     )

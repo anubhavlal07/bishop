@@ -1,0 +1,45 @@
+{
+  "alert_id": "TP-10-hive-and-ntds",
+  "source": "edr",
+  "rule_name": "Registry hive export and directory replication",
+  "detected_at": "2026-03-14T03:40:00+00:00",
+  "severity": "critical",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-118",
+    "ip": "10.20.30.118",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "d.eriksen",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "cmd.exe",
+    "path": "C:\\Windows\\System32\\cmd.exe"
+  },
+  "process": {
+    "name": "reg.exe",
+    "path": "C:\\Windows\\System32\\reg.exe",
+    "command_line": "reg save hklm\\sam C:\\Users\\Public\\s.hiv && reg save hklm\\system C:\\Users\\Public\\y.hiv"
+  },
+  "child_processes": [
+    {
+      "name": "mimikatz.exe",
+      "path": "C:\\Users\\Public\\m.exe",
+      "command_line": "m.exe lsadump::dcsync /domain:corp.local /user:krbtgt",
+      "signed": false
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1003.002",
+      "T1003.003",
+      "T1003"
+    ],
+    "should_escalate": false,
+    "why": "SAM and SYSTEM hives exported to a world-writable directory, followed by a DCSync replication request. Two different credential stores, neither with a routine explanation on a workstation.",
+    "synthetic": true
+  }
+}

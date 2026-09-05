@@ -292,7 +292,9 @@ def mfa_fatigue(alert: Alert) -> DetectorResult:
             f"{window_seconds / 60:.1f} minutes, then one approved — the pattern of a user "
             f"worn down by repeated pushes"
         ),
-        technique_hints=["T1621"],
+        # The approval means the adversary now holds a working session, which
+        # is the T1078 half of what happened and the half that matters next.
+        technique_hints=["T1621", "T1078"],
     )
 
 
@@ -371,7 +373,7 @@ def password_spray(alert: Alert) -> DetectorResult:
         score=round(score, 3),
         facts=facts,
         rationale=rationale,
-        technique_hints=["T1110.003"],
+        technique_hints=["T1110.003"] + (["T1078"] if successes_after else []),
     )
 
 

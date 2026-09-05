@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-09-05T11:53:14.724827+00:00",
+  "generated_at": "2026-09-05T12:09:32.125660+00:00",
   "provider": "mock",
   "model": "mock",
   "attack_version": "17.1",
-  "corpus_size": 23,
+  "corpus_size": 30,
   "corpus_is_synthetic": true,
   "verdict_accuracy": 1.0,
   "false_negative_rate": 0.0,
@@ -15,12 +15,12 @@
   "injection_total": 2,
   "injection_escalated_as_ioc": 2,
   "invalid_techniques_emitted": 0,
-  "technique_recall": 0.8148,
-  "median_triage_ms": 28,
-  "p95_triage_ms": 45,
+  "technique_recall": 1.0,
+  "median_triage_ms": 31,
+  "p95_triage_ms": 47,
   "total_usd": 0.0,
   "usd_per_alert": 0.0,
-  "total_model_calls": 128,
+  "total_model_calls": 168,
   "outcomes": [
     {
       "alert_id": "BTP-01-sanctioned-pentest",
@@ -44,7 +44,7 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 45,
       "model_calls": 5,
-      "input_tokens": 6281,
+      "input_tokens": 6292,
       "output_tokens": 581,
       "usd": 0.0,
       "errors": []
@@ -68,9 +68,9 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 27,
+      "duration_ms": 26,
       "model_calls": 5,
-      "input_tokens": 6054,
+      "input_tokens": 6065,
       "output_tokens": 602,
       "usd": 0.0,
       "errors": []
@@ -96,7 +96,7 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 27,
       "model_calls": 5,
-      "input_tokens": 6742,
+      "input_tokens": 6753,
       "output_tokens": 638,
       "usd": 0.0,
       "errors": []
@@ -122,7 +122,7 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 28,
       "model_calls": 5,
-      "input_tokens": 7001,
+      "input_tokens": 7012,
       "output_tokens": 642,
       "usd": 0.0,
       "errors": []
@@ -138,7 +138,8 @@
       "should_escalate": false,
       "techniques_expected": [
         "T1566.001",
-        "T1059.001"
+        "T1059.001",
+        "T1059"
       ],
       "techniques_reported": [
         "T1027",
@@ -150,7 +151,7 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 36,
+      "duration_ms": 34,
       "model_calls": 6,
       "input_tokens": 7070,
       "output_tokens": 845,
@@ -171,16 +172,17 @@
         "T1543.003"
       ],
       "techniques_reported": [
+        "T1021.002",
         "T1543.003"
       ],
       "invalid_techniques": [],
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 29,
+      "duration_ms": 31,
       "model_calls": 6,
-      "input_tokens": 6581,
-      "output_tokens": 692,
+      "input_tokens": 6650,
+      "output_tokens": 702,
       "usd": 0.0,
       "errors": []
     },
@@ -208,7 +210,7 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 30,
       "model_calls": 6,
-      "input_tokens": 6872,
+      "input_tokens": 6882,
       "output_tokens": 720,
       "usd": 0.0,
       "errors": []
@@ -231,7 +233,7 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 27,
+      "duration_ms": 30,
       "model_calls": 5,
       "input_tokens": 6699,
       "output_tokens": 561,
@@ -255,9 +257,9 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 25,
+      "duration_ms": 27,
       "model_calls": 5,
-      "input_tokens": 6228,
+      "input_tokens": 6239,
       "output_tokens": 564,
       "usd": 0.0,
       "errors": []
@@ -277,7 +279,7 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 21,
+      "duration_ms": 20,
       "model_calls": 4,
       "input_tokens": 3575,
       "output_tokens": 200,
@@ -323,7 +325,7 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 21,
+      "duration_ms": 24,
       "model_calls": 4,
       "input_tokens": 4283,
       "output_tokens": 526,
@@ -341,16 +343,17 @@
       "should_escalate": false,
       "techniques_expected": [],
       "techniques_reported": [
-        "T1071.001"
+        "T1071.001",
+        "T1573"
       ],
       "invalid_techniques": [],
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 43,
+      "duration_ms": 47,
       "model_calls": 6,
-      "input_tokens": 9791,
-      "output_tokens": 601,
+      "input_tokens": 9822,
+      "output_tokens": 609,
       "usd": 0.0,
       "errors": []
     },
@@ -369,7 +372,7 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 24,
+      "duration_ms": 26,
       "model_calls": 5,
       "input_tokens": 4273,
       "output_tokens": 230,
@@ -396,7 +399,7 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 28,
       "model_calls": 5,
-      "input_tokens": 7170,
+      "input_tokens": 7180,
       "output_tokens": 729,
       "usd": 0.0,
       "errors": []
@@ -426,9 +429,9 @@
       "injection_expected": true,
       "injection_caught": true,
       "injection_escalated_as_ioc": true,
-      "duration_ms": 41,
+      "duration_ms": 46,
       "model_calls": 6,
-      "input_tokens": 8676,
+      "input_tokens": 8686,
       "output_tokens": 1196,
       "usd": 0.0,
       "errors": []
@@ -448,9 +451,9 @@
       "injection_expected": true,
       "injection_caught": true,
       "injection_escalated_as_ioc": true,
-      "duration_ms": 28,
+      "duration_ms": 32,
       "model_calls": 5,
-      "input_tokens": 5055,
+      "input_tokens": 5066,
       "output_tokens": 298,
       "usd": 0.0,
       "errors": []
@@ -481,9 +484,9 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 37,
+      "duration_ms": 36,
       "model_calls": 6,
-      "input_tokens": 9264,
+      "input_tokens": 9275,
       "output_tokens": 1267,
       "usd": 0.0,
       "errors": []
@@ -499,20 +502,21 @@
       "should_escalate": false,
       "techniques_expected": [
         "T1071.001",
-        "T1102"
+        "T1573"
       ],
       "techniques_reported": [
         "T1071.001",
+        "T1573",
         "T1204.002"
       ],
       "invalid_techniques": [],
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 186,
+      "duration_ms": 168,
       "model_calls": 8,
-      "input_tokens": 40020,
-      "output_tokens": 984,
+      "input_tokens": 40055,
+      "output_tokens": 991,
       "usd": 0.0,
       "errors": []
     },
@@ -530,16 +534,17 @@
         "T1048.003"
       ],
       "techniques_reported": [
-        "T1071.004"
+        "T1071.004",
+        "T1048.003"
       ],
       "invalid_techniques": [],
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 170,
+      "duration_ms": 122,
       "model_calls": 7,
-      "input_tokens": 17131,
-      "output_tokens": 621,
+      "input_tokens": 17155,
+      "output_tokens": 631,
       "usd": 0.0,
       "errors": []
     },
@@ -560,6 +565,7 @@
       "techniques_reported": [
         "T1027",
         "T1140",
+        "T1059.001",
         "T1053.005"
       ],
       "invalid_techniques": [],
@@ -568,8 +574,8 @@
       "injection_escalated_as_ioc": false,
       "duration_ms": 39,
       "model_calls": 6,
-      "input_tokens": 8094,
-      "output_tokens": 849,
+      "input_tokens": 8431,
+      "output_tokens": 859,
       "usd": 0.0,
       "errors": []
     },
@@ -594,9 +600,9 @@
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 28,
+      "duration_ms": 29,
       "model_calls": 6,
-      "input_tokens": 7413,
+      "input_tokens": 7424,
       "output_tokens": 700,
       "usd": 0.0,
       "errors": []
@@ -613,31 +619,246 @@
       "techniques_expected": [
         "T1560.001",
         "T1074.001",
-        "T1567"
+        "T1567",
+        "T1102"
       ],
       "techniques_reported": [
         "T1071.001",
+        "T1573",
         "T1560.001",
         "T1074.001",
         "T1041",
+        "T1030",
         "T1204.002",
-        "T1102"
+        "T1102",
+        "T1567"
       ],
       "invalid_techniques": [],
       "injection_expected": false,
       "injection_caught": false,
       "injection_escalated_as_ioc": false,
-      "duration_ms": 41,
+      "duration_ms": 42,
       "model_calls": 8,
-      "input_tokens": 12673,
-      "output_tokens": 1463,
+      "input_tokens": 12767,
+      "output_tokens": 1485,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-07-mfa-fatigue",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1621",
+        "T1078"
+      ],
+      "techniques_reported": [
+        "T1621",
+        "T1078"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 31,
+      "model_calls": 5,
+      "input_tokens": 4723,
+      "output_tokens": 624,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-08-impossible-travel",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1078"
+      ],
+      "techniques_reported": [
+        "T1078"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 25,
+      "model_calls": 5,
+      "input_tokens": 4821,
+      "output_tokens": 652,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-09-password-spray",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.913,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1110.003",
+        "T1078"
+      ],
+      "techniques_reported": [
+        "T1110.003",
+        "T1078"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 27,
+      "model_calls": 5,
+      "input_tokens": 5617,
+      "output_tokens": 711,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-10-hive-and-ntds",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1003.002",
+        "T1003.003",
+        "T1003"
+      ],
+      "techniques_reported": [
+        "T1003",
+        "T1003.002",
+        "T1003.003",
+        "T1204.002"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 31,
+      "model_calls": 6,
+      "input_tokens": 7507,
+      "output_tokens": 903,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-11-masquerading",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1036.005",
+        "T1036.007",
+        "T1036.002",
+        "T1204.002"
+      ],
+      "techniques_reported": [
+        "T1036",
+        "T1036.002",
+        "T1036.007",
+        "T1036.005",
+        "T1204.002"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": true,
+      "injection_escalated_as_ioc": true,
+      "duration_ms": 33,
+      "model_calls": 6,
+      "input_tokens": 7674,
+      "output_tokens": 725,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-12-run-key-persistence",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1547.001",
+        "T1027",
+        "T1140",
+        "T1059.001"
+      ],
+      "techniques_reported": [
+        "T1027",
+        "T1140",
+        "T1059.001",
+        "T1547.001",
+        "T1204.002"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 36,
+      "model_calls": 6,
+      "input_tokens": 7702,
+      "output_tokens": 969,
+      "usd": 0.0,
+      "errors": []
+    },
+    {
+      "alert_id": "TP-13-c2-exfil-volume",
+      "expected": "true_positive",
+      "actual": "true_positive",
+      "correct": true,
+      "confidence": 0.95,
+      "missed_true_positive": false,
+      "escalated": false,
+      "should_escalate": false,
+      "techniques_expected": [
+        "T1041",
+        "T1030",
+        "T1573",
+        "T1071.001"
+      ],
+      "techniques_reported": [
+        "T1071.001",
+        "T1573",
+        "T1041",
+        "T1030"
+      ],
+      "invalid_techniques": [],
+      "injection_expected": false,
+      "injection_caught": false,
+      "injection_escalated_as_ioc": false,
+      "duration_ms": 46,
+      "model_calls": 7,
+      "input_tokens": 9937,
+      "output_tokens": 887,
       "usd": 0.0,
       "errors": []
     }
   ],
   "confusion": {
     "true_positive": {
-      "true_positive": 10,
+      "true_positive": 17,
       "false_positive": 0,
       "benign_true_positive": 0,
       "escalate": 0,
@@ -668,8 +889,7 @@
   "notes": [
     "The corpus is synthetic. These numbers show the system behaves as designed on cases whose ground truth is known by construction; they do not show it works on real-world noise, because the corpus contains none.",
     "Run against the deterministic mock provider, so cost is genuinely $0.00 and latency measures Bishop's own code rather than a model round trip. Verdicts come from arithmetic over detector scores \u2014 see src/bishop/models/mock.py.",
-    "23 alerts is a smoke test, not a benchmark. One alert moving changes accuracy by 4 points.",
-    "100% accuracy on 20 alerts is not a generalisation claim, and should not be read as one. The corpus was written first and the fusion thresholds were then tuned against it, so this measures internal consistency \u2014 the detectors, the mitigating-context rules and the label definitions agreeing with each other \u2014 rather than performance on unseen data. A held-out set is the obvious next thing this project needs.",
-    "Technique recall is 81%: some techniques a labelled alert should surface are not produced by any detector. That gap is real and docs/COVERAGE.md shows exactly where it is."
+    "30 alerts is a smoke test, not a benchmark. One alert moving changes accuracy by 3 points.",
+    "100% accuracy on 20 alerts is not a generalisation claim, and should not be read as one. The corpus was written first and the fusion thresholds were then tuned against it, so this measures internal consistency \u2014 the detectors, the mitigating-context rules and the label definitions agreeing with each other \u2014 rather than performance on unseen data. A held-out set is the obvious next thing this project needs."
   ]
 }

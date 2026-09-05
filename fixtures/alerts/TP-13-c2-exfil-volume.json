@@ -1,0 +1,303 @@
+{
+  "alert_id": "TP-13-c2-exfil-volume",
+  "source": "proxy",
+  "rule_name": "Sustained encrypted upload to a single destination",
+  "detected_at": "2026-03-14T05:00:00+00:00",
+  "severity": "critical",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-DB-03",
+    "ip": "10.20.10.33",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "svc_report",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "connections": [
+    {
+      "timestamp": "2026-03-14T04:59:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:10:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:19:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:30:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:39:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:50:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T05:59:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:10:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:19:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:30:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:39:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:50:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T06:59:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:10:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:19:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:30:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:39:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:50:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T07:59:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:10:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:19:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:30:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:39:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:50:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T08:59:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T09:10:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T09:19:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T09:30:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T09:39:40+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    },
+    {
+      "timestamp": "2026-03-14T09:50:20+00:00",
+      "hostname": "sync.cdn-metrics.example",
+      "dest_ip": "203.0.113.77",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 40000000,
+      "bytes_in": 100000
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1041",
+      "T1030",
+      "T1573",
+      "T1071.001"
+    ],
+    "should_escalate": false,
+    "why": "1.2 GB uploaded against 3 MB down, in uniform 40 MB chunks on a fixed 600-second interval over TLS. The chunking is a transfer-size limit and the rhythm is the channel, not a person uploading.",
+    "synthetic": true
+  }
+}

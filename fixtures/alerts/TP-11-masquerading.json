@@ -1,0 +1,40 @@
+{
+  "alert_id": "TP-11-masquerading",
+  "source": "sysmon",
+  "rule_name": "System binary running from an unexpected location",
+  "detected_at": "2026-03-14T10:25:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-204",
+    "ip": "10.20.30.204",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "f.almeida",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "svchost.exe",
+    "path": "C:\\Users\\f.almeida\\AppData\\Local\\Temp\\svchost.exe",
+    "command_line": "C:\\Users\\f.almeida\\AppData\\Local\\Temp\\svchost.exe -k netsvcs",
+    "signed": false
+  },
+  "file": {
+    "name": "invoice‮gpj.exe",
+    "path": "C:\\Users\\f.almeida\\Downloads\\statement.pdf.exe",
+    "size_bytes": 412000
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1036.005",
+      "T1036.007",
+      "T1036.002",
+      "T1204.002"
+    ],
+    "should_escalate": false,
+    "why": "Three separate name deceptions at once: svchost.exe outside System32, an attachment with a double extension, and a right-to-left override that makes an executable render as a JPEG in every Windows file listing.",
+    "synthetic": true
+  }
+}

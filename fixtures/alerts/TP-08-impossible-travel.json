@@ -1,0 +1,49 @@
+{
+  "alert_id": "TP-08-impossible-travel",
+  "source": "okta",
+  "rule_name": "Successful logins from two continents",
+  "detected_at": "2026-03-14T20:00:00+00:00",
+  "severity": "high",
+  "category": "identity",
+  "principal": {
+    "username": "h.lindqvist",
+    "domain": "CORP"
+  },
+  "auth_events": [
+    {
+      "timestamp": "2026-03-14T20:00:00+00:00",
+      "username": "h.lindqvist",
+      "outcome": "success",
+      "source_ip": "192.0.2.51",
+      "geo": {
+        "city": "London",
+        "country": "GB",
+        "latitude": 51.5074,
+        "longitude": -0.1278
+      },
+      "application": "VPN gateway"
+    },
+    {
+      "timestamp": "2026-03-14T20:18:00+00:00",
+      "username": "h.lindqvist",
+      "outcome": "success",
+      "source_ip": "198.51.100.88",
+      "geo": {
+        "city": "Sydney",
+        "country": "AU",
+        "latitude": -33.8688,
+        "longitude": 151.2093
+      },
+      "application": "Mail"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1078"
+    ],
+    "should_escalate": false,
+    "why": "London then Sydney, eighteen minutes apart. 16,900 km implies 56,000 km/h; unlike FP-03 the gap is far too long to be a VPN reconnect and far too short to be travel.",
+    "synthetic": true
+  }
+}

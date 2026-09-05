@@ -4,7 +4,7 @@
 
 Technique coverage against **MITRE ATT&CK v17.1**.
 
-16 techniques covered by a detector and exercised by a fixture, 15 with a detector but no fixture, against ATT&CK v17.1.
+31 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
 
 `covered` means a deterministic detector maps to the technique *and* a labelled
 fixture exercises it. `untested` means the detector exists but no fixture in the
@@ -22,31 +22,32 @@ point of the table.
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
-| [T1071.001](https://attack.mitre.org/techniques/T1071/001) Web Protocols | `beaconing` | `TP-02-c2-beacon` | covered |
+| [T1071.001](https://attack.mitre.org/techniques/T1071/001) Web Protocols | `beaconing` | `TP-02-c2-beacon`, `TP-13-c2-exfil-volume` | covered |
 | [T1071.004](https://attack.mitre.org/techniques/T1071/004) DNS | `dns_exfiltration` | `TP-03-dns-exfiltration` | covered |
-| [T1102](https://attack.mitre.org/techniques/T1102) Web Service | `abused_hosting_contact` | `TP-02-c2-beacon` | covered |
-| [T1573](https://attack.mitre.org/techniques/T1573) Encrypted Channel | `beaconing` | — | untested |
+| [T1102](https://attack.mitre.org/techniques/T1102) Web Service | `abused_hosting_contact` | `TP-06-data-staging-exfil` | covered |
+| [T1573](https://attack.mitre.org/techniques/T1573) Encrypted Channel | `beaconing` | `TP-02-c2-beacon`, `TP-13-c2-exfil-volume` | covered |
 
 ## Credential Access
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
+| [T1003](https://attack.mitre.org/techniques/T1003) OS Credential Dumping | — | `TP-10-hive-and-ntds` | none |
 | [T1003.001](https://attack.mitre.org/techniques/T1003/001) LSASS Memory | `credential_dumping` | `BTP-01-sanctioned-pentest`, `INJ-01-cmdline-verdict-steer`, `TP-01-credential-dumping` | covered |
-| [T1003.002](https://attack.mitre.org/techniques/T1003/002) Security Account Manager | `credential_dumping` | — | untested |
-| [T1003.003](https://attack.mitre.org/techniques/T1003/003) NTDS | `credential_dumping` | — | untested |
-| [T1110.003](https://attack.mitre.org/techniques/T1110/003) Password Spraying | `password_spray` | — | untested |
-| [T1621](https://attack.mitre.org/techniques/T1621) Multi-Factor Authentication Request Generation | `mfa_fatigue` | — | untested |
+| [T1003.002](https://attack.mitre.org/techniques/T1003/002) Security Account Manager | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
+| [T1003.003](https://attack.mitre.org/techniques/T1003/003) NTDS | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
+| [T1110.003](https://attack.mitre.org/techniques/T1110/003) Password Spraying | `password_spray` | `TP-09-password-spray` | covered |
+| [T1621](https://attack.mitre.org/techniques/T1621) Multi-Factor Authentication Request Generation | `mfa_fatigue` | `TP-07-mfa-fatigue` | covered |
 
 ## Defense Evasion
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
-| [T1027](https://attack.mitre.org/techniques/T1027) Obfuscated Files or Information | `encoded_command` | `TP-04-persistence-scheduled-task` | covered |
-| [T1036.002](https://attack.mitre.org/techniques/T1036/002) Right-to-Left Override | `masquerading` | — | untested |
-| [T1036.005](https://attack.mitre.org/techniques/T1036/005) Match Legitimate Resource Name or Location | `masquerading` | — | untested |
-| [T1036.007](https://attack.mitre.org/techniques/T1036/007) Double File Extension | `masquerading` | — | untested |
-| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
-| [T1140](https://attack.mitre.org/techniques/T1140) Deobfuscate/Decode Files or Information | `encoded_command` | — | untested |
+| [T1027](https://attack.mitre.org/techniques/T1027) Obfuscated Files or Information | `encoded_command` | `TP-04-persistence-scheduled-task`, `TP-12-run-key-persistence` | covered |
+| [T1036.002](https://attack.mitre.org/techniques/T1036/002) Right-to-Left Override | `masquerading` | `TP-11-masquerading` | covered |
+| [T1036.005](https://attack.mitre.org/techniques/T1036/005) Match Legitimate Resource Name or Location | `masquerading` | `TP-11-masquerading` | covered |
+| [T1036.007](https://attack.mitre.org/techniques/T1036/007) Double File Extension | `masquerading` | `TP-11-masquerading` | covered |
+| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | `TP-07-mfa-fatigue`, `TP-08-impossible-travel`, `TP-09-password-spray` | covered |
+| [T1140](https://attack.mitre.org/techniques/T1140) Deobfuscate/Decode Files or Information | `encoded_command` | `TP-12-run-key-persistence` | covered |
 | [T1218](https://attack.mitre.org/techniques/T1218) System Binary Proxy Execution | `lolbin_abuse` | `BTP-03-authorised-lolbin` | covered |
 | [T1218.011](https://attack.mitre.org/techniques/T1218/011) Rundll32 | — | `INJ-01-cmdline-verdict-steer`, `TP-01-credential-dumping` | none |
 
@@ -55,16 +56,16 @@ point of the table.
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
 | [T1053.005](https://attack.mitre.org/techniques/T1053/005) Scheduled Task | `persistence` | `BTP-04-approved-remote-admin`, `TP-04-persistence-scheduled-task` | covered |
-| [T1059](https://attack.mitre.org/techniques/T1059) Command and Scripting Interpreter | `lolbin_abuse`, `suspicious_parent_child` | — | untested |
-| [T1059.001](https://attack.mitre.org/techniques/T1059/001) PowerShell | `encoded_command` | `CHAIN-01-initial-access`, `TP-04-persistence-scheduled-task` | covered |
-| [T1204.002](https://attack.mitre.org/techniques/T1204/002) Malicious File | `suspicious_execution_path` | — | untested |
+| [T1059](https://attack.mitre.org/techniques/T1059) Command and Scripting Interpreter | `lolbin_abuse`, `suspicious_parent_child` | `CHAIN-01-initial-access` | covered |
+| [T1059.001](https://attack.mitre.org/techniques/T1059/001) PowerShell | `encoded_command` | `CHAIN-01-initial-access`, `TP-04-persistence-scheduled-task`, `TP-12-run-key-persistence` | covered |
+| [T1204.002](https://attack.mitre.org/techniques/T1204/002) Malicious File | `suspicious_execution_path` | `TP-11-masquerading` | covered |
 
 ## Exfiltration
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
-| [T1030](https://attack.mitre.org/techniques/T1030) Data Transfer Size Limits | `outbound_volume` | — | untested |
-| [T1041](https://attack.mitre.org/techniques/T1041) Exfiltration Over C2 Channel | `outbound_volume` | — | untested |
+| [T1030](https://attack.mitre.org/techniques/T1030) Data Transfer Size Limits | `outbound_volume` | `TP-13-c2-exfil-volume` | covered |
+| [T1041](https://attack.mitre.org/techniques/T1041) Exfiltration Over C2 Channel | `outbound_volume` | `TP-13-c2-exfil-volume` | covered |
 | [T1048.003](https://attack.mitre.org/techniques/T1048/003) Exfiltration Over Unencrypted Non-C2 Protocol | `dns_exfiltration` | `TP-03-dns-exfiltration` | covered |
 | [T1567](https://attack.mitre.org/techniques/T1567) Exfiltration Over Web Service | `abused_hosting_contact` | `TP-06-data-staging-exfil` | covered |
 
@@ -72,7 +73,7 @@ point of the table.
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
-| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
+| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | `TP-07-mfa-fatigue`, `TP-08-impossible-travel`, `TP-09-password-spray` | covered |
 | [T1566.001](https://attack.mitre.org/techniques/T1566/001) Spearphishing Attachment | `suspicious_parent_child` | `CHAIN-01-initial-access`, `TP-01-credential-dumping` | covered |
 
 ## Lateral Movement
@@ -86,21 +87,21 @@ point of the table.
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
 | [T1053.005](https://attack.mitre.org/techniques/T1053/005) Scheduled Task | `persistence` | `BTP-04-approved-remote-admin`, `TP-04-persistence-scheduled-task` | covered |
-| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
+| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | `TP-07-mfa-fatigue`, `TP-08-impossible-travel`, `TP-09-password-spray` | covered |
 | [T1098](https://attack.mitre.org/techniques/T1098) Account Manipulation | `account_manipulation` | `BTP-02-it-automation-priv`, `TP-05-privilege-escalation` | covered |
 | [T1136](https://attack.mitre.org/techniques/T1136) Create Account | `account_manipulation` | `TP-05-privilege-escalation` | covered |
 | [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | `CHAIN-02-lateral-movement` | covered |
-| [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | — | untested |
+| [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | `TP-12-run-key-persistence` | covered |
 
 ## Privilege Escalation
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
 | [T1053.005](https://attack.mitre.org/techniques/T1053/005) Scheduled Task | `persistence` | `BTP-04-approved-remote-admin`, `TP-04-persistence-scheduled-task` | covered |
-| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
+| [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | `TP-07-mfa-fatigue`, `TP-08-impossible-travel`, `TP-09-password-spray` | covered |
 | [T1098](https://attack.mitre.org/techniques/T1098) Account Manipulation | `account_manipulation` | `BTP-02-it-automation-priv`, `TP-05-privilege-escalation` | covered |
 | [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | `CHAIN-02-lateral-movement` | covered |
-| [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | — | untested |
+| [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | `TP-12-run-key-persistence` | covered |
 
 ## What this table does not say
 

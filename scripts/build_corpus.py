@@ -156,10 +156,12 @@ def build() -> list[dict[str, Any]]:
             severity="medium",
             category="network",
             label="true_positive",
-            techniques=["T1071.001", "T1102"],
+            techniques=["T1071.001", "T1573"],
             why=(
-                "48 connections at 300 s ± 8% with near-identical request sizes, to a host "
-                "listed as malicious in the indicator cache. That is a check-in, not browsing."
+                "48 connections at 300 s ± 8% with near-identical request sizes over TLS, to "
+                "a host listed as malicious in the indicator cache. That is a check-in, not "
+                "browsing. Labelled T1102 originally, which was wrong — the destination is "
+                "not a legitimate web service being abused, it is attacker infrastructure."
             ),
             detected_at=at(hours=3),
             device={"hostname": "WKSTN-017", "ip": "10.20.30.17", "os": "Windows 11"},
@@ -299,7 +301,9 @@ def build() -> list[dict[str, Any]]:
             severity="high",
             category="endpoint",
             label="true_positive",
-            techniques=["T1560.001", "T1074.001", "T1567"],
+            # T1102 as well as T1567: transfer.sh is a legitimate web service being
+            # abused, which is what T1102 describes, and the upload is the T1567 half.
+            techniques=["T1560.001", "T1074.001", "T1567", "T1102"],
             why=(
                 "A password-protected archive of the finance share written to "
                 "C:\\Users\\Public, then 340 MB uploaded to transfer.sh against 2 MB down."
@@ -723,6 +727,288 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
+    # ── coverage fixtures ───────────────────────────────────────────────────
+    #
+    # Techniques that had a detector and no labelled alert exercising it.
+    # `docs/COVERAGE.md` called those "untested": real coverage, unproven
+    # coverage. Each of these exists to move one row of that table, and every
+    # one is a case the detector should genuinely fire on — a fixture written to
+    # satisfy a matrix rather than to be right would make the matrix worse than
+    # leaving the row red.
+
+    alerts.append(
+        alert(
+            "TP-07-mfa-fatigue",
+            rule_name="Repeated MFA push notifications denied then approved",
+            source="okta",
+            severity="high",
+            category="identity",
+            label="true_positive",
+            techniques=["T1621", "T1078"],
+            why=(
+                "Seven push prompts denied in four minutes from a foreign address, then "
+                "one approved. That is push-bombing succeeding, and the approval is the "
+                "moment the account was lost."
+            ),
+            detected_at=at(hours=23, minutes=10),
+            principal={"username": "r.castellanos", "domain": "CORP"},
+            auth_events=[
+                {
+                    "timestamp": at(hours=23, minutes=10, seconds=i * 35),
+                    "username": "r.castellanos",
+                    "outcome": "mfa_denied",
+                    "source_ip": "203.0.113.201",
+                    "geo": geo("lagos"),
+                    "mfa_method": "push",
+                }
+                for i in range(7)
+            ]
+            + [
+                {
+                    "timestamp": at(hours=23, minutes=14, seconds=30),
+                    "username": "r.castellanos",
+                    "outcome": "mfa_success",
+                    "source_ip": "203.0.113.201",
+                    "geo": geo("lagos"),
+                    "mfa_method": "push",
+                }
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-08-impossible-travel",
+            rule_name="Successful logins from two continents",
+            source="okta",
+            severity="high",
+            category="identity",
+            label="true_positive",
+            techniques=["T1078"],
+            why=(
+                "London then Sydney, eighteen minutes apart. 16,900 km implies 56,000 km/h; "
+                "unlike FP-03 the gap is far too long to be a VPN reconnect and far too "
+                "short to be travel."
+            ),
+            detected_at=at(hours=20),
+            principal={"username": "h.lindqvist", "domain": "CORP"},
+            auth_events=[
+                {
+                    "timestamp": at(hours=20),
+                    "username": "h.lindqvist",
+                    "outcome": "success",
+                    "source_ip": "192.0.2.51",
+                    "geo": geo("london"),
+                    "application": "VPN gateway",
+                },
+                {
+                    "timestamp": at(hours=20, minutes=18),
+                    "username": "h.lindqvist",
+                    "outcome": "success",
+                    "source_ip": "198.51.100.88",
+                    "geo": geo("sydney"),
+                    "application": "Mail",
+                },
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-09-password-spray",
+            rule_name="Authentication failures across many accounts from one source",
+            source="okta",
+            severity="high",
+            category="identity",
+            label="true_positive",
+            techniques=["T1110.003", "T1078"],
+            why=(
+                "One external address, 24 accounts, one attempt each, then a success. "
+                "Wide and shallow is spraying, and per-account lockout never fires on it."
+            ),
+            detected_at=at(hours=4, minutes=30),
+            auth_events=[
+                {
+                    "timestamp": at(hours=4, minutes=30, seconds=i * 7),
+                    "username": f"{name}",
+                    "outcome": "failure",
+                    "source_ip": "203.0.113.144",
+                }
+                for i, name in enumerate(
+                    [
+                        "a.baptiste",
+                        "b.moreau",
+                        "c.nwosu",
+                        "d.eriksen",
+                        "e.hoffmann",
+                        "f.almeida",
+                        "g.petrov",
+                        "h.lindqvist",
+                        "i.tanaka",
+                        "j.okafor",
+                        "k.svensson",
+                        "l.dubois",
+                        "m.oyelaran",
+                        "n.adeyemi",
+                        "o.kimani",
+                        "p.almeida",
+                        "q.zhang",
+                        "r.iyer",
+                        "s.mensah",
+                        "t.nakamura",
+                        "u.varga",
+                        "v.silva",
+                        "w.tan",
+                        "x.mbeki",
+                    ]
+                )
+            ]
+            + [
+                {
+                    "timestamp": at(hours=4, minutes=34),
+                    "username": "l.dubois",
+                    "outcome": "success",
+                    "source_ip": "203.0.113.144",
+                }
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-10-hive-and-ntds",
+            rule_name="Registry hive export and directory replication",
+            source="edr",
+            severity="critical",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1003.002", "T1003.003", "T1003"],
+            why=(
+                "SAM and SYSTEM hives exported to a world-writable directory, followed by "
+                "a DCSync replication request. Two different credential stores, neither "
+                "with a routine explanation on a workstation."
+            ),
+            detected_at=at(hours=3, minutes=40),
+            device={"hostname": "WKSTN-118", "ip": "10.20.30.118", "os": "Windows 11"},
+            principal={"username": "d.eriksen", "domain": "CORP"},
+            parent_process={"name": "cmd.exe", "path": r"C:\Windows\System32\cmd.exe"},
+            process={
+                "name": "reg.exe",
+                "path": r"C:\Windows\System32\reg.exe",
+                "command_line": r"reg save hklm\sam C:\Users\Public\s.hiv && reg save hklm\system C:\Users\Public\y.hiv",
+            },
+            child_processes=[
+                {
+                    "name": "mimikatz.exe",
+                    "path": r"C:\Users\Public\m.exe",
+                    "command_line": "m.exe lsadump::dcsync /domain:corp.local /user:krbtgt",
+                    "signed": False,
+                }
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-11-masquerading",
+            rule_name="System binary running from an unexpected location",
+            source="sysmon",
+            severity="high",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1036.005", "T1036.007", "T1036.002", "T1204.002"],
+            why=(
+                "Three separate name deceptions at once: svchost.exe outside System32, an "
+                "attachment with a double extension, and a right-to-left override that "
+                "makes an executable render as a JPEG in every Windows file listing."
+            ),
+            detected_at=at(hours=10, minutes=25),
+            device={"hostname": "WKSTN-204", "ip": "10.20.30.204", "os": "Windows 11"},
+            principal={"username": "f.almeida", "domain": "CORP"},
+            process={
+                "name": "svchost.exe",
+                "path": r"C:\Users\f.almeida\AppData\Local\Temp\svchost.exe",
+                "command_line": r"C:\Users\f.almeida\AppData\Local\Temp\svchost.exe -k netsvcs",
+                "signed": False,
+            },
+            file={
+                "name": "invoice\u202egpj.exe",
+                "path": r"C:\Users\f.almeida\Downloads\statement.pdf.exe",
+                "size_bytes": 412_000,
+            },
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-12-run-key-persistence",
+            rule_name="Registry Run key written by an unsigned binary",
+            source="sysmon",
+            severity="high",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1547.001", "T1027", "T1140", "T1059.001"],
+            why=(
+                "An unsigned binary in AppData writing a Run key that launches an encoded "
+                "PowerShell command. Unlike FP-08 the persistence points into a "
+                "world-writable directory and the payload is obfuscated."
+            ),
+            detected_at=at(hours=1, minutes=55),
+            device={"hostname": "WKSTN-091", "ip": "10.20.30.91", "os": "Windows 11"},
+            principal={"username": "g.petrov", "domain": "CORP"},
+            process={
+                "name": "updater.exe",
+                "path": r"C:\Users\g.petrov\AppData\Roaming\updater.exe",
+                "command_line": r"updater.exe --install",
+                "signed": False,
+            },
+            registry_changes=[
+                {
+                    "key": r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run",
+                    "value_name": "SecurityHealth",
+                    "value_data": "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAKQA=",
+                }
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "TP-13-c2-exfil-volume",
+            rule_name="Sustained encrypted upload to a single destination",
+            source="proxy",
+            severity="critical",
+            category="network",
+            label="true_positive",
+            techniques=["T1041", "T1030", "T1573", "T1071.001"],
+            why=(
+                "1.2 GB uploaded against 3 MB down, in uniform 40 MB chunks on a fixed "
+                "600-second interval over TLS. The chunking is a transfer-size limit and "
+                "the rhythm is the channel, not a person uploading."
+            ),
+            detected_at=at(hours=5),
+            device={
+                "hostname": "SRV-DB-03",
+                "ip": "10.20.10.33",
+                "is_server": True,
+                "criticality": "high",
+            },
+            principal={"username": "svc_report", "domain": "CORP", "is_service_account": True},
+            connections=[
+                {
+                    "timestamp": at(hours=5, seconds=600 * i + (20 if i % 2 else -20)),
+                    "hostname": "sync.cdn-metrics.example",
+                    "dest_ip": "203.0.113.77",
+                    "dest_port": 443,
+                    "protocol": "tcp",
+                    "bytes_out": 40_000_000,
+                    "bytes_in": 100_000,
+                }
+                for i in range(30)
+            ],
+        )
+    )
+
     # ── 3 correlated alerts: one intrusion, three low-severity alerts ───────
     #
     # These exist to exercise correlation, and they are the case that argues
@@ -740,7 +1026,7 @@ def build() -> list[dict[str, Any]]:
             severity="medium",
             category="endpoint",
             label="true_positive",
-            techniques=["T1566.001", "T1059.001"],
+            techniques=["T1566.001", "T1059.001", "T1059"],
             why=(
                 "On its own, a medium-severity Office-spawns-PowerShell alert that many "
                 "SOCs close. It is the first link of CHAIN-01/02/03 and only reads as "

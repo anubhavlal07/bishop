@@ -112,7 +112,8 @@
     "techniques": [
       "T1560.001",
       "T1074.001",
-      "T1567"
+      "T1567",
+      "T1102"
     ],
     "should_escalate": false,
     "why": "A password-protected archive of the finance share written to C:\\Users\\Public, then 340 MB uploaded to transfer.sh against 2 MB down.",

@@ -165,14 +165,31 @@ def beaconing(alert: Alert) -> DetectorResult:
     if best["uniform_payload_size"]:
         rationale += ", with near-identical request sizes"
 
+    hints = ["T1071.001"]
+    if _mostly_tls(alert.connections, str(best["destination"])):
+        # A beacon over 443 is an encrypted channel, which is the property that
+        # makes the payload unavailable and the rhythm the only thing left.
+        hints.append("T1573")
+
     return DetectorResult(
         detector="beaconing",
         fired=True,
         score=round(best_score, 3),
         facts=best,
         rationale=rationale,
-        technique_hints=["T1071.001"],
+        technique_hints=hints,
     )
+
+
+def _mostly_tls(connections, destination: str) -> bool:
+    matching = [
+        c
+        for c in connections
+        if str(c.hostname or c.dest_ip or "unknown") == destination and c.dest_port
+    ]
+    if not matching:
+        return False
+    return sum(1 for c in matching if c.dest_port in (443, 8443)) >= len(matching) * 0.8
 
 
 def _registrable_parts(query: str) -> tuple[str, list[str]]:
@@ -290,7 +307,10 @@ def dns_exfiltration(alert: Alert) -> DetectorResult:
             f"{best['mean_entropy_bits_per_char']} bits per character — that is encoded data, "
             f"not hostnames"
         ),
-        technique_hints=["T1071.004"],
+        # DNS carrying data out is exfiltration over a non-C2 protocol as much
+        # as it is application-layer C2; which one it is depends on direction,
+        # and the volume here says data is leaving.
+        technique_hints=["T1071.004", "T1048.003"],
     )
 
 
@@ -325,8 +345,15 @@ def outbound_volume(alert: Alert) -> DetectorResult:
     received = sum(c.bytes_in or 0 for c in worst_group)
     ratio = sent / received if received else float(sent)
 
+    sizes = [c.bytes_out for c in worst_group if c.bytes_out]
+    # Near-identical transfer sizes across many connections is a deliberate
+    # chunk size, which is what T1030 describes — data split to stay under a
+    # threshold rather than sent in one stream.
+    uniform_chunks = len(sizes) >= 5 and len(set(sizes)) <= max(2, len(sizes) // 5)
+
     facts = {
         "destination": worst_key,
+        "uniform_chunk_size": uniform_chunks,
         "bytes_out": sent,
         "bytes_in": received,
         "out_in_ratio": round(ratio, 2) if received else None,
@@ -361,5 +388,5 @@ def outbound_volume(alert: Alert) -> DetectorResult:
             f"{round(received / 1_000_000, 2)} MB received — a {facts['out_in_ratio']}:1 "
             f"outbound ratio, which is an upload rather than a session"
         ),
-        technique_hints=["T1041"],
+        technique_hints=["T1041"] + (["T1030"] if uniform_chunks else []),
     )

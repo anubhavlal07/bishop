@@ -1,0 +1,42 @@
+{
+  "alert_id": "TP-12-run-key-persistence",
+  "source": "sysmon",
+  "rule_name": "Registry Run key written by an unsigned binary",
+  "detected_at": "2026-03-14T01:55:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-091",
+    "ip": "10.20.30.91",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "g.petrov",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "updater.exe",
+    "path": "C:\\Users\\g.petrov\\AppData\\Roaming\\updater.exe",
+    "command_line": "updater.exe --install",
+    "signed": false
+  },
+  "registry_changes": [
+    {
+      "key": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "value_name": "SecurityHealth",
+      "value_data": "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAKQA="
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1547.001",
+      "T1027",
+      "T1140",
+      "T1059.001"
+    ],
+    "should_escalate": false,
+    "why": "An unsigned binary in AppData writing a Run key that launches an encoded PowerShell command. Unlike FP-08 the persistence points into a world-writable directory and the payload is obfuscated.",
+    "synthetic": true
+  }
+}
