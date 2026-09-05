@@ -106,6 +106,8 @@ SIGNAL_TO_ATLAS: dict[str, tuple[str, ...]] = {
     "invisible_text": ("AML.T0068",),
     "homoglyph": ("AML.T0068",),
     "multilingual_instruction": ("AML.T0068",),
+    # A forged approval is aimed at the output Bishop is trusted to produce.
+    "forged_provenance": ("AML.T0067",),
     "oversized_field": (),
 }
 

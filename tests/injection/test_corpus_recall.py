@@ -92,7 +92,9 @@ def test_the_corpus_covers_every_attack_class_the_threat_model_names():
 
 def test_recall_is_reported_rather_than_asserted(record_property):
     """Print the score so the README number comes from a run, not from memory."""
-    caught = sum(1 for entry in CORPUS if scan_text(entry["payload"], field=entry["field"]).is_injection)
+    caught = sum(
+        1 for entry in CORPUS if scan_text(entry["payload"], field=entry["field"]).is_injection
+    )
     record_property("corpus_caught", caught)
     record_property("corpus_total", len(CORPUS))
     print(f"\ninjection corpus recall: {caught}/{len(CORPUS)}")

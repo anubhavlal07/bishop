@@ -142,8 +142,25 @@ class TestDecisionParsing:
         assert decision.decision is Decision.REJECTED
         assert decision.approved_action_ids == []
 
-    def test_approval_covers_every_action_by_default(self):
+    def test_an_approval_naming_no_action_approves_nothing(self):
+        """This used to approve everything, and it is the API's default body.
+
+        `approved_action_ids` defaults to `[]` on the request model, so
+        `{"decision": "approved"}` is a valid body that named no actions — and
+        `[] or valid_ids` made it mean all of them. Against an unauthenticated
+        endpoint that was one request from isolating a host, with an audit entry
+        recording a human approval nobody gave.
+        """
         decision = _parse_decision({"decision": "approved", "decided_by": "a"}, self.plan)
+        assert decision.decision is Decision.REJECTED
+        assert decision.approved_action_ids == []
+        assert "named no valid action ids" in decision.note
+
+    def test_an_approval_naming_actions_approves_exactly_those(self):
+        decision = _parse_decision(
+            {"decision": "approved", "approved_action_ids": ["act-1", "act-2"], "decided_by": "a"},
+            self.plan,
+        )
         assert decision.decision is Decision.APPROVED
         assert set(decision.approved_action_ids) == {"act-1", "act-2"}
 
@@ -215,15 +232,30 @@ class TestEndToEndGate:
 
     def test_the_decision_is_written_to_the_audit_chain(self, run):
         graph, state, config, runtime = run(credential_theft_alert())
-        graph.invoke(state, config=config)
+        first = graph.invoke(state, config=config)
+        request = first["__interrupt__"][0].value
+        ids = [a["action_id"] for a in request["actions"]]
         graph.invoke(
-            Command(resume={"decision": "approved", "decided_by": "analyst@corp", "note": "go"}),
+            Command(
+                resume={
+                    "decision": "approved",
+                    "approved_action_ids": ids,
+                    "decided_by": "analyst@corp",
+                    "note": "go",
+                }
+            ),
             config=config,
         )
         decisions = runtime.chain.by_action(AuditAction.HUMAN_DECIDED)
         assert len(decisions) == 1
         assert decisions[0].payload["decided_by"] == "analyst@corp"
         assert decisions[0].payload["decision"] == "approved"
+
+        # The decision commits to what the analyst was shown, not just to ids.
+        requested = runtime.chain.by_action(AuditAction.APPROVAL_REQUESTED)
+        assert decisions[0].payload["approved_request_hash"] == requested[0].payload["request_hash"]
+        assert requested[0].payload["targets"]
+        assert requested[0].payload["blast_radii"]
         runtime.chain.verify()
 
     def test_the_approval_replay_is_labelled_not_hidden(self, run):

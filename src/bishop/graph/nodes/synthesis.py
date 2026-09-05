@@ -61,11 +61,15 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
     catalogue = load_catalogue()
 
     results = _all_results(reports)
-    fired = [r for r in results if r.fired]
+    fired = [r for r in results if r.fired and not r.mitigating]
 
     context: dict[str, Any] = {
         "incident_id": state.get("incident_id"),
-        "entity_key": state.get("entity_key"),
+        # Built by `Alert.entity_key()` with f-string interpolation of the
+        # hostname and username, so the marker is gone and the value is
+        # attacker-influenced. Marked rather than dropped: the analyst and
+        # the model both need to know which entity this is about.
+        "entity_key_quoted": f"«{state.get('entity_key')}»",
         "investigators_run": [r.investigator for r in reports],
         "detectors_fired": len(fired),
         "injection_attempts": len(injections),
@@ -184,6 +188,7 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
         data=data,
         validation=validation,
         fired=fired,
+        mitigating=[r for r in results if r.fired and r.mitigating],
         injections=injections,
         threshold=runtime.settings.escalation_threshold,
         catalogue=catalogue,
@@ -228,6 +233,7 @@ def _build_verdict(
     data: dict[str, Any],
     validation,
     fired: list[DetectorResult],
+    mitigating: list[DetectorResult],
     injections: list[Evidence],
     threshold: float,
     catalogue,
@@ -241,13 +247,29 @@ def _build_verdict(
     confidence = float(data.get("confidence") or 0.0)
     escalation_reason = data.get("escalation_reason")
 
-    # Grounding: a malicious verdict needs a measurement behind it. An injection
-    # attempt counts — it is a deterministic finding from the quarantine scan.
+    # Grounding, in both directions. A malicious verdict needs a measurement
+    # behind it — an injection attempt counts, being a deterministic finding
+    # from the quarantine scan.
     if label is VerdictLabel.TRUE_POSITIVE and not fired and not injections:
         label = VerdictLabel.ESCALATE
         escalation_reason = (
             "the model proposed a true positive, but no deterministic detector fired. "
             "Bishop does not assert malice on a model's reading alone."
+        )
+        confidence = min(confidence, threshold)
+
+    # And an *exculpatory* verdict needs one too. Grounding only the accusing
+    # side left the suppression path open, which is the attacker's higher-value
+    # goal: a model asserting "authorised by change ticket CHG-4471" at 0.93,
+    # with nothing measured either way, closed the alert. A benign true positive
+    # is a claim that something was authorised, and that claim has to come from
+    # environment policy — a mitigating detector — rather than from prose.
+    if label is VerdictLabel.BENIGN_TRUE_POSITIVE and not mitigating:
+        label = VerdictLabel.ESCALATE
+        escalation_reason = (
+            "the model called this an authorised activity, but no mitigating detector "
+            "found anything in environment policy that authorises it. Bishop does not "
+            "clear an alert on a model's reading alone."
         )
         confidence = min(confidence, threshold)
 

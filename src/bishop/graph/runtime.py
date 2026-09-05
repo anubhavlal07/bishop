@@ -24,8 +24,13 @@ RUNTIME_KEY = "bishop_runtime"
 
 @dataclass(slots=True)
 class Settings:
-    #: Bounded so a disagreeing critic cannot loop forever. Two is enough to
-    #: catch an overconfident verdict and cheap enough to always run.
+    #: Bounded so a disagreeing critic cannot loop forever.
+    #:
+    #: At 1 the critic runs once and the graph moves on — `after_critic` never
+    #: routes back to synthesis. That is the shipped default because a second
+    #: synthesis pass costs a model call to reconsider evidence that has not
+    #: changed. Raise it to let the critic actually send a verdict back; the
+    #: edge exists and `build.py` wires it.
     max_critic_rounds: int = 1
     #: Below this, the verdict is handed to a human instead of asserted.
     escalation_threshold: float = 0.45

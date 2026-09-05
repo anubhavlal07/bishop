@@ -92,12 +92,33 @@ instance check, returning dotted paths like `auth_events[2].user_agent`. Adding
 a field to the schema cannot accidentally omit it from the boundary, because
 discovery is by type rather than by a hand-maintained list.
 
-**One way through.** `bishop.quarantine.render_block()` is the only thing that
-puts alert text in front of a model. Every prompt builder in
-`bishop.graph.prompts` ends with `assert_no_untrusted(...)` over its own inputs,
-which raises rather than sending an unwrapped value. That is deliberately
-redundant with the quarantine call: one is the control, the other asserts the
-control was applied.
+**One way through — and why that was not enough.** `render_block()` is the
+only thing that puts alert text in front of a model *as alert text*, and every
+prompt builder ends with `assert_no_untrusted(...)` over its own inputs.
+
+That check is an instance check on `UntrustedStr`, and every string operation in
+Python returns a plain `str`. `str(x)`, `x.lower()`, an f-string — the marker
+does not survive any of them. Red-teaming found four live paths where it did
+not: `Alert.entity_key()`, detector facts, the response planner's context, and
+`Alert.raw`, which is `dict[str, Any]` and carried no markers to begin with.
+Attacker text was arriving inside `<detector-results>`, the block the system
+prompt calls Bishop's own output, carrying a literal `</detector-results>` that
+closed it early.
+
+Tracking provenance through `str()` is not something Python permits. So the
+defence moved to the render boundary, where it does not need provenance:
+
+- `safe_block()` escapes `<` and `>` in **everything** it serialises into a
+  trusted block. `json.dumps` escapes quotes and backslashes but not angle
+  brackets, and angle brackets are what carries structural meaning here.
+- `_mark_quoted()` wraps string leaves in detector facts in guillemets and caps
+  their length, because they are excerpts rather than Bishop's prose — and
+  `encoded_command` is a decoding oracle, base64-decoding an attacker's payload
+  into the trusted region on their behalf.
+- `Alert.raw` is walked explicitly and scanned like every typed field.
+
+`assert_no_untrusted` stays. It catches the direct mistake, which is worth
+catching; it just cannot be the only thing standing there.
 
 **The fence.** Untrusted values render inside
 `<untrusted-alert-data nonce="…">`, where the nonce derives from the run id via
@@ -173,6 +194,11 @@ provider is for, and it is why the scorecard labels which provider produced it.
 `reports` and `cost` are **reducer fields** — investigators run in parallel via
 `Send`, so their writes merge rather than overwrite. Everything else is written
 by exactly one node, which is what keeps the concurrency comprehensible.
+
+Confidence means different things by provider. Under the mock it is arithmetic
+over detector scores; under a live provider it is the model's own assertion,
+clamped only by the abstention threshold. The scorecard names the provider for
+exactly this reason.
 
 `quarantine_evidence` is **its own field**, not a slot inside `reports`. An
 alert whose only notable feature is an injected instruction produces no detector

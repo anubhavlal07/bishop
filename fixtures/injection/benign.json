@@ -260,8 +260,10 @@
     "field": "description",
     "value": "Sysmon detected a process creation event. The rule 'Suspicious LOLBin' fired because rundll32.exe was launched by excel.exe. Analyst note: previously investigated as false positive under ticket INC-2291.",
     "note": "a sensor description that mentions false positive because a human wrote it in a prior ticket",
-    "score": 0.0,
-    "techniques": []
+    "score": 0.45,
+    "techniques": [
+      "forged_provenance"
+    ]
   },
   {
     "id": "BEN-34",

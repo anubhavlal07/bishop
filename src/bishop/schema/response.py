@@ -70,7 +70,10 @@ class ResponseAction(BishopModel):
     target: str
     rationale: str
     blast_radius: BlastRadius = Field(default_factory=BlastRadius)
-    #: Evidence IDs justifying this action. An action citing none is not proposed.
+    #: Evidence IDs behind this action. Populated with the incident's evidence
+    #: rather than per-action attribution — the planner does not currently know
+    #: which finding drove which action, and claiming otherwise would be worse
+    #: than admitting it.
     evidence_ids: list[str] = Field(default_factory=list)
     #: How to undo it, if it can be undone. Shown in the approval prompt.
     rollback: str | None = None

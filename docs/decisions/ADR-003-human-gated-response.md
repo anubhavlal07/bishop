@@ -17,15 +17,17 @@ autonomous to pay off.
 
 **No autonomous containment, at any confidence level.**
 
-- Every response action passes a LangGraph `interrupt()` gate presenting an editable plan with a
-  blast-radius estimate.
-- The **edited** plan is what executes. The resumed value is consumed; the original proposal is
-  not silently preferred.
+- Every response action passes a LangGraph `interrupt()` gate, which presents the plan with a
+  blast-radius estimate per action and takes an approve, reject, or approve-a-subset decision.
+- The **decision** is what executes. The resumed value is consumed; the original proposal is
+  not silently preferred, and an approval that names no action approves nothing. The analyst
+  chooses from the proposed actions — they cannot edit a target or add one.
 - Rejection terminates cleanly and is recorded. Nothing partially executes.
 - Timeout or crash at the gate defaults to **not acting**.
 - No env var, config flag, CLI switch or test hook disables the gate outside the test suite.
-- Every executor sits behind an interface and the shipped implementation is a mock that writes
-  to `outbox/`. No real API client, SSH, WinRM, cloud SDK or subprocess exists in any response
+- Every executor sits behind an interface and the shipped implementation is a mock that records
+  what it would have done and performs no side effect. No real API client, SSH, WinRM, cloud
+  SDK or subprocess exists in any response
   path.
 
 ## Consequences

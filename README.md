@@ -55,9 +55,48 @@ Four properties, each doing something the others can't:
    LLM is reading it and is targeting you specifically. That's one of the strongest signals in
    the alert, so the scanner raises severity rather than quietly sanitising.
 
-The scanner scores twelve techniques — instruction override, role hijack, delimiter break,
-verdict manipulation, tool coercion, exfiltration lure, prompt disclosure, encoding evasion,
-invisible text, homoglyph, multilingual instruction, oversized field.
+The scanner scores thirteen techniques — instruction override, role hijack, delimiter break,
+verdict manipulation, forged provenance, tool coercion, exfiltration lure, prompt disclosure,
+encoding evasion, invisible text, homoglyph, multilingual instruction, oversized field.
+
+### Then I spent a day trying to break it
+
+`tests/injection/` is a corpus of **132 payloads and 38 benign samples** built
+specifically to defeat the above. It found six ways in, and every one of them worked the same
+way: **not by attacking the fence, but by going around it.**
+
+`assert_no_untrusted()` is an instance check on `UntrustedStr`. Every string operation in Python
+returns a plain `str` — `str(x)`, `x.lower()`, an f-string — so the marker does not survive
+contact with any of them. Four live paths laundered it: `Alert.entity_key()`, detector facts,
+the response planner's context, and `Alert.raw`, which is `dict[str, Any]` and was never scanned
+at all. Attacker text was arriving inside `<detector-results>` — the block the system prompt
+describes as *Bishop's own output* — carrying a literal `</detector-results>`. A nineteen-character
+suffix on a real credential-dumping command line flipped the verdict to `false_positive` and
+dropped all five containment actions.
+
+The worst one is subtler. In one case Bishop **detected** the injection, raised it as an IOC,
+wrote it to the audit chain, put it in the incident report — and still returned `false_positive`,
+because a second field forged an empty `<injection-findings>` block and told the reasoning step
+there were no findings. Detection and escalation are not the same thing as defence.
+
+Four fixes, in order of how much they closed:
+
+1. **Nothing serialised into a trusted block may contain a block delimiter.** `json.dumps`
+   escapes quotes but not angle brackets; `safe_block` escapes them explicitly. Tracking
+   provenance through `str()` is not possible in Python. Refusing to emit a delimiter is.
+2. **Strings inside detector facts are marked as quotations**, because they are excerpts, not
+   Bishop's prose — and `encoded_command` is a decoding oracle: the attacker writes base64 and
+   Bishop decodes it into the trusted region for them.
+3. **`Alert.raw` is walked and scanned** like every typed field.
+4. **Fields past the render cap are scanned before they are dropped**, so a payload cannot be
+   buried behind a hundred harmless ones.
+
+Current corpus score: **58/132 caught, 38/38 benign samples clean** — no false positives, including
+`-EncodedCommand`, LOLBins, and a rule description that literally reads "analysts should ignore
+previous alerts from this rule". The 74 that still evade are recorded as
+strict-xfail tests, so the suite fails the moment one is fixed and the ledger stops being able
+to go stale. Most of them are the semantic class: text that supplies plausible benign context
+with no imperative to detect.
 
 ---
 
@@ -79,7 +118,7 @@ alert ──► ingest + normalise ──► UNTRUSTED-FIELD QUARANTINE
                                    response planner
                                           ▼
                         ╔═════════════════════════════════╗
-                        ║  human gate — editable plan     ║
+                        ║  human gate — approve, reject, or approve-a-subset decision     ║
                         ╚═════════════════════════════════╝
                                           ▼
                           execute (mocked) · incident report
@@ -118,8 +157,8 @@ parent/sub-technique relationship. A failed check is rejected and re-prompted, n
 through with a hedge. A tool that cites a technique that doesn't exist looks authoritative and
 is wrong, which is worse than citing none.
 
-**No autonomous containment.** Every response action goes behind a human gate with an editable
-plan, and every executor is a mock behind an interface. Not because automation is impossible,
+**No autonomous containment.** Every response action goes behind a human gate — approve,
+reject, or approve a subset — and every executor is a mock behind an interface. Not because automation is impossible,
 but because the interesting engineering question is where you put the human — and a portfolio
 project that quietly isolates hosts is answering the wrong question.
 
@@ -133,7 +172,7 @@ Requires Python 3.12 and `uv`.
 uv sync --extra dev
 just demo                  # triage an alert end to end, including the human gate
 just eval                  # the scorecard
-just test                  # 254 tests; the boundary ones are the interesting ones
+just test                  # 737 tests, 74 of them xfail (open injection gaps)
 ```
 
 Then the console, if you want to watch it:
@@ -219,6 +258,8 @@ on the console's scorecard page, so the numbers are hard to quote without them.
 - Semantic steering — a payload supplying plausible benign context with no imperative to detect
   — is the hardest class and only partially mitigated.
 - No live SIEM connector and no real containment integrations. Every executor is a mock.
+- The API has no authentication. Fine for a read-mostly demo over synthetic data, not fine for
+  anything else.
 - A poisoned threat-intel feed degrades verdicts without tripping the scanner.
 - The mitigating-context detectors read `fixtures/environment/policy.json`. Anyone who can write
   to that file can exonerate themselves. In a real deployment it comes from the CMDB and the

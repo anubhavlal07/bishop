@@ -448,11 +448,19 @@ def cmd_verify(args: argparse.Namespace) -> int:
         return 1
     chain = load_chain(path)
     try:
-        chain.verify()
+        chain.verify(expected_head=args.expect_head, expected_length=args.expect_length)
     except ChainBroken as exc:
         print(f"  {red('CHAIN BROKEN')}: {exc}")
         return 1
+
     print(f"  {green('chain intact')} — {len(chain)} entries, head {chain.head[:32]}…")
+    if not args.expect_head:
+        print(
+            dim(
+                "  Verified from genesis forwards, which cannot detect that the end was cut "
+                "off. Pass --expect-head with the incident's audit_head to check that too."
+            )
+        )
     return 0
 
 
@@ -512,6 +520,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     ver = sub.add_parser("verify", help="verify a saved audit chain")
     ver.add_argument("path")
+    ver.add_argument(
+        "--expect-head",
+        help="the audit_head recorded in the incident report; catches a truncated tail",
+    )
+    ver.add_argument("--expect-length", type=int, help="how many entries the chain should have")
     ver.set_defaults(func=cmd_verify)
 
     sub.add_parser("detectors", help="list the detector library").set_defaults(func=cmd_detectors)

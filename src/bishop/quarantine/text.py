@@ -31,7 +31,22 @@ ZERO_WIDTH = {
     "⁠",  # word joiner
     "﻿",  # zero width no-break space
     "­",  # soft hyphen
+    "᠎",  # Mongolian vowel separator
+    "⁡",  # function application
+    "⁢",  # invisible times
+    "⁣",  # invisible separator
+    "⁤",  # invisible plus
+    "͏",  # combining grapheme joiner
+    "ᅟ",  # Hangul choseong filler
+    "ᅠ",  # Hangul jungseong filler
+    "ㅤ",  # Hangul filler
+    "ﾠ",  # halfwidth Hangul filler
 }
+
+#: Variation selectors. Invisible, and enough of them can encode a whole
+#: message; the VS15/VS16 pair also flips emoji presentation, which is how a
+#: keyword can be split without a zero-width character.
+VARIATION_SELECTORS = range(0xFE00, 0xFE10)
 
 #: Bidirectional controls. The RTL override is the classic filename-spoofing trick.
 BIDI_CONTROLS = {
@@ -107,6 +122,93 @@ def mixed_script_words(text: str) -> list[str]:
         if len(scripts) > 1:
             suspicious.append(word)
     return suspicious
+
+
+#: Latin lookalikes from other alphabets. Not exhaustive — Unicode's confusables
+#: table has thousands of entries — but these are the substitutions that actually
+#: appear, because they are the ones that render identically in a sans-serif UI.
+_CONFUSABLES = str.maketrans(
+    {
+        # Cyrillic
+        "\u0430": "a",
+        "\u0435": "e",
+        "\u043e": "o",
+        "\u0440": "p",
+        "\u0441": "c",
+        "\u0445": "x",
+        "\u0443": "y",
+        "\u0456": "i",
+        "\u0455": "s",
+        "\u0501": "d",
+        "\u043d": "h",
+        "\u043a": "k",
+        "\u043c": "m",
+        "\u0442": "t",
+        "\u0432": "b",
+        "\u0410": "A",
+        "\u0415": "E",
+        "\u041e": "O",
+        "\u0420": "P",
+        "\u0421": "C",
+        "\u0425": "X",
+        "\u0423": "Y",
+        "\u0406": "I",
+        "\u041d": "H",
+        "\u041a": "K",
+        "\u041c": "M",
+        "\u0422": "T",
+        "\u0412": "B",
+        # Greek
+        "\u03b1": "a",
+        "\u03bf": "o",
+        "\u03c1": "p",
+        "\u03bd": "v",
+        "\u03b5": "e",
+        "\u03c4": "t",
+        "\u03b9": "i",
+        "\u03ba": "k",
+        "\u03c5": "u",
+        "\u03c7": "x",
+        "\u0391": "A",
+        "\u039f": "O",
+        "\u03a1": "P",
+        "\u0395": "E",
+        "\u03a4": "T",
+        "\u0399": "I",
+        "\u039a": "K",
+        "\u03a7": "X",
+        "\u0392": "B",
+        "\u039c": "M",
+        # Armenian and others that turn up
+        "\u0561": "a",
+        "\u0585": "o",
+        "\u04cf": "l",
+        "\u217c": "l",
+        "\u2170": "i",
+    }
+)
+
+
+def nfkc(text: str) -> str:
+    """Compatibility-normalise.
+
+    This is what collapses fullwidth Latin, mathematical alphanumerics and
+    small-capital letterforms back to ASCII. A model reads all three as ordinary
+    words; without this pass the scanner sees a single-script string with no
+    keyword in it and says nothing.
+    """
+    return unicodedata.normalize("NFKC", text)
+
+
+def confusable_fold(text: str) -> str:
+    """Map common cross-alphabet lookalikes onto their Latin equivalents.
+
+    Complements `mixed_script_words`, which only *reports* that a word mixes
+    alphabets. Folding lets the phrase patterns match the word an analyst would
+    read, so a Cyrillic-spelled instruction is caught by the instruction rules
+    rather than only by the weaker homoglyph signal.
+    """
+    return text.translate(_CONFUSABLES)
 
 
 def _printable_ratio(data: bytes) -> float:
@@ -212,16 +314,31 @@ def analysis_forms(text: str) -> list[tuple[str, str]]:
     """Every form of a string the signal checks should look at.
 
     Returns `(form_name, text)` pairs: the original, the invisible-stripped
-    form, the de-spaced form, and anything that decoded out of it.
+    form, the de-spaced form, the Unicode-normalised and confusable-folded
+    forms, and anything that decoded out of it. Duplicates are dropped, so a
+    plain ASCII value costs one scan rather than seven.
     """
     forms: list[tuple[str, str]] = [("raw", text)]
+    seen = {text}
+
+    def add(name: str, value: str) -> None:
+        if value not in seen:
+            seen.add(value)
+            forms.append((name, value))
+
     stripped = strip_invisible(text)
-    if stripped != text:
-        forms.append(("invisible-stripped", stripped))
-    collapsed = despaced(stripped)
-    if collapsed != stripped:
-        forms.append(("despaced", collapsed))
-    forms.extend(decoded_candidates(stripped))
+    add("invisible-stripped", stripped)
+    add("despaced", despaced(stripped))
+
+    # Normalisation last, over the already-stripped form, so a payload that
+    # combines tricks — fullwidth letters split by zero-width spaces — still
+    # reduces to something the phrase patterns can match.
+    normalised = confusable_fold(nfkc(stripped))
+    add("normalised", normalised)
+    add("normalised-despaced", despaced(normalised))
+
+    for encoding, decoded in decoded_candidates(stripped):
+        add(encoding, decoded)
     return forms
 
 

@@ -44,7 +44,7 @@ def adversarial_critic(
 
     context = {
         "incident_id": state.get("incident_id"),
-        "entity_key": state.get("entity_key"),
+        "entity_key_quoted": f"«{state.get('entity_key')}»",
         "detectors_fired": sum(1 for r in results if r.fired),
     }
     system, prompt = build_critic_prompt(

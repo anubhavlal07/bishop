@@ -11,10 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-from bishop.quarantine import INJECTION_THRESHOLD, scan_text
-from tests.injection.conftest import benign_corpus, make_alert
-from bishop.quarantine import quarantine_alert
+from bishop.quarantine import INJECTION_THRESHOLD, quarantine_alert, scan_text
 from bishop.schema import Process
+from tests.injection.conftest import benign_corpus, make_alert
 
 BENIGN = benign_corpus()
 

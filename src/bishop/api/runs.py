@@ -109,9 +109,13 @@ class RunManager:
     def resume(self, run: Run, decision: dict[str, Any]) -> None:
         from langgraph.types import Command
 
-        if run.status != "awaiting_approval":
-            raise ValueError(f"run {run.run_id} is {run.status}, not awaiting approval")
-        run.status = "running"
+        # Under the lock: two simultaneous decisions could otherwise both pass
+        # the check and both resume the graph, which on a gate means a
+        # duplicated execution.
+        with self._lock:
+            if run.status != "awaiting_approval":
+                raise ValueError(f"run {run.run_id} is {run.status}, not awaiting approval")
+            run.status = "running"
         run.push({"kind": "resumed", "decision": decision.get("decision")})
         threading.Thread(
             target=self._drive, args=(run, Command(resume=decision)), daemon=True

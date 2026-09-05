@@ -142,8 +142,16 @@ CHECKPOINT_TYPES: tuple[type, ...] = (
 
 
 def build_serialiser() -> JsonPlusSerializer:
-    """A checkpoint serialiser that knows Bishop's types by name."""
-    return JsonPlusSerializer().with_msgpack_allowlist(CHECKPOINT_TYPES)
+    """A checkpoint serialiser restricted to Bishop's own types.
+
+    The allowlist has to go to the constructor. `with_msgpack_allowlist` merges
+    into an existing list and short-circuits when that list is `True` — which is
+    the permissive default — so building it that way returned an unrestricted
+    serialiser while looking like it had been locked down. The eleven
+    "Deserializing unregistered type" warnings on every run were the runtime
+    saying so.
+    """
+    return JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINT_TYPES)
 
 
 def build_graph(*, checkpointer: Any | None = None):

@@ -216,3 +216,41 @@ class TestPersistence:
         assert entry.seq == 3
         assert entry.prev_hash == head_before
         second.verify()
+
+
+class TestTruncation:
+    """A chain verified from genesis says nothing about its own end.
+
+    Deleting the last entries is the cheapest possible tamper — it removes the
+    record of what was executed and requires recomputing nothing, because a
+    truncated chain is a shorter valid chain.
+    """
+
+    def test_truncating_the_tail_passes_a_naive_verify(self, chain):
+        populate(chain)
+        del chain._entries[2:]
+        chain.verify()  # no exception: this is the gap, stated as a fact
+
+    def test_a_retained_head_catches_truncation(self, chain):
+        populate(chain)
+        head = chain.head
+        del chain._entries[2:]
+        with pytest.raises(ChainBroken, match="truncated"):
+            chain.verify(expected_head=head)
+
+    def test_a_retained_length_catches_truncation(self, chain):
+        populate(chain)
+        del chain._entries[2:]
+        with pytest.raises(ChainBroken, match="removed from the end"):
+            chain.verify(expected_length=3)
+
+    def test_is_intact_takes_the_expected_head(self, chain):
+        populate(chain)
+        head = chain.head
+        assert chain.is_intact(expected_head=head)
+        del chain._entries[2:]
+        assert not chain.is_intact(expected_head=head)
+
+    def test_an_intact_chain_still_verifies_against_its_own_head(self, chain):
+        populate(chain)
+        chain.verify(expected_head=chain.head, expected_length=len(chain))

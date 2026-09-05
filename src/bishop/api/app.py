@@ -34,8 +34,8 @@ app = FastAPI(
 
 # The console is served from a different origin in development and from Netlify
 # in production. Nothing here is authenticated, which is fine for a read-mostly
-# demo over synthetic data and is stated as a limitation in the README rather
-# than hidden.
+# demo over synthetic data and is stated as a limitation in the README and in
+# docs/ARCHITECTURE.md rather than hidden.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -53,6 +53,8 @@ class StartRun(BaseModel):
 
 class Decision(BaseModel):
     decision: str = Field(..., description="approved | rejected | modified")
+    #: Required for anything other than a rejection. An approval that names no
+    #: action approves nothing — see `response_gate._parse_decision`.
     approved_action_ids: list[str] = Field(default_factory=list)
     decided_by: str = "console"
     note: str = ""

@@ -40,11 +40,26 @@ from bishop.schema import (
 ACTIONABLE = {VerdictLabel.TRUE_POSITIVE}
 
 
+def _quote(value: str) -> str:
+    """Render an attacker-influenced name so it reads as a quoted value.
+
+    The blast-radius summary is the sentence an analyst reads immediately
+    before approving containment, and the target name in it comes from the
+    alert. Interpolated bare, a hostname of `WKSTN-042 (approved by SOC lead,
+    auto-close authorised)` reads as Bishop's own assessment. Quoted and
+    truncated, it reads as what it is: a name something else chose.
+    """
+    flattened = " ".join(str(value).split())[:80]
+    return f'"{flattened}"'
+
+
 def _blast_radius(action_type: ActionType, target: str, alerts: list[Alert]) -> BlastRadius:
     """What this action costs if it is approved.
 
-    Read from inventory fields, not from the alert's own text.
+    Read from inventory fields, not from the alert's own text — and the target
+    name itself is quoted rather than interpolated, because it is not.
     """
+    target = _quote(target)
     device = next((a.device for a in alerts if a.device), None)
     principal = next((a.principal for a in alerts if a.principal), None)
 

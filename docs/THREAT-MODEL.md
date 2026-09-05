@@ -159,7 +159,7 @@ The boundary is the headline, but it is not the only control.
 - **Technique IDs are validated against the ATT&CK STIX bundle.** A model cannot introduce a
   fabricated technique, and cannot be talked into one.
 - **No autonomous containment.** Every response action passes a human `interrupt()` gate with an
-  editable plan and a mocked executor. Attacker goals 2 and 3 both require getting past a person
+  approve, reject, or approve-a-subset decision and a mocked executor. Attacker goals 2 and 3 both require getting past a person
   reading the proposal — the failure mode is bounded at "wasted analyst attention", not
   "adversary controls our infrastructure".
 - **Bounded critic loop.** A hard iteration cap in graph state bounds goal 5.

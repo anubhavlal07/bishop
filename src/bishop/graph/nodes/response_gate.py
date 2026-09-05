@@ -22,7 +22,7 @@ from typing import Any, Optional
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import interrupt
 
-from bishop.audit import AuditAction
+from bishop.audit import AuditAction, hash_payload
 from bishop.graph.runtime import get_runtime
 from bishop.graph.state import BishopState
 from bishop.schema import Decision, HumanDecision, ResponsePlan
@@ -63,7 +63,9 @@ def _approval_request(plan: ResponsePlan, state: BishopState) -> dict[str, Any]:
         "instructions": (
             "Approve, reject, or approve a subset. Reply with "
             "{'decision': 'approved'|'rejected'|'modified', "
-            "'approved_action_ids': [...], 'decided_by': '...', 'note': '...'}."
+            "'approved_action_ids': [...], 'decided_by': '...', 'note': '...'}. "
+            "`approved_action_ids` is required for an approval: an approval that "
+            "names no action approves nothing."
         ),
     }
 
@@ -103,12 +105,19 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
         entry.payload.get("action_ids") == [a.action_id for a in plan.actions]
         for entry in runtime.chain.by_action(AuditAction.APPROVAL_REQUESTED)
     )
+    # The hash commits to *what the analyst was shown* — targets, blast radii,
+    # the verdict — not just to the action ids. Without it the chain can prove
+    # someone approved `INC-X-action-1` and cannot prove what action-1 was.
+    request_hash = hash_payload(request)
     runtime.chain.append(
         "response_gate",
         AuditAction.APPROVAL_REQUESTED,
         {
             "action_ids": [a.action_id for a in plan.actions],
             "irreversible": [a.action_id for a in plan.actions if a.is_irreversible],
+            "targets": {a.action_id: a.target[:120] for a in plan.actions},
+            "blast_radii": {a.action_id: a.blast_radius.summary[:200] for a in plan.actions},
+            "request_hash": request_hash,
             "replayed_after_resume": replay,
         },
     )
@@ -131,6 +140,9 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
             ],
             "note": decision.note,
             "decided_at": decision.decided_at,
+            # Same hash as the APPROVAL_REQUESTED entry above: this is what they
+            # were looking at when they decided.
+            "approved_request_hash": request_hash,
         },
     )
     runtime.emit(
@@ -167,8 +179,28 @@ def _parse_decision(answer: Any, plan: ResponsePlan) -> HumanDecision:
     note = str(answer.get("note") or "")
 
     if raw in {"approved", "approve", "yes", "y"}:
-        approved = [str(i) for i in (answer.get("approved_action_ids") or valid_ids)]
+        # An approval names what it approves. `[] or valid_ids` used to mean
+        # everything, which made `{"decision": "approved"}` — a body naming no
+        # actions at all — approve five, two of them irreversible, through an
+        # unauthenticated endpoint. An omitted list and an empty one were
+        # indistinguishable, and both meant "all".
+        #
+        # Both now mean none. Every caller Bishop ships sends the ids
+        # explicitly, so nothing loses a capability it was using, and the
+        # failure direction is the one that does not disable an account.
+        approved = [str(i) for i in (answer.get("approved_action_ids") or [])]
         approved = [i for i in approved if i in valid_ids]
+        if not approved:
+            return HumanDecision(
+                decided_by=decided_by,
+                decision=Decision.REJECTED,
+                approved_action_ids=[],
+                note=(
+                    (note + " ").strip()
+                    + "[approval named no valid action ids; treated as a rejection]"
+                ).strip(),
+                decided_at=now,
+            )
         return HumanDecision(
             decided_by=decided_by,
             decision=Decision.APPROVED,

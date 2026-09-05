@@ -42,6 +42,7 @@ class InjectionTechnique(StrEnum):
     INVISIBLE_TEXT = "invisible_text"
     HOMOGLYPH = "homoglyph"
     MULTILINGUAL_INSTRUCTION = "multilingual_instruction"
+    FORGED_PROVENANCE = "forged_provenance"
     OVERSIZED_FIELD = "oversized_field"
 
 
@@ -135,7 +136,17 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.DELIMITER_BREAK,
         _rx(
-            r"</untrusted[\w-]*>",
+            # `(?:\s[^>]*)?` matters: the real fence closes with
+            # `</untrusted-alert-data nonce="...">`, and a pattern demanding `>`
+            # immediately after the tag name missed the exact shape an attacker
+            # copying the fence would write.
+            r"</\s*untrusted[\w-]*(?:\s[^>]*)?>",
+            # Bishop's own trusted block names. A field containing one is trying
+            # to forge the region the prompt describes as Bishop's own output.
+            # `safe_block` stops the forgery from working; this makes it visible.
+            r"</?\s*(?:detector-results|injection-findings|incident-context|"
+            r"investigator-reports|proposed-verdict|settled-verdict|validation-failure)"
+            r"(?:\s[^>]*)?>",
             r"end\s+of\s+(?:untrusted|quarantined?|alert)\s+(?:data|section|block)",
             r"```\s*(?:system|end)",
             r"-{3,}\s*end\s+(?:of\s+)?(?:data|input|untrusted)",
@@ -146,8 +157,14 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.VERDICT_MANIPULATION,
         _rx(
-            r"(?:mark|classify|label|treat|report)\s+(?:this|it|the\s+alert)\s+as\s+"
-            r"(?:benign|safe|false[\s-]?positive|authoris?zed|approved|clean|resolved)",
+            # The alternation used to be `(?:this|it|the\s+alert)\s+as`, which
+            # matched "this" and then demanded "as" — so "mark this alert as
+            # benign", the most natural phrasing there is, scored zero. Allow
+            # intervening words instead of enumerating the nouns.
+            r"(?:mark|classify|label|treat|report|record|set|flag)\s+"
+            r"(?:this|it|that|the)(?:\s+\w+){0,3}\s+as\s+(?:an?\s+)?"
+            r"(?:benign|safe|false[\s_-]?positive|authoris?zed|approved|clean|resolved|"
+            r"expected|informational|low[\s-]?risk|non[\s-]?malicious)",
             r"this\s+(?:is|was)\s+(?:an?\s+)?(?:authoris?zed|approved|sanctioned|legitimate|routine)\s+"
             r"(?:activity|test|action|pentest|scan|task)\b.{0,80}?(?:do\s+not|no\s+need|close|ignore)",
             r"no\s+(?:further\s+)?(?:investigation|action|escalation|analysis)\s+(?:is\s+)?"
@@ -156,9 +173,59 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:do\s+not|don't|never)\s+(?:escalate|alert|notify|report)\b",
             r"(?:whitelist|allowlist)(?:ed)?\s+(?:by|per|process|binary|host)",
             r"confidence\s*[:=]\s*(?:0(?:\.0+)?|low)\b",
+            # Declarative rather than imperative. An alert field asserting a
+            # verdict is steering just as hard as one demanding it, and reads
+            # as ordinary prose to a keyword filter.
+            r"(?:the\s+)?(?:correct\s+|final\s+|previous\s+)?verdict\s+(?:for\s+\w+(?:\s+\w+)?\s+)?is\s+"
+            r"(?:an?\s+)?(?:benign|false[\s_-]?positive|true[\s_-]?positive|authoris?zed|approved)",
+            r"this\s+(?:alert|incident|event|activity|detection)\s+is\s+(?:an?\s+)?"
+            r"(?:false[\s_-]?positive|benign|expected|routine|authoris?zed|approved|known[\s-]good)",
+            # A field shaped like Bishop's own output. VRD-03 and VRD-04: a JSON
+            # verdict object or a bare `field: value` pair, ready to be copied
+            # into a report by anything that reads structure out of free text.
+            r"[\"']?(?:label|verdict|classification)[\"']?\s*[:=]\s*[\"']?"
+            r"(?:false_positive|benign|benign_true_positive|no[_\s-]?action)",
+            r"[\"']?(?:assessed_severity|severity|priority|queue)[\"']?\s*[:=]\s*[\"']?"
+            r"(?:informational|none|p5|auto[_\s-]?close|suppress)",
         ),
         0.6,
         "text argues for a specific verdict on its own alert",
+    ),
+    (
+        InjectionTechnique.FORGED_PROVENANCE,
+        _rx(
+            # Authorisation reaches Bishop from environment policy — the CMDB,
+            # the identity provider, the change calendar — and never from the
+            # alert. A field *claiming* to be approved is therefore always
+            # either a mistake or an attempt to be believed, and the confused
+            # deputy it is aiming at is the one that would otherwise check.
+            r"approved\s+by\s+\S",
+            r"authoris?zed[\s-]+by[\s:=]+\S",
+            r"--?authoris?ed[\s-]by[\s=]",
+            r"sign(?:ed)?[\s-]?off\s+(?:by|on)\b",
+            r"change\s+(?:advisory\s+board|ticket|request)\s+(?:approved|authoris?zed|CHG-)",
+            r"\b(?:CHG|CR|RFC|INC|TICKET)[\s-]?\d{3,}\b.{0,60}?"
+            r"(?:approved|authoris?zed|sanctioned|sign(?:ed)?[\s-]?off|auto[\s-]?close)",
+            r"(?:approved|authoris?zed|sanctioned).{0,60}?\b(?:CHG|CR|RFC|INC|TICKET)[\s-]?\d{3,}\b",
+            # Fabricated triage history: a claim that a human already decided.
+            r"(?:previously|already)\s+(?:triaged|reviewed|investigated|assessed)\b",
+            r"clos(?:ed|ure)\s+as\s+(?:benign|false[\s_-]?positive|no[\s-]?action|duplicate)",
+            r"duplicate\s+of\s+(?:INC|TICKET|CASE)[\s-]?\d+",
+            r"\b(?:engagement|rules?\s+of\s+engagement|roe)\b[\s:=-]+\S+.{0,40}?"
+            r"(?:in[\s-]?scope|authoris?ed|approved)",
+            # An allowlist claim living in a path or a name. The directory is
+            # attacker-chosen; the claim is not evidence of anything.
+            r"[\\/](?:allow[\s_-]?list(?:ed)?|white[\s_-]?list(?:ed)?|approved[\s_-]?binaries|"
+            r"known[\s_-]?good|trusted|sanctioned)[\\/]",
+        ),
+        # Below the threshold on its own, deliberately. A sensor description
+        # quoting a prior analyst note and an attacker fabricating one are the
+        # same string — `fixtures/injection/` has a matched pair, BEN-33 and
+        # VRD-09, that differ only in who wrote them. One provenance claim is
+        # genuinely ambiguous; three stacked in one field is a fabrication, and
+        # the probabilistic OR gets there on its own.
+        0.45,
+        "text asserts an approval, an owner, or a prior decision that Bishop cannot confirm",
     ),
     (
         InjectionTechnique.TOOL_COERCION,
@@ -228,7 +295,7 @@ _DECODED_IMPERATIVE = _rx(
     r"\binstructions?\b",
     r"\bsystem\s+prompt\b",
     r"\bbenign\b",
-    r"\bfalse[\s-]?positive\b",
+    r"\bfalse[\s_-]?positive\b",
     r"\byou\s+are\s+now\b",
     r"\bdo\s+not\s+escalate\b",
     r"\bapprove\b",
@@ -258,10 +325,23 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
 
     seen: set[tuple[str, str]] = set()
 
+    #: Email subjects and bodies are third-party text by nature — quoting a
+    #: change ticket there is what email is for. Every other field is Bishop
+    #: being told something about the alert it is triaging.
+    quoted_field = field.rsplit(".", 1)[-1] in {"subject", "body_excerpt"}
+
     for form_name, form_text in analysis_forms(value):
-        is_decoded = form_name not in {"raw", "invisible-stripped", "despaced"}
+        is_decoded = form_name not in {
+            "raw",
+            "invisible-stripped",
+            "despaced",
+            "normalised",
+            "normalised-despaced",
+        }
 
         for technique, pattern, weight, note in _PATTERNS:
+            if quoted_field and technique is InjectionTechnique.FORGED_PROVENANCE:
+                continue
             for match in pattern.finditer(form_text):
                 key = (technique.value, match.group(0)[:40].lower())
                 if key in seen:
@@ -317,6 +397,11 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
         )
 
     if homoglyphs := mixed_script_words(value):
+        # 0.4 alone is below the threshold on purpose: a single mixed-script
+        # word is sometimes a genuinely multilingual hostname. What makes the
+        # attack land is the *instruction* spelled that way, and the folded
+        # analysis form above now matches that directly — so this signal reports
+        # the deception and lets the phrase rules carry the weight.
         risk.signals.append(
             InjectionSignal(
                 technique=InjectionTechnique.HOMOGLYPH,

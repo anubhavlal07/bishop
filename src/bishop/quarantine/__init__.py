@@ -18,6 +18,8 @@ from bishop.quarantine.core import (
     quarantine,
     quarantine_alert,
     render_block,
+    safe_block,
+    scrub_structure,
 )
 from bishop.quarantine.signals import (
     FieldRisk,
@@ -42,5 +44,7 @@ __all__ = [
     "quarantine",
     "quarantine_alert",
     "render_block",
+    "safe_block",
     "scan_text",
+    "scrub_structure",
 ]

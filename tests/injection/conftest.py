@@ -25,13 +25,10 @@ RUN_ID = "run-injection-corpus"
 #: a strict-xfail test asserting the behaviour Bishop should have; when one is
 #: fixed the test reports XPASS and fails, which is the signal to clear the id
 #: from this list. An entry here means the review is not passed.
-OPEN_BLOCKERS = (
-    "BLK-01-cmdline-closes-trusted-block",
-    "BLK-02-hostname-empties-detector-block",
-    "BLK-03-hostname-erases-injection-findings",
-    "BLK-04-connection-hostname-closes-block",
-    "BLK-05-raw-field-never-quarantined",
-)
+#: Findings that would stop a ship. Empty is the only acceptable value here;
+#: an entry means a demonstrated path from an attacker-controlled field to a
+#: changed verdict or a dropped containment action.
+OPEN_BLOCKERS: tuple[str, ...] = ()
 
 
 def _load(path: Path) -> list[dict[str, Any]]:

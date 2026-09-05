@@ -10,12 +10,18 @@ a link. A correction is a new entry that references the old one.** That is why
 there is no `update`, no `delete`, and why `correct()` appends rather than
 edits. An audit log you can quietly fix is not an audit log — it is a note.
 
-What this does and does not give you. It detects tampering by anyone who cannot
-recompute the whole chain, which covers accidental corruption, a partial
-overwrite, and an attacker who edits one row in the database. It does *not*
-defend against someone who can rewrite the entire file and recompute every hash
-forward; that needs the head published somewhere Bishop does not control —
-`docs/ARCHITECTURE.md` says so plainly rather than overselling this.
+What this does and does not give you. It detects an edit to any entry, a
+reordering, and a deletion from the middle — all of those break the next link.
+It does **not** detect a deletion from the *end* unless you tell it what the end
+should be, because a truncated chain is a shorter valid chain. `verify()` takes
+`expected_head` and `expected_length` for exactly that, and an `Incident`
+carries `audit_head` so the value is available; `bishop verify --expect-head`
+uses it. Without a retained head, cutting off the record of what executed costs
+an attacker nothing.
+
+It also does not defend against someone who can rewrite the entire file and
+recompute every hash forward. That needs the head published somewhere Bishop
+does not control.
 """
 
 from __future__ import annotations
@@ -212,12 +218,16 @@ class AuditChain:
                 payload=payload or {},
                 prev_hash=self._entries[-1].entry_hash if self._entries else GENESIS_HASH,
             )
-            self._entries.append(entry)
+            # Disk first. If the write fails, the exception propagates and the
+            # entry is in neither place — which is recoverable. Appending to
+            # memory first would leave the two diverged, with the in-memory
+            # chain claiming a link the file does not have.
             if self.path is not None:
                 with self.path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(entry.to_dict(), sort_keys=True, default=str) + "\n")
                     handle.flush()
                     os.fsync(handle.fileno())
+            self._entries.append(entry)
             return entry
 
     def correct(self, actor: str, corrects_seq: int, reason: str, **detail: Any) -> AuditEntry:
@@ -262,20 +272,43 @@ class AuditChain:
 
     # ── verification ────────────────────────────────────────────────────────
 
-    def verify(self) -> None:
-        """Recompute the chain. Raises `ChainBroken` at the first bad link."""
-        verify_entries(self._entries)
+    def verify(
+        self, *, expected_head: str | None = None, expected_length: int | None = None
+    ) -> None:
+        """Recompute the chain. Raises `ChainBroken` at the first bad link.
 
-    def is_intact(self) -> bool:
+        Pass `expected_head` when you have one — verifying from genesis alone
+        cannot detect that the tail was cut off.
+        """
+        verify_entries(self._entries, expected_head=expected_head, expected_length=expected_length)
+
+    def is_intact(self, *, expected_head: str | None = None) -> bool:
         try:
-            self.verify()
+            self.verify(expected_head=expected_head)
         except ChainBroken:
             return False
         return True
 
 
-def verify_entries(entries: list[AuditEntry]) -> None:
-    """Verify a sequence of entries links correctly, from genesis."""
+def verify_entries(
+    entries: list[AuditEntry],
+    *,
+    expected_head: str | None = None,
+    expected_length: int | None = None,
+) -> None:
+    """Verify a sequence of entries links correctly, from genesis.
+
+    `expected_head` and `expected_length` are what make truncation detectable.
+    A hash chain verified from genesis forwards says nothing about its own end:
+    delete the last two lines of the file — the `action_executed` and
+    `run_completed` entries, the record of what was actually done — and every
+    remaining link still verifies. That is the cheapest possible tamper and it
+    requires recomputing nothing.
+
+    The head hash is published outside the chain (an `Incident` carries it as
+    `audit_head`, and it is printed at the end of a CLI run), so checking
+    against it closes the gap for anyone who kept a copy.
+    """
     previous = GENESIS_HASH
     for index, entry in enumerate(entries):
         if entry.seq != index:
@@ -292,6 +325,17 @@ def verify_entries(entries: list[AuditEntry]) -> None:
         if entry.entry_hash != entry._compute_hash():
             raise ChainBroken(f"entry {entry.seq}: entry hash does not match its own contents")
         previous = entry.entry_hash
+
+    if expected_length is not None and len(entries) != expected_length:
+        raise ChainBroken(
+            f"chain has {len(entries)} entries but {expected_length} were expected: "
+            f"{'entries were removed from the end' if len(entries) < expected_length else 'entries were added'}"
+        )
+    if expected_head is not None and previous != expected_head:
+        raise ChainBroken(
+            f"chain head is {previous[:12]}… but {expected_head[:12]}… was expected: "
+            f"the end of the chain was rewritten or truncated"
+        )
 
 
 def _read_jsonl(path: Path) -> Iterator[AuditEntry]:

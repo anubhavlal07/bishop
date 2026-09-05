@@ -26,6 +26,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from bishop.detectors.base import clear, miss, register
+from bishop.quarantine import scan_text
 from bishop.schema.alert import Alert
 from bishop.schema.evidence import DetectorResult
 
@@ -180,6 +181,14 @@ def ioc_reputation(alert: Alert) -> DetectorResult:
             record = cache.lookup(host)
         if record is None or record.verdict == "benign":
             continue
+        # A feed's free text is written by the feed operator, not by Bishop, and
+        # `docs/THREAT-MODEL.md` puts a compromised or careless feed on the
+        # untrusted side. `IocRecord` types these as plain `str`, so nothing
+        # upstream marks them — scan them here, where they enter Bishop.
+        note_risk = scan_text(record.note, field="intel.note")
+        family_risk = scan_text(record.malware_family, field="intel.malware_family")
+        poisoned = note_risk.is_injection or family_risk.is_injection
+
         hits.append(
             {
                 "where": where,
@@ -187,11 +196,15 @@ def ioc_reputation(alert: Alert) -> DetectorResult:
                 "kind": record.kind,
                 "verdict": record.verdict,
                 "source": record.source,
-                "malware_family": record.malware_family,
+                "malware_family": record.malware_family[:200],
                 "first_seen": record.first_seen,
                 "last_seen": record.last_seen,
-                "confidence": record.confidence,
-                "note": record.note,
+                # A feed carrying an instruction is a feed to distrust. The hit
+                # may still be real; the confidence in it is not.
+                "confidence": 0.3 if poisoned else record.confidence,
+                "note": record.note[:400],
+                "feed_text_flagged": poisoned,
+                "feed_text_signals": sorted(set(note_risk.techniques + family_risk.techniques)),
             }
         )
 
@@ -221,7 +234,13 @@ def ioc_reputation(alert: Alert) -> DetectorResult:
         f"{strongest['indicator']} ({strongest['where']}) is listed as {strongest['verdict']} "
         f"by {strongest['source']}, associated with {family}"
     )
-    if cache.synthetic:
+    if any(h.get("feed_text_flagged") for h in hits):
+        rationale = (
+            f"{strongest['indicator']} ({strongest['where']}) has a reputation entry, but the "
+            f"feed's own free text contains instruction-shaped content. Treat the feed as "
+            f"compromised or careless and the reputation as unconfirmed"
+        )
+    elif cache.synthetic:
         rationale += "; note the committed cache is synthetic — see docs/DETECTORS.md"
 
     return DetectorResult(
