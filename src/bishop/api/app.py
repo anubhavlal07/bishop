@@ -179,6 +179,7 @@ def health() -> dict[str, Any]:
         "offline": is_offline(provider),
         "store": store_health(),
         "deployment": settings.redacted(),
+        "public_demo": settings.public_demo,
         "live": _live_readiness(),
     }
 
@@ -442,7 +443,7 @@ def start_run(body: StartRun, request: Request) -> dict[str, Any]:
             alert, report = normalise(body.alert)
         except (TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
-        run = runs.start(alert, alert_id=alert.alert_id, provider=provider)
+        run = runs.start(alert, alert_id=alert.alert_id, provider=provider, submitted=True)
         return {
             "run_id": run.run_id,
             "status": run.status,

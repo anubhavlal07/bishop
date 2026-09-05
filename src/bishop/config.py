@@ -77,6 +77,8 @@ class DeploymentSettings(BaseSettings):
 
     database_url: str = ""
 
+    public_demo: bool = False
+
     json_logs: bool = False
     log_level: str = "INFO"
 
@@ -116,12 +118,14 @@ class DeploymentSettings(BaseSettings):
 
         problems: list[str] = []
 
-        if not self.keys:
+        if not self.keys and not self.public_demo:
             problems.append(
                 "BISHOP_API_KEYS is empty. A production API serving security incidents "
                 "must authenticate. Generate one with `bishop keygen` and set it; Bishop "
                 "will not invent a key for you, because a key printed into a deploy log "
-                "is not a secret."
+                "is not a secret. If this deployment is a public demo over the synthetic "
+                "corpus, set BISHOP_PUBLIC_DEMO=true instead — it makes that an explicit "
+                "choice rather than a missing setting."
             )
         else:
             weak = [k for k in self.keys if len(k) < 32]
@@ -158,6 +162,20 @@ class DeploymentSettings(BaseSettings):
                 "DATABASE_URL is SQLite. Use Postgres in production, for the same reason."
             )
 
+        if self.public_demo:
+            if self.rate_limit_per_minute > 60:
+                problems.append(
+                    f"BISHOP_PUBLIC_DEMO is on with a limit of {self.rate_limit_per_minute}/min. "
+                    f"An unauthenticated endpoint needs a tighter one than a keyed deployment: "
+                    f"set BISHOP_RATE_LIMIT_PER_MINUTE to 60 or less."
+                )
+            if self.keys:
+                problems.append(
+                    "BISHOP_PUBLIC_DEMO is on and BISHOP_API_KEYS is set. Pick one. A public "
+                    "demo that also demands a key locks out the visitors it is for, and a "
+                    "key baked into a public console's JavaScript protects nothing."
+                )
+
         if problems:
             raise ConfigError(
                 "Bishop refuses to start in production with this configuration:\n\n"
@@ -165,6 +183,21 @@ class DeploymentSettings(BaseSettings):
                 + "\n\nSet BISHOP_ENVIRONMENT=development to run with laptop defaults."
             )
         return self
+
+    @property
+    def persist_submitted_alerts(self) -> bool:
+        """Whether an alert a visitor supplied may be written to the store.
+
+        False in public-demo mode, and this is the load-bearing part of that
+        mode rather than a detail. The store is shared and `/incidents` lists
+        it, so persisting a submitted alert on an open deployment publishes one
+        stranger's alert to every other visitor. Somebody pasting a real alert
+        from their own SIEM into a demo box has not consented to that.
+
+        Corpus runs are still persisted: those alerts are synthetic, committed
+        to this repository, and already public.
+        """
+        return not self.public_demo
 
     def redacted(self) -> dict[str, Any]:
         """Safe to log and to serve from `/health`."""
@@ -177,6 +210,8 @@ class DeploymentSettings(BaseSettings):
             "max_request_bytes": self.max_request_bytes,
             "database": _describe_database(self.database_url or os.environ.get("DATABASE_URL", "")),
             "json_logs": self.json_logs,
+            "public_demo": self.public_demo,
+            "persists_submitted_alerts": self.persist_submitted_alerts,
         }
 
 

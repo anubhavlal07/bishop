@@ -54,20 +54,24 @@ services:
       - key: BISHOP_LOG_LEVEL
         value: INFO
       - key: BISHOP_RATE_LIMIT_PER_MINUTE
-        value: "120"
+        value: "30"
 
-      # Set in the dashboard, never here.
-      - key: BISHOP_API_KEYS
-        sync: false
+      # A public demo: no API key, and visitors bring their own model key.
+      # This is an explicit mode rather than an absent setting — with it on,
+      # Bishop refuses a loose rate limit, refuses to also demand an API key,
+      # and never writes an alert a visitor supplied to the shared store.
+      - key: BISHOP_PUBLIC_DEMO
+        value: "true"
       - key: BISHOP_CORS_ORIGINS
-        sync: false
+        value: https://bishop.anubhavlal.dev
 
       # The model. Unset provider means the deterministic one, which serves
       # real detector findings and a real ATT&CK mapping but no model
       # judgement. Set both of these to run live — Bishop refuses to start a
       # live provider without a key rather than silently falling back, because
       # a scorecard that quietly changed provider would be meaningless.
+      # No server-side model key at all. Each visitor supplies their own in
+      # the console, it stays in their browser, and it travels with the runs
+      # that need it — so this deployment cannot spend anybody's money.
       - key: BISHOP_MODEL_PROVIDER
         value: mock
-      - key: ANTHROPIC_API_KEY
-        sync: false

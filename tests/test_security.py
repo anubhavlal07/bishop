@@ -238,3 +238,70 @@ class TestEventStreamAuth:
     def test_other_endpoints_do_not_accept_a_query_key(self):
         """The concession must not become a general bypass."""
         assert self.build().get(f"/incidents?api_key={KEY}").status_code == 401
+
+
+class TestPublicDemoMode:
+    """An open deployment where visitors bring their own model key.
+
+    The mode exists so that "no authentication" is an explicit choice with its
+    own constraints, rather than a missing setting that happens to boot.
+    """
+
+    def base(self, **overrides):
+        defaults = {
+            "environment": "production",
+            "api_keys": "",
+            "public_demo": True,
+            "cors_origins": "https://bishop.anubhavlal.dev",
+            "rate_limit_per_minute": 30,
+            "database_url": "postgresql+psycopg://u:p@host/bishop",
+        }
+        return {**defaults, **overrides}
+
+    def test_production_without_keys_is_allowed_when_declared(self):
+        settings = DeploymentSettings(**self.base())
+        assert settings.is_production
+        assert not settings.auth_required
+
+    def test_the_plain_missing_key_case_still_refuses(self):
+        """Without the flag, an empty key list is still a refusal. The mode has
+        to be chosen, not fallen into."""
+        with pytest.raises(ConfigError, match="BISHOP_API_KEYS"):
+            DeploymentSettings(**self.base(public_demo=False))
+
+    def test_the_refusal_names_the_demo_flag(self):
+        with pytest.raises(ConfigError, match="BISHOP_PUBLIC_DEMO"):
+            DeploymentSettings(**self.base(public_demo=False))
+
+    def test_a_loose_rate_limit_is_refused(self):
+        """An unauthenticated endpoint needs a tighter limit, not the same one."""
+        with pytest.raises(ConfigError, match="tighter"):
+            DeploymentSettings(**self.base(rate_limit_per_minute=120))
+
+    def test_demo_mode_with_keys_is_refused_as_contradictory(self):
+        with pytest.raises(ConfigError, match="Pick one"):
+            DeploymentSettings(**self.base(api_keys=KEY))
+
+    def test_submitted_alerts_are_not_persisted(self):
+        """The reason the mode exists.
+
+        The store is shared and /incidents lists it, so persisting an alert a
+        stranger pasted publishes it to every other visitor.
+        """
+        assert not DeploymentSettings(**self.base()).persist_submitted_alerts
+
+    def test_a_keyed_deployment_does_persist_them(self):
+        keyed = DeploymentSettings(
+            environment="production",
+            api_keys=KEY,
+            cors_origins="https://console.example",
+            rate_limit_per_minute=60,
+            database_url="postgresql+psycopg://u:p@host/bishop",
+        )
+        assert keyed.persist_submitted_alerts
+
+    def test_health_reports_the_mode_rather_than_implying_it(self):
+        reported = DeploymentSettings(**self.base()).redacted()
+        assert reported["public_demo"] is True
+        assert reported["persists_submitted_alerts"] is False
+        assert reported["auth_required"] is False

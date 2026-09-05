@@ -230,3 +230,78 @@ class TestTheAuditChainRecordsTheModelNotTheKey:
         serialised = str([e.to_dict() for e in runtime.chain])
         for secret in (ANTHROPIC, OPENAI, GEMINI, AZURE):
             assert secret not in serialised
+
+
+class TestSubmittedAlertsStayPrivateInDemoMode:
+    """The leak public-demo mode exists to prevent.
+
+    A visitor pastes an alert from their own SIEM into an open deployment.
+    Without this, it lands in the shared store and `/incidents` serves it to
+    every other visitor.
+    """
+
+    def test_a_submitted_run_is_flagged_as_submitted(self):
+        from bishop.api.runs import RunManager
+        from tests.graph.conftest import quiet_alert
+
+        manager = RunManager()
+        run = manager.start(quiet_alert(), alert_id="A-1", submitted=True)
+        assert run.submitted
+        run._done.wait(timeout=30)
+
+    def test_a_corpus_run_is_not_flagged(self):
+        from bishop.api.runs import RunManager
+        from tests.graph.conftest import quiet_alert
+
+        manager = RunManager()
+        run = manager.start(quiet_alert(), alert_id="A-2")
+        assert not run.submitted
+        # Waited on deliberately. A run left in flight finishes during the next
+        # test and lands in whatever that test patched, which is a false
+        # failure that looks exactly like a real leak.
+        run._done.wait(timeout=30)
+
+    def test_a_submitted_run_never_reaches_the_store_in_demo_mode(self, monkeypatch):
+        """Driven through a real run, because the guard sits after the incident
+        is built and a stubbed run would skip past it."""
+        from bishop.api.runs import RunManager
+        from bishop.config import reset_settings
+        from tests.graph.conftest import quiet_alert
+
+        monkeypatch.setenv("BISHOP_PUBLIC_DEMO", "true")
+        reset_settings()
+        try:
+            written: list[object] = []
+            monkeypatch.setattr("bishop.store.save_incident", lambda *a, **k: written.append(a))
+
+            manager = RunManager()
+            run = manager.start(quiet_alert(), alert_id="LEAK-1", submitted=True)
+            run._done.wait(timeout=30)
+
+            mine = [a for a in written if a and getattr(a[0], "incident_id", "") == "INC-LEAK-1"]
+            assert mine == [], "a visitor's alert was written to the shared store"
+            assert any(e.get("kind") == "not_persisted" for e in run.events)
+        finally:
+            reset_settings()
+
+    def test_a_corpus_run_is_still_persisted_in_demo_mode(self, monkeypatch):
+        """The corpus is synthetic and already public, so it still stores."""
+        from bishop.api.runs import RunManager
+        from bishop.config import reset_settings
+        from tests.graph.conftest import quiet_alert
+
+        monkeypatch.setenv("BISHOP_PUBLIC_DEMO", "true")
+        reset_settings()
+        try:
+            written: list[object] = []
+            monkeypatch.setattr("bishop.store.save_incident", lambda *a, **k: written.append(a))
+            monkeypatch.setattr("bishop.store.init_db", lambda *a, **k: None)
+
+            manager = RunManager()
+            run = manager.start(quiet_alert(), alert_id="CORPUS-1")
+            run._done.wait(timeout=30)
+
+            mine = [a for a in written if a and getattr(a[0], "incident_id", "") == "INC-CORPUS-1"]
+            assert mine, "a corpus run should still be stored"
+        finally:
+            reset_settings()

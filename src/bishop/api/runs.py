@@ -39,6 +39,7 @@ class Run:
     approval_request: dict[str, Any] | None = None
     result: dict[str, Any] | None = None
     error: str | None = None
+    submitted: bool = False
 
     _queue: queue.Queue = field(default_factory=queue.Queue, repr=False)
     _runtime: Any = field(default=None, repr=False)
@@ -85,9 +86,14 @@ class RunManager:
         ]:
             self._runs.pop(run.run_id, None)
 
-    def start(self, alert: Alert, *, alert_id: str, provider=None) -> Run:
+    def start(self, alert: Alert, *, alert_id: str, provider=None, submitted: bool = False) -> Run:
         run_id = f"run-{uuid.uuid4().hex[:12]}"
-        run = Run(run_id=run_id, alert_id=alert_id, incident_id=f"INC-{alert_id}")
+        run = Run(
+            run_id=run_id,
+            alert_id=alert_id,
+            incident_id=f"INC-{alert_id}",
+            submitted=submitted,
+        )
 
         runtime = build_runtime(run_id=run_id, listener=run.push, provider=provider)
         run._runtime = runtime
@@ -123,11 +129,25 @@ class RunManager:
         losing the answer. It is logged as a run error so it is not silent.
         """
         try:
+            from bishop.config import get_settings
             from bishop.store import init_db, save_incident
 
             incident = run.incident()
             if incident is None:
                 return
+
+            if run.submitted and not get_settings().persist_submitted_alerts:
+                run.push(
+                    {
+                        "kind": "not_persisted",
+                        "reason": (
+                            "this deployment is a public demo, so an alert you supplied is "
+                            "triaged in memory and never written to the shared store"
+                        ),
+                    }
+                )
+                return
+
             init_db()
             save_incident(incident, chain=run._runtime.chain if run._runtime else None)
         except Exception as exc:
