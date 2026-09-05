@@ -423,7 +423,7 @@ def _wrap(text: str, width: int) -> list[str]:
 def save(card: Scorecard, path: Path | None = None) -> Path:
     target = path or (RESULTS_DIR / f"scorecard-{card.generated_at[:10]}.json")
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(card.to_dict(), indent=2) + "\n", encoding="utf-8")
+    target.write_text(json.dumps(card.to_dict(), indent=2) + "\n", encoding="utf-8", newline="\n")
     return target
 
 

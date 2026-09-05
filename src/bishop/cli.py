@@ -786,7 +786,11 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     markdown = render_markdown(matrix)
     target = Path(args.output)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(markdown, encoding="utf-8")
+    # An explicit LF newline rather than the platform default. This file is
+    # committed and CI regenerates it to check it is current, so a CRLF written
+    # on Windows against an LF written on Linux makes every one of its lines
+    # read as changed and fails a build that has nothing wrong with it.
+    target.write_text(markdown, encoding="utf-8", newline="\n")
     print(f"  {matrix.summary()}")
     print(dim(f"  written to {target}"))
     if matrix.invalid_hints:

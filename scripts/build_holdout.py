@@ -607,7 +607,9 @@ def main() -> int:
         label = payload["labels"]["verdict"]
         counts[label] = counts.get(label, 0) + 1
         (OUT_DIR / f"{payload['alert_id']}.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+            newline="\n",
         )
 
     print(f"wrote {len(alerts)} held-out alerts to {OUT_DIR.relative_to(REPO_ROOT)}")

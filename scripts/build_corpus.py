@@ -1221,7 +1221,11 @@ def main() -> int:
         label = payload["labels"]["verdict"]
         counts[label] = counts.get(label, 0) + 1
         path = OUT_DIR / f"{payload['alert_id']}.json"
-        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
 
     print(f"wrote {len(alerts)} alerts to {OUT_DIR.relative_to(REPO_ROOT)}")
     for label, count in sorted(counts.items()):
