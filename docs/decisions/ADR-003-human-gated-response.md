@@ -50,9 +50,16 @@ portfolio project does not need.
 
 ## Consequences for how it is reviewed
 
-This is why `evidence-auditor` reviews only and never edits, and why a BLOCKER in the gate or
-executor-isolation checks stops a ship outright. A control that can be waived under deadline
-pressure is not a control.
+The gate is defended twice, on purpose. `response_gate` is the only edge into
+`response_execute`, and `response_execute` independently re-checks the recorded decision for
+every action it is handed — including when the graph is invoked directly, a state is restored
+from a checkpoint, or someone adds an edge. The second check is the one that survives
+refactoring: a control that lives only in the graph topology is one edge away from being gone,
+and nobody would notice until an account got disabled.
+
+`tests/graph/test_gate.py` asserts both, and every test in it is an attempt to get an action
+executed without a human approving it. A control that can be waived under deadline pressure is
+not a control.
 
 ## Alternatives considered
 
