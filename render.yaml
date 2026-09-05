@@ -13,12 +13,17 @@
 #
 # They are marked `sync: false` so they are never committed to this file. A key
 # in version control is not a key.
+#
+# Both services run on Render's free tier. Two consequences worth knowing: a
+# free web service sleeps after 15 minutes of inactivity and takes ~50s to wake,
+# and a free Postgres expires 30 days after creation. Move both to a paid plan
+# before anyone depends on the deployment.
 
 databases:
   - name: bishop-db
     databaseName: bishop
-    plan: basic-256mb
-    region: frankfurt
+    plan: free
+    region: singapore
     postgresMajorVersion: "16"
 
 services:
@@ -26,8 +31,8 @@ services:
     name: bishop-api
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
-    region: frankfurt
+    plan: free
+    region: singapore
     # Readiness, not liveness: Render should stop routing to an instance that
     # cannot reach the database, without restarting one that is merely waiting.
     healthCheckPath: /health/ready
