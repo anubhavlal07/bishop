@@ -1,0 +1,37 @@
+{
+  "alert_id": "HO-07-developer-obfuscation",
+  "source": "sysmon",
+  "rule_name": "Obfuscated PowerShell execution",
+  "detected_at": "2026-07-09T13:40:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-DEV-08",
+    "ip": "10.30.40.8"
+  },
+  "principal": {
+    "username": "a.fitzgerald",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "code.exe",
+    "path": "C:\\Program Files\\Microsoft VS Code\\Code.exe",
+    "signed": true,
+    "signer": "Microsoft Corporation"
+  },
+  "process": {
+    "name": "powershell.exe",
+    "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "command_line": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command IEX (Get-Content .\\build\\tasks.ps1 -Raw) -join ''",
+    "signed": true,
+    "signer": "Microsoft Windows"
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "A build script that legitimately assembles a string and calls Invoke-Expression, run by a developer from the repository directory. Four obfuscation tells and no malice — the exact shape encoded_command scores on.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

@@ -22,6 +22,12 @@ from bishop.schema import Alert
 
 CORPUS_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "alerts"
 
+#: The held-out set. Written after the fusion thresholds were fixed, run
+#: separately, and never used to tune anything — see `scripts/build_holdout.py`
+#: for the protocol it is kept under. It is a separate directory rather than a
+#: flag on the golden set so that `load_corpus()` cannot pick it up by accident.
+HOLDOUT_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "holdout"
+
 
 @dataclass(frozen=True, slots=True)
 class LabelledAlert:

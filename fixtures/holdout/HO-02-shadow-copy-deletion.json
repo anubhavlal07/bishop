@@ -1,0 +1,37 @@
+{
+  "alert_id": "HO-02-shadow-copy-deletion",
+  "source": "edr",
+  "rule_name": "Volume shadow copies deleted",
+  "detected_at": "2026-07-09T03:44:00+00:00",
+  "severity": "critical",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-311",
+    "ip": "10.30.30.11",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "s.okoye",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "explorer.exe",
+    "path": "C:\\Windows\\explorer.exe"
+  },
+  "process": {
+    "name": "cmd.exe",
+    "path": "C:\\Windows\\System32\\cmd.exe",
+    "command_line": "cmd.exe /c vssadmin delete shadows /all /quiet & wbadmin delete catalog -quiet & bcdedit /set recoveryenabled No"
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1490",
+      "T1059.003"
+    ],
+    "should_escalate": false,
+    "why": "Deleting every shadow copy is ransomware preparation and has essentially no administrative use on a workstation. Bishop has no dedicated detector, but the command line is obfuscated enough that encoded_command should carry it.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

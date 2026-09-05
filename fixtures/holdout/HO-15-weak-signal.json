@@ -1,0 +1,33 @@
+{
+  "alert_id": "HO-15-weak-signal",
+  "source": "sysmon",
+  "rule_name": "Uncommon parent-child process relationship",
+  "detected_at": "2026-07-09T17:50:00+00:00",
+  "severity": "low",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-208",
+    "ip": "10.30.30.8"
+  },
+  "principal": {
+    "username": "b.aluko",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "javaw.exe",
+    "path": "C:\\Program Files\\Corp\\ERP\\javaw.exe"
+  },
+  "process": {
+    "name": "cmd.exe",
+    "path": "C:\\Windows\\System32\\cmd.exe",
+    "command_line": "cmd.exe /c type C:\\Corp\\ERP\\export\\daily.csv"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [],
+    "should_escalate": true,
+    "why": "One weak signal and nothing else: an unusual parent for cmd.exe, no obfuscation, no persistence, no network. Not enough to accuse and not enough to clear. This is the case abstention exists for.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

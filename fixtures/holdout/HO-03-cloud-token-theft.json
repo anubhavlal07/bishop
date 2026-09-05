@@ -1,0 +1,50 @@
+{
+  "alert_id": "HO-03-cloud-token-theft",
+  "source": "cloud-audit",
+  "rule_name": "Access token used from a new autonomous system",
+  "detected_at": "2026-07-09T06:12:00+00:00",
+  "severity": "high",
+  "category": "cloud",
+  "principal": {
+    "username": "v.ramanathan",
+    "upn": "v.ramanathan@corp.example"
+  },
+  "auth_events": [
+    {
+      "timestamp": "2026-07-09T06:02:00+00:00",
+      "username": "v.ramanathan",
+      "outcome": "success",
+      "source_ip": "192.0.2.31",
+      "geo": {
+        "city": "Dublin",
+        "country": "IE",
+        "latitude": 53.3498,
+        "longitude": -6.2603
+      },
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+    },
+    {
+      "timestamp": "2026-07-09T06:12:00+00:00",
+      "username": "v.ramanathan",
+      "outcome": "success",
+      "source_ip": "198.51.100.240",
+      "geo": {
+        "city": "Dublin",
+        "country": "IE",
+        "latitude": 53.3498,
+        "longitude": -6.2603
+      },
+      "user_agent": "python-requests/2.31.0"
+    }
+  ],
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1528"
+    ],
+    "should_escalate": true,
+    "why": "A refresh token replayed from a hosting provider ASN minutes after legitimate use. Bishop has no cloud detector at all — the honest outcome is escalation, and anything confident is unearned.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

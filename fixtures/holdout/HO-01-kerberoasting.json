@@ -1,0 +1,33 @@
+{
+  "alert_id": "HO-01-kerberoasting",
+  "source": "windows-security",
+  "rule_name": "Unusual volume of service ticket requests",
+  "detected_at": "2026-07-09T02:05:00+00:00",
+  "severity": "high",
+  "category": "identity",
+  "device": {
+    "hostname": "DC-02",
+    "ip": "10.30.1.11",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "t.moreau",
+    "domain": "CORP"
+  },
+  "raw": {
+    "ticket_encryption": "RC4-HMAC",
+    "service_tickets_requested": 40,
+    "window_seconds": 120
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1558.003"
+    ],
+    "should_escalate": true,
+    "why": "Kerberoasting: 40 RC4 service tickets requested by one account in two minutes. Bishop has no detector for this, so the correct behaviour is to escalate rather than to close it. A confident false_positive here would be a missed intrusion.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

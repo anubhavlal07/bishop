@@ -501,7 +501,17 @@ def cmd_demo(args: argparse.Namespace) -> int:
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
-    from bishop.eval import diff_against_baseline, load_baseline, render_text, run_scorecard, save
+    from bishop.eval import (
+        HOLDOUT_DIR,
+        diff_against_baseline,
+        load_baseline,
+        render_text,
+        run_scorecard,
+        save,
+    )
+
+    if getattr(args, "holdout", False):
+        return _run_holdout(args, HOLDOUT_DIR, render_text, run_scorecard, save)
 
     card = run_scorecard()
     print(render_text(card))
@@ -527,6 +537,68 @@ def cmd_eval(args: argparse.Namespace) -> int:
         print(dim(f"  written to {path}"))
         print()
     return 0
+
+
+def _run_holdout(args, holdout_dir, render_text, run_scorecard, save) -> int:
+    """The held-out run.
+
+    Deliberately different from the golden-set run in two ways.
+
+    There is **no baseline and no gate**. A committed baseline is a regression
+    gate, and a regression gate on a held-out set is precisely the mechanism
+    that converts it back into a development set: it makes every future change
+    optimise against these cases. So the number is printed and recorded, and
+    nothing in CI fails because of it.
+
+    And every case is printed, right or wrong, with the label's own
+    justification. Fifteen cases is small enough that the individual outcomes
+    are the result — the aggregate is a summary of them, not a substitute.
+    """
+    from bishop.eval import load_corpus
+
+    if not holdout_dir.exists():
+        print(red(f"  no held-out set at {holdout_dir}"))
+        print(dim("  generate it with: uv run python scripts/build_holdout.py"))
+        return 1
+
+    card = run_scorecard(corpus_dir=holdout_dir, corpus_name="holdout")
+    print(render_text(card))
+
+    why = {item.alert_id: item.why for item in load_corpus(holdout_dir)}
+    print("  EVERY CASE")
+    for outcome in card.outcomes:
+        mark = green("ok  ") if outcome.correct else red("MISS")
+        if outcome.missed_true_positive:
+            mark = red("FN  ")
+        print(
+            f"    {mark} {outcome.alert_id:32} expected {outcome.expected:20} got {outcome.actual}"
+        )
+        if not outcome.correct:
+            for line in _wrap_text(why.get(outcome.alert_id, ""), 68):
+                print(dim(f"           {line}"))
+    print()
+    print(dim("  No baseline and no gate on this set, by design: a regression gate here"))
+    print(dim("  would make every future change optimise against these cases, which is"))
+    print(dim("  the one thing that would destroy what the set is for."))
+    print()
+
+    if args.save:
+        path = save(card, _holdout_result_path(card))
+        print(dim(f"  written to {path}"))
+        print()
+    return 0
+
+
+def _holdout_result_path(card):
+    from bishop.eval.scorecard import RESULTS_DIR
+
+    return RESULTS_DIR / f"holdout-{card.generated_at[:10]}.json"
+
+
+def _wrap_text(text: str, width: int) -> list[str]:
+    from bishop.eval.scorecard import _wrap
+
+    return _wrap(text, width) if text else []
 
 
 def cmd_coverage(args: argparse.Namespace) -> int:
@@ -624,6 +696,11 @@ def build_parser() -> argparse.ArgumentParser:
     ev = sub.add_parser("eval", help="run the scorecard")
     ev.add_argument("--save", action="store_true", help="write the scorecard to eval/results/")
     ev.add_argument("--gate", action="store_true", help="exit non-zero on a regression")
+    ev.add_argument(
+        "--holdout",
+        action="store_true",
+        help="run the held-out set instead — reported separately, never gated",
+    )
     ev.set_defaults(func=cmd_eval)
 
     cov = sub.add_parser("coverage", help="regenerate the coverage matrix")

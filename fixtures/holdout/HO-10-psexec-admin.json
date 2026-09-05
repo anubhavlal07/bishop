@@ -1,0 +1,33 @@
+{
+  "alert_id": "HO-10-psexec-admin",
+  "source": "windows-security",
+  "rule_name": "Remote service created on a server",
+  "detected_at": "2026-07-09T22:30:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-APP-33",
+    "ip": "10.30.10.83",
+    "is_server": true
+  },
+  "principal": {
+    "username": "m.donnelly-adm",
+    "domain": "CORP",
+    "is_privileged": true
+  },
+  "process": {
+    "name": "psexesvc.exe",
+    "path": "C:\\Windows\\PSEXESVC.exe",
+    "command_line": "sc.exe \\\\SRV-APP-33 create PSEXESVC binPath= C:\\Windows\\PSEXESVC.exe",
+    "signed": true,
+    "signer": "Microsoft Corporation"
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "An administrator using PsExec during a scheduled maintenance window. Remote service creation is the lateral-movement signal in the dev set's chain; the account and the window are what differ, and neither is in Bishop's policy file.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

@@ -15,9 +15,16 @@ _default:
 demo *args:
     uv run bishop demo {{args}}
 
-# The full scorecard against the 20-alert golden set.
+# The full scorecard against the development corpus. Tuned against; gated.
 eval *args:
     uv run bishop eval {{args}}
+
+# The held-out set: written after the thresholds were fixed, never tuned
+# against, deliberately not gated. This is the number that speaks to unseen
+# data, and it is meant to be worse than `just eval` — see
+# scripts/build_holdout.py for the protocol.
+eval-holdout *args:
+    uv run bishop eval --holdout {{args}}
 
 # List the labelled corpus.
 alerts:
@@ -62,9 +69,14 @@ check: lint test
 
 # ── data ────────────────────────────────────────────────────────────────────
 
-# Regenerate the 20-alert corpus from scripts/build_corpus.py.
+# Regenerate the development corpus from scripts/build_corpus.py.
 corpus:
     uv run python scripts/build_corpus.py
+
+# Regenerate the held-out set. Rarely — regenerating it after reading its
+# results is how a held-out set quietly becomes a training set.
+holdout:
+    uv run python scripts/build_holdout.py
 
 # Regenerate docs/COVERAGE.md from the detector registry and the corpus.
 coverage:

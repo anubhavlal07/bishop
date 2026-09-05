@@ -1,0 +1,201 @@
+{
+  "alert_id": "HO-05-slow-dns-exfil",
+  "source": "dns",
+  "rule_name": "Elevated DNS TXT query volume",
+  "detected_at": "2026-07-09T09:20:00+00:00",
+  "severity": "low",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-APP-21",
+    "ip": "10.30.10.21",
+    "is_server": true
+  },
+  "principal": {
+    "username": "svc_worker",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "dns_events": [
+    {
+      "timestamp": "2026-07-09T09:20:00+00:00",
+      "query": "yzohufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:20:45+00:00",
+      "query": "j6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:21:30+00:00",
+      "query": "2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yz.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:22:15+00:00",
+      "query": "lij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabw.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:23:00+00:00",
+      "query": "4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzohufkt.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:23:45+00:00",
+      "query": "ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzohufktq.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:24:30+00:00",
+      "query": "6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4n.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:25:15+00:00",
+      "query": "p4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzohufk.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:26:00+00:00",
+      "query": "abwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzoh.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:26:45+00:00",
+      "query": "rg7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6xe.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:27:30+00:00",
+      "query": "clij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dab.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:28:15+00:00",
+      "query": "tqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:29:00+00:00",
+      "query": "ev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:29:45+00:00",
+      "query": "v2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3y.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:30:30+00:00",
+      "query": "g7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6xev.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:31:15+00:00",
+      "query": "xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:32:00+00:00",
+      "query": "ij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:32:45+00:00",
+      "query": "zohufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:33:30+00:00",
+      "query": "ktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:34:15+00:00",
+      "query": "3yzohufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:35:00+00:00",
+      "query": "m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2d.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:35:45+00:00",
+      "query": "5clij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2da.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:36:30+00:00",
+      "query": "ohufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:37:15+00:00",
+      "query": "7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6xev2.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:38:00+00:00",
+      "query": "qrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5clij6x.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:38:45+00:00",
+      "query": "bwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzohu.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:39:30+00:00",
+      "query": "s3yzohufktqrg7m5clij6xev2dabwp4ns3yzohufktqr.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:40:15+00:00",
+      "query": "dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzo.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:41:00+00:00",
+      "query": "ufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5cl.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:41:45+00:00",
+      "query": "fktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5cli.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:42:30+00:00",
+      "query": "wp4ns3yzohufktqrg7m5clij6xev2dabwp4ns3yzohuf.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:43:15+00:00",
+      "query": "hufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7m5c.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:44:00+00:00",
+      "query": "yzohufktqrg7m5clij6xev2dabwp4ns3yzohufktqrg7.stats.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-07-09T09:44:45+00:00",
+      "query": "j6xev2dabwp4ns3yzohufktqrg7m5clij6xev2dabwp4.stats.example",
+      "query_type": "TXT"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.004",
+      "T1048.003"
+    ],
+    "should_escalate": false,
+    "why": "Encoded subdomains under one parent, but spread thinly — 34 queries rather than the 62 of the dev-set case, and shorter labels. Deliberately closer to the detector's threshold than anything it was tuned on.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

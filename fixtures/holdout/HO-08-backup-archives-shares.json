@@ -1,0 +1,36 @@
+{
+  "alert_id": "HO-08-backup-archives-shares",
+  "source": "edr",
+  "rule_name": "Password-protected archive created from a network share",
+  "detected_at": "2026-07-09T01:15:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-ARCHIVE-02",
+    "ip": "10.30.10.52",
+    "is_server": true
+  },
+  "principal": {
+    "username": "svc_archive",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "parent_process": {
+    "name": "taskeng.exe",
+    "path": "C:\\Windows\\System32\\taskeng.exe"
+  },
+  "process": {
+    "name": "7z.exe",
+    "path": "C:\\Program Files\\7-Zip\\7z.exe",
+    "command_line": "7z.exe a -p<redacted> -mhe=on E:\\archive\\legal-2026-07.7z \\\\fileserver\\legal\\*",
+    "signed": true
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "The archival job encrypts its output because policy requires it. Password protection is what pushed the dev set's staging case over the line, and here it is the compliant behaviour.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

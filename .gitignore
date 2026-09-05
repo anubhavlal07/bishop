@@ -24,6 +24,9 @@ outbox/
 storage/
 eval/results/*.json
 !eval/results/baseline.json
+# Every held-out run is committed, dated, and never overwritten. A held-out
+# result that can be quietly re-run and replaced is not a held-out result.
+!eval/results/holdout-*.json
 
 # ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/

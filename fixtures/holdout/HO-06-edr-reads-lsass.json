@@ -1,0 +1,35 @@
+{
+  "alert_id": "HO-06-edr-reads-lsass",
+  "source": "sysmon",
+  "rule_name": "LSASS process access",
+  "detected_at": "2026-07-09T11:03:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-377",
+    "ip": "10.30.30.77"
+  },
+  "principal": {
+    "username": "SYSTEM",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "process": {
+    "name": "MsMpEng.exe",
+    "path": "C:\\Program Files\\Windows Defender\\MsMpEng.exe",
+    "signed": true,
+    "signer": "Microsoft Windows"
+  },
+  "raw": {
+    "TargetImage": "C:\\Windows\\system32\\lsass.exe",
+    "GrantedAccess": "0x1410"
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "The EDR agent itself opening LSASS with a read mask, which it does on every host continuously. Structurally identical to the dev set's clearest true positive; the difference is the signed vendor binary in Program Files.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

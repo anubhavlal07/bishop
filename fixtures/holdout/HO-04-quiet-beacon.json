@@ -1,0 +1,162 @@
+{
+  "alert_id": "HO-04-quiet-beacon",
+  "source": "proxy",
+  "rule_name": "Low-volume periodic connections",
+  "detected_at": "2026-07-09T08:00:00+00:00",
+  "severity": "low",
+  "category": "network",
+  "device": {
+    "hostname": "WKSTN-402",
+    "ip": "10.30.30.42"
+  },
+  "principal": {
+    "username": "k.brennan",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "teams_autoupdate.exe",
+    "path": "C:\\Users\\k.brennan\\AppData\\Local\\teams_autoupdate.exe",
+    "signed": false
+  },
+  "connections": [
+    {
+      "timestamp": "2026-07-09T07:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T08:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T08:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T09:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T09:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T10:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T10:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T11:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T11:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T12:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T12:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T13:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T13:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T14:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T14:56:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    },
+    {
+      "timestamp": "2026-07-09T15:34:00+00:00",
+      "hostname": "telemetry.msedge-cdn.example",
+      "dest_ip": "203.0.113.190",
+      "dest_port": 443,
+      "bytes_out": 964,
+      "bytes_in": 310
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.001",
+      "T1573"
+    ],
+    "should_escalate": false,
+    "why": "A 30-minute beacon with 15% jitter and small uniform payloads, from a signed-looking binary in AppData. Low severity from the sensor and easy to close; the rhythm is the finding.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

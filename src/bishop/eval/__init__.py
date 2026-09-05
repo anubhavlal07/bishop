@@ -2,6 +2,7 @@
 
 from bishop.eval.corpus import (
     CORPUS_DIR,
+    HOLDOUT_DIR,
     LabelledAlert,
     corpus_techniques,
     distribution,
@@ -19,6 +20,7 @@ from bishop.eval.scorecard import (
 
 __all__ = [
     "CORPUS_DIR",
+    "HOLDOUT_DIR",
     "AlertOutcome",
     "LabelledAlert",
     "Scorecard",

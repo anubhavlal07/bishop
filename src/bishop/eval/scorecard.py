@@ -83,6 +83,10 @@ class Scorecard:
     attack_version: str
     corpus_size: int
     corpus_is_synthetic: bool
+    #: Which set this was run on. "golden" is the tuned development corpus;
+    #: "holdout" is the set written after the thresholds were fixed and run
+    #: once. The two numbers mean different things and are never averaged.
+    corpus_name: str = "golden"
 
     verdict_accuracy: float = 0.0
     false_negative_rate: float = 0.0
@@ -190,7 +194,10 @@ def _rate(numerator: int, denominator: int) -> float:
 
 
 def run_scorecard(
-    *, provider: ModelProvider | None = None, corpus_dir: Path | None = None
+    *,
+    provider: ModelProvider | None = None,
+    corpus_dir: Path | None = None,
+    corpus_name: str = "golden",
 ) -> Scorecard:
     from bishop.attck import load_catalogue
 
@@ -208,6 +215,7 @@ def run_scorecard(
         attack_version=catalogue.attack_version,
         corpus_size=len(corpus),
         corpus_is_synthetic=all(item.synthetic for item in corpus),
+        corpus_name=corpus_name,
         outcomes=outcomes,
     )
 
@@ -288,14 +296,35 @@ def _notes(card: Scorecard) -> list[str]:
             f"{card.corpus_size} alerts is a smoke test, not a benchmark. One alert moving "
             f"changes accuracy by {100 / card.corpus_size:.0f} points."
         )
-    if card.verdict_accuracy >= 1.0:
+    if card.corpus_name == "holdout":
         notes.append(
-            "100% accuracy on 20 alerts is not a generalisation claim, and should not be "
-            "read as one. The corpus was written first and the fusion thresholds were then "
-            "tuned against it, so this measures internal consistency — the detectors, the "
-            "mitigating-context rules and the label definitions agreeing with each other — "
-            "rather than performance on unseen data. A held-out set is the obvious next "
-            "thing this project needs."
+            "This is the held-out set. It was written after the fusion thresholds were "
+            "fixed, nothing here was used to tune anything, and it is run separately from "
+            "`just eval` so it cannot leak into the loop by habit. Read this number, not "
+            "the golden-set one, when asking whether Bishop generalises."
+        )
+        notes.append(
+            "Several cases here describe techniques Bishop has no detector for — "
+            "Kerberoasting, cloud token theft. The correct behaviour on those is to "
+            "escalate, so a low accuracy driven by escalations is a different and much "
+            "less serious result than one driven by missed true positives. Read the "
+            "false-negative rate and the confusion matrix, not the headline."
+        )
+        notes.append(
+            "If a case here gets fixed, it stops being held out — debugging against it "
+            "converts it into a development case. The honest move is to move it into "
+            "fixtures/alerts/ and write a fresh held-out case, not to keep the label and "
+            "the credit."
+        )
+    elif card.verdict_accuracy >= 1.0:
+        notes.append(
+            f"{card.verdict_accuracy:.0%} accuracy on {card.corpus_size} alerts is not a "
+            "generalisation claim and should not be read as one. This corpus was written "
+            "first and the fusion thresholds were then tuned against it, so it measures "
+            "internal consistency — the detectors, the mitigating-context rules and the "
+            "label definitions agreeing with each other. The held-out set in "
+            "fixtures/holdout/ is the number that speaks to unseen data; run it with "
+            "`just eval-holdout`."
         )
     if card.technique_recall < 1.0:
         notes.append(
@@ -317,7 +346,11 @@ def render_text(card: Scorecard) -> str:
     add = lines.append
 
     add("")
-    add("  BISHOP SCORECARD")
+    add(
+        "  BISHOP SCORECARD — HELD-OUT SET"
+        if card.corpus_name == "holdout"
+        else "  BISHOP SCORECARD"
+    )
     add(
         f"  {card.corpus_size} labelled alerts · provider {card.provider} ({card.model}) · ATT&CK v{card.attack_version}"
     )
