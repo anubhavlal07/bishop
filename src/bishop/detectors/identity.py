@@ -577,3 +577,136 @@ def account_manipulation(alert: Alert) -> DetectorResult:
         rationale=rationale,
         technique_hints=["T1098"] + (["T1136"] if "account_created" in kinds else []),
     )
+
+
+#: Kerberos encryption types, as Windows event 4769 reports them. RC4 is the
+#: one an attacker wants: the resulting ticket is encrypted with the service
+#: account's NTLM hash and can be cracked offline at speed. AES tickets are far
+#: more expensive to attack, so a request that asks for RC4 on a domain capable
+#: of AES is asking for the crackable version on purpose.
+_WEAK_TICKET_ENCRYPTION = {"0x17", "0x18", "rc4", "rc4-hmac", "rc4_hmac_md5", "rc4-hmac-md5"}
+
+#: Field spellings for the same thing across sensors. Windows writes
+#: `TicketEncryptionType`; normalised pipelines tend to write snake_case.
+_TICKET_ENCRYPTION_KEYS = ("ticket_encryption", "TicketEncryptionType", "ticket_encryption_type")
+_TICKET_COUNT_KEYS = ("service_tickets_requested", "ticket_count", "tgs_requests")
+_TICKET_WINDOW_KEYS = ("window_seconds", "window_s", "interval_seconds")
+_SERVICE_NAME_KEYS = ("service_names", "ServiceName", "spns", "service_principal_names")
+
+
+def _first_raw(alert: Alert, keys: tuple[str, ...]) -> object:
+    for key in keys:
+        if key in alert.raw and alert.raw[key] not in (None, "", [], {}):
+            return alert.raw[key]
+    return None
+
+
+@register(
+    surface="identity",
+    summary=(
+        "Bulk Kerberos service-ticket requests, weighted by whether the weak "
+        "RC4 encryption an offline crack needs was asked for."
+    ),
+    techniques=["T1558.003"],
+    references=[
+        "https://attack.mitre.org/techniques/T1558/003/",
+        "https://learn.microsoft.com/windows/security/threat-protection/auditing/event-4769",
+    ],
+)
+def kerberoasting(alert: Alert) -> DetectorResult:
+    """Harvesting service tickets to crack offline.
+
+    Written because the held-out set caught Bishop escalating a Kerberoasting
+    alert with nothing measured: no detector had jurisdiction, so a real
+    intrusion arrived at a human with an empty evidence table.
+
+    **The rate is the signal, not the request.** Every workstation requests
+    service tickets constantly; that is how Kerberos works. What no ordinary
+    client does is ask for dozens in a couple of minutes, because a client
+    requests a ticket for a service it is about to use, and it does not
+    suddenly need forty.
+
+    **RC4 is the part that shows intent.** A ticket encrypted with RC4 is
+    encrypted with the service account's NTLM hash and can be cracked offline;
+    an AES ticket is far more expensive to attack. A modern domain issues AES,
+    so a request that specifically asks for RC4 is asking for the crackable
+    version — which is why the same rate scores higher with it than without.
+
+    **What this does not do.** It reads a summary the sensor already computed
+    rather than counting raw 4769 events, because the alert schema carries no
+    ticket-event type. A sensor that reports no count leaves nothing to measure
+    and this returns a miss rather than pretending otherwise.
+    """
+    encryption = _first_raw(alert, _TICKET_ENCRYPTION_KEYS)
+    count = _first_raw(alert, _TICKET_COUNT_KEYS)
+    window = _first_raw(alert, _TICKET_WINDOW_KEYS)
+    services = _first_raw(alert, _SERVICE_NAME_KEYS)
+
+    if count is None and encryption is None:
+        return miss(
+            "kerberoasting",
+            "the alert carries no service-ticket counts or encryption types to examine",
+        )
+
+    try:
+        requested = int(str(count)) if count is not None else 0
+    except (TypeError, ValueError):
+        requested = 0
+
+    try:
+        seconds = float(str(window)) if window is not None else 0.0
+    except (TypeError, ValueError):
+        seconds = 0.0
+
+    weak = str(encryption).strip().lower() in _WEAK_TICKET_ENCRYPTION if encryption else False
+    distinct_services = len(services) if isinstance(services, list) else 0
+
+    # A handful of tickets is ordinary Kerberos. The threshold is deliberately
+    # well above what a client does in a burst at logon.
+    if requested < 10 and not (weak and distinct_services >= 10):
+        return clear(
+            "kerberoasting",
+            f"{requested} service tickets requested, which is ordinary Kerberos traffic",
+            tickets_requested=requested,
+            weak_encryption=weak,
+        )
+
+    per_minute = (requested / (seconds / 60)) if seconds > 0 else float(requested)
+
+    score = 0.45
+    if requested >= 20:
+        score = 0.6
+    if per_minute >= 10:
+        score = 0.7
+    if weak:
+        # The downgrade is what separates harvesting from a busy client.
+        score = min(0.9, score + 0.2)
+    if distinct_services >= 10:
+        score = min(0.95, score + 0.05)
+
+    facts = {
+        "tickets_requested": requested,
+        "window_seconds": seconds or None,
+        "tickets_per_minute": round(per_minute, 1) if seconds > 0 else None,
+        "weak_encryption": weak,
+        "encryption_reported": str(encryption) if encryption else None,
+        "distinct_services": distinct_services or None,
+        "account": str(alert.principal.username) if alert.principal else None,
+    }
+
+    rate = f" in {seconds:.0f} s ({per_minute:.0f}/min)" if seconds > 0 else ""
+    reason = (
+        " requested with RC4, which encrypts the ticket under the service account's "
+        "NTLM hash and can be cracked offline — a modern domain issues AES, so asking "
+        "for RC4 is asking for the crackable version"
+        if weak
+        else ". No weak encryption was reported, so this is volume alone"
+    )
+    return DetectorResult(
+        detector="kerberoasting",
+        fired=True,
+        score=round(score, 3),
+        facts=facts,
+        rationale=f"{requested} Kerberos service tickets{rate}{reason}",
+        technique_hints=["T1558.003"],
+    )

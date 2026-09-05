@@ -1030,6 +1030,49 @@ def build() -> list[dict[str, Any]]:
 
     alerts.append(
         alert(
+            "TP-15-kerberoasting",
+            rule_name="Bulk Kerberos service ticket requests with RC4",
+            source="windows-security",
+            severity="high",
+            category="identity",
+            label="true_positive",
+            techniques=["T1558.003"],
+            why=(
+                "62 service tickets in 90 seconds, every one requested with RC4 on a "
+                "domain that issues AES. A client asks for a ticket for a service it is "
+                "about to use and does not suddenly need sixty; asking for RC4 asks for "
+                "the version that cracks offline."
+            ),
+            detected_at=at(hours=3, minutes=5),
+            device={
+                "hostname": "DC-01",
+                "ip": "10.20.1.10",
+                "is_server": True,
+                "criticality": "high",
+            },
+            principal={"username": "b.iqbal", "domain": "CORP"},
+            raw={
+                "ticket_encryption": "0x17",
+                "service_tickets_requested": 62,
+                "window_seconds": 90,
+                "service_names": [
+                    "MSSQLSvc/sql01.corp.local:1433",
+                    "HTTP/intranet.corp.local",
+                    "CIFS/fileserver.corp.local",
+                    "MSSQLSvc/sql02.corp.local:1433",
+                    "HTTP/reports.corp.local",
+                    "LDAP/dc02.corp.local",
+                    "CIFS/backup.corp.local",
+                    "HTTP/wiki.corp.local",
+                    "MSSQLSvc/warehouse.corp.local:1433",
+                    "TERMSRV/jump01.corp.local",
+                ],
+            },
+        )
+    )
+
+    alerts.append(
+        alert(
             "CHAIN-01-initial-access",
             rule_name="Office application spawned a script interpreter",
             source="sysmon",

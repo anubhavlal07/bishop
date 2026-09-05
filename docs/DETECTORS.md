@@ -102,6 +102,28 @@ That does not make the command-line path trustworthy. It makes it bounded.
 
 ---
 
+### `kerberoasting` — T1558.003
+
+Harvesting service tickets to crack offline. Written after the held-out set
+caught Bishop escalating one of these with an empty evidence table.
+
+**The rate is the signal, not the request.** Every workstation requests service
+tickets constantly; that is how Kerberos works. What no ordinary client does is
+ask for dozens in a couple of minutes, because a client requests a ticket for a
+service it is about to use and does not suddenly need forty.
+
+**RC4 is the part that shows intent.** An RC4 ticket is encrypted under the
+service account's NTLM hash and cracks offline at speed; an AES ticket is far
+more expensive to attack. A modern domain issues AES, so asking for RC4 is asking
+for the crackable version — the same rate scores higher with it than without.
+
+It reads a summary the sensor already computed rather than counting raw 4769
+events, because the alert schema carries no ticket-event type. A sensor that
+reports no count leaves nothing to measure, and that is a `miss()`, not a
+`clear()`.
+
+---
+
 ## endpoint
 
 The recurring shape here is *context beats identity*. `rundll32.exe` is not
@@ -173,6 +195,25 @@ Contact with services hosting arbitrary user content. Explicitly weak at 0.35 �
 plenty of legitimate traffic goes to GitHub and Discord. It exists so synthesis
 can raise the weight of a connection that is already suspicious for another
 reason.
+
+---
+
+### `recovery_destruction` — T1490, T1070.001
+
+Deleting the way back before encrypting. Written after the held-out set caught
+Bishop closing a shadow-copy deletion as a false positive.
+
+**One mechanism is suspicion; several is intent.** An administrator reclaiming
+disk on a full server genuinely runs `vssadmin delete shadows`, so one match
+scores 0.55 and the rationale says so. Shadow copies *and* the backup catalogue
+*and* boot recovery destroyed in one command line is 0.9 — nobody frees disk
+space by disabling `bcdedit` recovery.
+
+`/quiet` and `-quiet` add to the score. Those flags exist to skip the
+confirmation prompt, and nobody standing at the console needs to skip it.
+
+It reads scheduled-task actions as well as command lines, because persistence
+runs the command later and the task action is the carrier.
 
 ---
 
@@ -327,7 +368,7 @@ log text constantly; "ignore the above instructions" does not.
 ## Thresholds, and where they came from
 
 Honestly: from reading the technique documentation and from tuning against the
-31-alert development corpus. They are not derived from a labelled production
+32-alert development corpus. They are not derived from a labelled production
 dataset, because there isn't one here.
 
 The ones with an actual physical justification are worth separating out:

@@ -70,16 +70,21 @@ def quiet_alert() -> Alert:
 def uncovered_alert() -> Alert:
     """An alert about something Bishop has no detector for at all.
 
-    A Kerberoasting ticket count: no process tree, no connections, no auth
-    events, nothing any detector reads. Every detector returns `miss`, so
-    `examined` is empty — which is the state the third grounding rule exists
-    for, and the state the held-out set found Bishop closing as benign.
+    A cloud token replay: no process tree, no connections, no auth events,
+    nothing any detector reads. Every detector returns `miss`, so `examined` is
+    empty — which is the state the third grounding rule exists for, and the
+    state the held-out set found Bishop closing as benign.
+
+    This was a Kerberoasting alert until `kerberoasting` was written, at which
+    point a detector had jurisdiction and the fixture stopped demonstrating
+    anything. That is the test working: it asserts an alert nothing can examine
+    is escalated, so it has to keep naming something nothing can examine.
     """
     return make_alert(
         alert_id="A-UNCOVERED",
-        source="windows-security",
-        rule_name="Unusual volume of service ticket requests",
-        raw={"ticket_encryption": "RC4-HMAC", "service_tickets_requested": 40},
+        source="cloud-audit",
+        rule_name="Access token used from a new autonomous system",
+        raw={"token_type": "refresh", "asn": "AS14061", "prior_asn": "AS3215"},
     )
 
 

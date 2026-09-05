@@ -4,7 +4,7 @@
 
 Technique coverage against **MITRE ATT&CK v17.1**.
 
-33 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
+34 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
 
 `covered` means a deterministic detector maps to the technique *and* a labelled
 fixture exercises it. `untested` means the detector exists but no fixture in the
@@ -36,6 +36,7 @@ point of the table.
 | [T1003.002](https://attack.mitre.org/techniques/T1003/002) Security Account Manager | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
 | [T1003.003](https://attack.mitre.org/techniques/T1003/003) NTDS | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
 | [T1110.003](https://attack.mitre.org/techniques/T1110/003) Password Spraying | `password_spray` | `TP-09-password-spray` | covered |
+| [T1558.003](https://attack.mitre.org/techniques/T1558/003) Kerberoasting | `kerberoasting` | `TP-15-kerberoasting` | covered |
 | [T1621](https://attack.mitre.org/techniques/T1621) Multi-Factor Authentication Request Generation | `mfa_fatigue` | `TP-07-mfa-fatigue` | covered |
 
 ## Defense Evasion
