@@ -44,6 +44,29 @@ def _sanitise(message: str) -> str:
     return _SECRET_SHAPED.sub("<redacted>", message)[:400]
 
 
+#: Finish reasons that mean the model ran out of room mid-answer. Worth naming
+#: separately: a truncated response fails downstream as "not valid JSON", which
+#: sends whoever debugs it looking at the schema rather than at the budget.
+_TRUNCATED = {"MAX_TOKENS", "max_tokens", "length"}
+
+
+def _check_not_truncated(finish_reason: str | None, provider: str, max_tokens: int) -> None:
+    """Fail on a half-finished answer, naming the real cause.
+
+    Measured against the live Gemini API: a 200-token budget was spent 189 on
+    thinking and 7 on content, and the reply came back as the prose "Here is
+    the JSON requested:" with a 200 status. Without this the next thing to fail
+    is the JSON parser, and the message points at the schema rather than at the
+    budget that actually ran out.
+    """
+    if finish_reason and finish_reason in _TRUNCATED:
+        raise ModelError(
+            f"{provider}: the model hit the {max_tokens}-token output limit before "
+            f"finishing its answer, so the result is incomplete. On Gemini this is "
+            f"usually thinking tokens consuming the budget."
+        )
+
+
 class _HttpProvider:
     """Shared plumbing: one POST, JSON in, JSON out, errors sanitised."""
 
@@ -111,6 +134,7 @@ class AnthropicHttp(_HttpProvider):
             for block in payload.get("content", [])
             if block.get("type") == "text"
         )
+        _check_not_truncated(payload.get("stop_reason"), self.name, max_tokens)
         usage = payload.get("usage", {})
         return ModelResponse(
             text=text,
@@ -173,6 +197,7 @@ class OpenAIHttp(_HttpProvider):
         if not choices:
             raise ModelError(f"{self.name}: the provider returned no choices")
         text = choices[0].get("message", {}).get("content") or ""
+        _check_not_truncated(choices[0].get("finish_reason"), self.name, max_tokens)
         usage = payload.get("usage", {})
         return ModelResponse(
             text=text,
@@ -222,7 +247,24 @@ class GeminiHttp(_HttpProvider):
         body: dict[str, Any] = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens},
+            "generationConfig": {
+                "maxOutputTokens": max_tokens,
+                # Set on every call, not only the schema'd ones. Thinking is on
+                # by default on Gemini 3.x and `maxOutputTokens` covers thinking
+                # *and* output, so a small budget is spent entirely on thoughts.
+                # Measured against the live API: a 200-token budget went 189 on
+                # thoughts and 7 on content, and the reply arrived as the prose
+                # "Here is the JSON requested:" with a 200 status — a node handed
+                # prose where it expected an object yields an empty verdict, and
+                # an empty verdict reads as a clean alert. The 16-token
+                # connectivity ping in `verify_credentials` truncated the same
+                # way and told users their valid key had been rejected.
+                #
+                # Turned down rather than up: Bishop asks this path for one
+                # structured extraction, where the reasoning adds little, and
+                # raising budgets instead burns ~200 discarded tokens per call.
+                "thinkingConfig": {"thinkingLevel": "low"},
+            },
         }
         if schema is not None:
             body["generationConfig"]["responseMimeType"] = "application/json"
@@ -245,6 +287,7 @@ class GeminiHttp(_HttpProvider):
         text = "".join(
             part.get("text", "") for part in candidates[0].get("content", {}).get("parts", [])
         )
+        _check_not_truncated(candidates[0].get("finishReason"), self.name, max_tokens)
         usage = payload.get("usageMetadata", {})
         return ModelResponse(
             text=text,
@@ -280,11 +323,63 @@ def _strict(schema: dict[str, Any]) -> dict[str, Any]:
 
 
 def _gemini_schema(schema: dict[str, Any]) -> dict[str, Any]:
-    """Gemini's schema dialect is OpenAPI-flavoured and rejects some keywords."""
+    """Translate a JSON Schema into Gemini's dialect.
+
+    Gemini validates against a protobuf definition rather than JSON Schema, and
+    the differences are not cosmetic — they are 400s. Two matter here.
+
+    **A union type is a list, and proto has no list-typed field.** JSON Schema
+    writes an optional string as `{"type": ["string", "null"]}`; Gemini rejects
+    it with `Proto field is not repeating, cannot start list`. The equivalent is
+    a single type plus `nullable`. This is not hypothetical: `SYNTHESIS_SCHEMA`
+    has exactly one such property (`escalation_reason`), and it failed every
+    live synthesis call until this collapsed it.
+
+    **`anyOf` around a null is the same construct spelled differently**, and is
+    normalised the same way.
+
+    Unknown keywords are dropped rather than passed through, because Gemini
+    rejects the whole request on the first one it does not recognise.
+    """
     if not isinstance(schema, dict):
         return schema
-    dropped = {"additionalProperties", "$schema", "definitions", "$defs", "default"}
+
+    dropped = {
+        "additionalProperties",
+        "$schema",
+        "definitions",
+        "$defs",
+        "default",
+        "title",
+        "examples",
+        "const",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
+    }
     out = {k: v for k, v in schema.items() if k not in dropped}
+
+    # `anyOf: [{...}, {"type": "null"}]` -> the non-null branch, marked nullable.
+    if "anyOf" in out:
+        branches = [b for b in out.pop("anyOf") if isinstance(b, dict)]
+        concrete = [b for b in branches if b.get("type") != "null"]
+        if len(branches) != len(concrete):
+            out["nullable"] = True
+        if concrete:
+            merged = dict(concrete[0])
+            merged.update({k: v for k, v in out.items() if k != "nullable"})
+            out = {**merged, **({"nullable": True} if out.get("nullable") else {})}
+
+    # `type: ["string", "null"]` -> `type: "string"` + `nullable: true`.
+    declared = out.get("type")
+    if isinstance(declared, list):
+        concrete_types = [t for t in declared if t != "null"]
+        if len(concrete_types) != len(declared):
+            out["nullable"] = True
+        # More than one concrete type has no proto equivalent; the first is the
+        # one the caller actually means, and guessing beyond that would be worse
+        # than a predictable narrowing.
+        out["type"] = concrete_types[0] if concrete_types else "string"
+
     if "properties" in out:
         out["properties"] = {k: _gemini_schema(v) for k, v in out["properties"].items()}
     if "items" in out:
@@ -328,7 +423,9 @@ def verify_credentials(credentials: Credentials) -> dict[str, Any]:
             system="You are a connectivity check. Reply with the single word OK.",
             prompt="Reply with OK.",
             task="verify",
-            max_tokens=16,
+            # Not 16. A thinking model spends its budget on thoughts before it
+            # writes anything, so a tiny ping truncates and reads as a bad key.
+            max_tokens=256,
         )
     except ModelError as exc:
         return {"ok": False, "provider": credentials.provider, "detail": _sanitise(str(exc))}

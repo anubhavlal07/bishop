@@ -102,11 +102,45 @@ def adversarial_critic(
 
     label = verdict.label
     escalation_reason = verdict.escalation_reason
+
+    #: How far the critic must move confidence for its own escalation flag to
+    #: be treated as supported by its analysis rather than as a reflex.
+    MATERIAL_DOUBT = 0.1
+
     if should_escalate and label is VerdictLabel.TRUE_POSITIVE:
-        label = VerdictLabel.ESCALATE
-        escalation_reason = (
-            "the adversarial pass found an ordinary explanation that the evidence does not rule out"
-        )
+        if -adjustment >= MATERIAL_DOUBT or revised < runtime.settings.escalation_threshold:
+            label = VerdictLabel.ESCALATE
+            escalation_reason = (
+                "the adversarial pass found an ordinary explanation that the evidence "
+                "does not rule out"
+            )
+        else:
+            # The flag contradicts the critic's own numbers: it asked for
+            # escalation while leaving confidence essentially untouched. Seen
+            # against a live model on TP-01, where the critic wrote "the verdict
+            # easily survives adversarial critique", named a red-team hypothesis
+            # it then dismissed, moved confidence to 0.98 — and still set the
+            # flag. Honouring that escalates every true positive, because a
+            # competent critic can always name *some* alternative; a tool that
+            # escalates everything has perfect recall and is useless.
+            #
+            # Same rule as the grounding checks in synthesis: a model assertion
+            # that its own measurements do not support does not decide a verdict.
+            # The counter-arguments are still recorded and still shown — only the
+            # unsupported label change is refused.
+            runtime.chain.append(
+                "adversarial_critic",
+                AuditAction.ACTION_REFUSED,
+                {
+                    "kind": "unsupported_escalation_refused",
+                    "detail": (
+                        f"the critic asked to escalate but moved confidence by only "
+                        f"{adjustment:+.2f}, leaving {revised:.2f} — above the "
+                        f"{runtime.settings.escalation_threshold:.2f} threshold. Its own "
+                        f"analysis does not support the flag."
+                    ),
+                },
+            )
     elif revised < runtime.settings.escalation_threshold and label in {
         VerdictLabel.TRUE_POSITIVE,
         VerdictLabel.BENIGN_TRUE_POSITIVE,

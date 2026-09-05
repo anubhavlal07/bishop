@@ -8,6 +8,7 @@ let an injection-laced alert come back clean because no detector fired on it.
 from __future__ import annotations
 
 from bishop.audit import AuditAction
+from bishop.graph import build_runtime, initial_state, runtime_config
 from bishop.graph.nodes.investigators import _ground
 from bishop.graph.nodes.report import build_incident
 from bishop.graph.nodes.synthesis import _accusatory_examination
@@ -285,3 +286,89 @@ class TestEscalation:
         )
         result = graph.invoke(state, config=config)
         assert result["critic_rounds"] <= 1
+
+
+class TestTheCriticMustBackItsOwnEscalation:
+    """A critic that asks to escalate while leaving confidence untouched is
+    contradicting itself, and an unsupported flag does not decide a verdict.
+
+    Found against a live model, not the deterministic one: on TP-01 the critic
+    wrote "the verdict easily survives adversarial critique", named a red-team
+    hypothesis it then dismissed, left confidence at 0.98 — and still set
+    `should_escalate`. Honouring that escalates every true positive, because a
+    competent critic can always name some alternative, and a tool that
+    escalates everything has perfect recall and is useless.
+    """
+
+    def critique(self, *, should_escalate, adjustment, base_confidence=0.95):
+        """Drive `adversarial_critic` with one scripted critic response."""
+        from bishop.graph.nodes.adversarial_critic import adversarial_critic
+        from bishop.models.base import ModelResponse, Usage
+        from bishop.schema import Verdict
+        from tests.graph.conftest import credential_theft_alert
+
+        class ScriptedCritic:
+            name = "scripted"
+            model_id = "scripted"
+
+            def complete(self, **_):
+                return ModelResponse(
+                    text="",
+                    data={
+                        "counter_arguments": ["an authorised red team could explain this"],
+                        "confidence_adjustment": adjustment,
+                        "should_escalate": should_escalate,
+                    },
+                    usage=Usage(input_tokens=1, output_tokens=1),
+                    model="scripted",
+                    stop_reason="end_turn",
+                )
+
+        runtime = build_runtime(
+            run_id="critic-coherence", provider=ScriptedCritic(), settings=Settings()
+        )
+        verdict = Verdict(
+            label=VerdictLabel.TRUE_POSITIVE,
+            confidence=base_confidence,
+            rationale="detectors fired",
+            assessed_severity="high",
+        )
+        state = initial_state(
+            run_id="critic-coherence",
+            alerts=[credential_theft_alert()],
+            incident_id="INC-CC",
+        )
+        state["verdict"] = verdict
+        result = adversarial_critic(state, runtime_config(runtime))
+        return result["verdict"], runtime
+
+    def test_an_unsupported_escalation_is_refused(self):
+        verdict, _ = self.critique(should_escalate=True, adjustment=-0.02)
+        assert verdict.label is VerdictLabel.TRUE_POSITIVE
+
+    def test_a_supported_escalation_is_honoured(self):
+        """Real doubt, expressed as a real confidence drop, still escalates."""
+        verdict, _ = self.critique(should_escalate=True, adjustment=-0.3)
+        assert verdict.label is VerdictLabel.ESCALATE
+        assert "does not rule out" in (verdict.escalation_reason or "")
+
+    def test_escalation_still_happens_when_confidence_falls_below_threshold(self):
+        verdict, _ = self.critique(
+            should_escalate=True, adjustment=-0.05, base_confidence=0.46
+        )
+        assert verdict.label is VerdictLabel.ESCALATE
+
+    def test_the_counter_arguments_survive_a_refused_escalation(self):
+        """The critique is still shown — only the label change is refused."""
+        verdict, _ = self.critique(should_escalate=True, adjustment=-0.02)
+        assert verdict.counter_arguments
+
+    def test_the_refusal_is_audited(self):
+        """A refused label change is a decision, and decisions go in the chain."""
+        _, runtime = self.critique(should_escalate=True, adjustment=-0.02)
+        refusals = [
+            e
+            for e in runtime.chain.by_action(AuditAction.ACTION_REFUSED)
+            if e.payload.get("kind") == "unsupported_escalation_refused"
+        ]
+        assert refusals, "an unsupported escalation must be recorded, not silently dropped"

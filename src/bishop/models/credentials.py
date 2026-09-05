@@ -84,10 +84,14 @@ PROVIDERS: dict[str, ProviderSpec] = {
     "gemini": ProviderSpec(
         key="gemini",
         label="Google Gemini",
-        default_model="gemini-2.5-pro",
-        models=("gemini-2.5-pro", "gemini-2.5-flash"),
-        key_hint="starts with AIza",
-        key_pattern=r"^AIza[A-Za-z0-9_\-]{30,}$",
+        default_model="gemini-3.8-flash",
+        models=("gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-pro-preview"),
+        key_hint="starts with AIza or AQ.",
+        # Two formats in the wild: the long-standing `AIza...` and the newer
+        # `AQ.`-prefixed keys AI Studio now issues. The pattern was `^AIza`
+        # only, which rejected a valid current key before any request was made
+        # - the exact failure the shape-only rule above warns about.
+        key_pattern=r"^(AIza[A-Za-z0-9_\-]{30,}|AQ\.[A-Za-z0-9_\-.]{20,})$",
         help_url="https://aistudio.google.com/apikey",
     ),
     "azure-openai": ProviderSpec(
