@@ -583,8 +583,21 @@ def _run_holdout(args, holdout_dir, render_text, run_scorecard, save) -> int:
     print()
 
     if args.save:
-        path = save(card, _holdout_result_path(card))
-        print(dim(f"  written to {path}"))
+        path = _holdout_result_path(card)
+        if path.exists():
+            # Refusing rather than overwriting, because of what this file is.
+            # A held-out result is only meaningful the first time; a second run
+            # on the same day is a run made after seeing the first, and letting
+            # it silently take the same filename would replace the one honest
+            # measurement with a flattering one and leave no trace.
+            print(red(f"  {path.name} already exists and will not be overwritten"))
+            print(dim("  A held-out result is a record of one run, not a file that updates."))
+            print(dim("  The first run is the measurement; delete it deliberately or"))
+            print(dim("  write a fresh held-out set if you need a new number."))
+            print()
+            return 0
+        saved = save(card, path)
+        print(dim(f"  written to {saved}"))
         print()
     return 0
 
