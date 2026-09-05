@@ -288,6 +288,14 @@ has not been written honestly.
   whether the scanner recognises a payload — an evading payload still cannot forge a block
   delimiter. The scanner's job is escalation (§4.4), not containment.
 
+- **A containment target is checked against the incident, not scanned.** A
+  hostname reaching the response plan from an attacker-controlled field is not
+  something the scanner can help with: `DC-01` is an ordinary name with nothing
+  in it to detect. The executor refuses any targeted action whose target is not
+  a host or account the alerts actually name, and fails closed when it has no
+  alerts to check against. Scanning enumerates attacks; this checks a
+  relationship, which is finite.
+
 - **A new laundering path.** §4.5 fixed four. The invariant is enforced at the render boundary,
   so a *fifth* path that stringifies attacker text is contained by `safe_block()` — but a new
   prompt-assembly site that does not route through `safe_block()` would not be. That is a

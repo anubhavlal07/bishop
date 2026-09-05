@@ -73,6 +73,65 @@ class MockExecutor:
         }
 
 
+#: Actions that act on a named machine or account. `open_ticket`, `notify_owner`
+#: and `monitor` take a reference rather than a target and are not checked here.
+_TARGETED_ACTIONS = {
+    "isolate_host",
+    "disable_account",
+    "revoke_sessions",
+    "force_password_reset",
+    "kill_process",
+    "quarantine_file",
+}
+
+
+def _known_entities(alerts: list[Any]) -> set[str]:
+    """Every host and account the alerts actually name, lowercased."""
+    known: set[str] = set()
+    for alert in alerts or []:
+        device = getattr(alert, "device", None)
+        if device is not None:
+            for value in (device.hostname, device.ip):
+                if value:
+                    known.add(str(value).strip().lower())
+        principal = getattr(alert, "principal", None)
+        if principal is not None:
+            for value in (principal.username, principal.upn, principal.sid):
+                if value:
+                    known.add(str(value).strip().lower())
+        for event in getattr(alert, "auth_events", []) or []:
+            if event.username:
+                known.add(str(event.username).strip().lower())
+    return known
+
+
+def _targets_a_known_entity(action: ResponseAction, known: set[str]) -> tuple[bool, str]:
+    """Refuse to act on something the alert never mentioned.
+
+    The containment target reaches here from the response plan, which a model
+    wrote from prompt context that includes attacker-controlled fields. Nothing
+    upstream ties it back to the incident, so a laundered hostname could name a
+    machine the alert has nothing to do with — pointing the one irreversible
+    capability Bishop has at a third party, with a human approving what looked
+    like a reasonable plan.
+
+    Scanning the hostname cannot fix this: `DC-01` is a perfectly ordinary name
+    and there is nothing in it to detect. What is checkable is the relationship
+    — you cannot isolate a host that is not in the incident.
+    """
+    if str(action.action_type) not in _TARGETED_ACTIONS:
+        return True, ""
+    target = (action.target or "").strip().lower()
+    if not target:
+        return False, "the action names no target"
+    if target not in known:
+        return False, (
+            f"{action.target!r} is not a host or account named by this incident. An "
+            f"action may only touch an entity the alerts actually mention."
+        )
+    return True, ""
+
+
 def _authorised(action: ResponseAction, decision: HumanDecision | None) -> tuple[bool, str]:
     """The independent re-check. See the module docstring for why it exists."""
     if decision is None:
@@ -107,8 +166,12 @@ def response_execute(
 
     log: list[dict[str, Any]] = []
 
+    known = _known_entities(state.get("alerts") or [])
+
     for action in plan.actions:
         allowed, reason = _authorised(action, decision)
+        if allowed:
+            allowed, reason = _targets_a_known_entity(action, known)
         if not allowed:
             record = {
                 "action_id": action.action_id,

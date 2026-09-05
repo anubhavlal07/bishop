@@ -69,6 +69,10 @@ class TestExecutorRefusal:
     def _run(self, state):
         runtime = build_runtime(run_id="run-gate")
         executor = MockExecutor()
+        # A real state always carries the alerts, and the executor now checks a
+        # containment target against the entities they name. `isolate_action`
+        # targets WKSTN-042, which is the host in `credential_theft_alert`.
+        state = {"alerts": [credential_theft_alert()], **state}
         result = response_execute(state, runtime_config(runtime), executor=executor)
         return result, executor, runtime
 
@@ -274,3 +278,95 @@ class TestEndToEndGate:
         assert not result.get("__interrupt__")
         assert result["response_plan"].actions == []
         assert result["execution_log"] == []
+
+
+class TestAnActionMayOnlyTouchTheIncident:
+    """The containment target must be an entity the alerts actually name.
+
+    The target reaches the executor from a plan a model wrote, using prompt
+    context that includes attacker-controlled fields. Nothing upstream ties it
+    back to the incident, so a laundered hostname could point Bishop's one
+    irreversible capability at a third party — with a human approving what
+    looked like an entirely reasonable plan.
+
+    Scanning cannot fix this: `DC-01` is an ordinary hostname with nothing in it
+    to detect. The checkable thing is the relationship.
+    """
+
+    def _run(self, action, alerts=None):
+        runtime = build_runtime(run_id="run-target")
+        executor = MockExecutor()
+        state = {
+            "alerts": alerts if alerts is not None else [credential_theft_alert()],
+            "response_plan": plan_with(action),
+            "human_decision": HumanDecision(
+                decision=Decision.APPROVED,
+                approved_action_ids=[action.action_id],
+                decided_by="analyst",
+            ),
+        }
+        result = response_execute(state, runtime_config(runtime), executor=executor)
+        return result, executor, runtime
+
+    def other_host(self, hostname: str) -> ResponseAction:
+        return ResponseAction(
+            action_id="act-x",
+            action_type=ActionType.ISOLATE_HOST,
+            target=hostname,
+            rationale="laundered target",
+            blast_radius=BlastRadius(hosts_affected=1, summary="one host"),
+        )
+
+    def test_the_incidents_own_host_is_isolated(self):
+        result, executor, _ = self._run(isolate_action())
+        assert [a.action_id for a in executor.performed] == ["act-1"]
+        assert result["execution_log"][0]["status"] == "simulated"
+
+    def test_a_host_the_alert_never_mentioned_is_refused(self):
+        """TOL-07: a hostname laundered through an attacker-controlled field."""
+        result, executor, _ = self._run(self.other_host("DC-01"))
+        assert executor.performed == []
+        assert result["execution_log"][0]["status"] == "refused"
+        assert (
+            "not a host or account named by this incident" in (result["execution_log"][0]["reason"])
+        )
+
+    def test_the_refusal_is_audited(self):
+        _, _, runtime = self._run(self.other_host("DC-01"))
+        assert runtime.chain.by_action(AuditAction.ACTION_REFUSED)
+
+    def test_matching_ignores_case_and_padding(self):
+        """A real plan writes the hostname back in whatever case the model used."""
+        result, executor, _ = self._run(self.other_host("  wkstn-042  "))
+        assert result["execution_log"][0]["status"] == "simulated"
+
+    def test_an_account_action_checks_the_principal(self):
+        action = ResponseAction(
+            action_id="act-a",
+            action_type=ActionType.DISABLE_ACCOUNT,
+            target="someone.else",
+            rationale="laundered account",
+            blast_radius=BlastRadius(users_affected=1, summary="one account"),
+        )
+        result, executor, _ = self._run(action)
+        assert executor.performed == []
+        assert result["execution_log"][0]["status"] == "refused"
+
+    def test_an_untargeted_action_is_not_blocked(self):
+        """`open_ticket` names a reference, not a machine."""
+        action = ResponseAction(
+            action_id="act-t",
+            action_type=ActionType.OPEN_TICKET,
+            target="INC-1234",
+            rationale="record it",
+            blast_radius=BlastRadius(summary="no operational impact"),
+        )
+        result, _, _ = self._run(action)
+        assert result["execution_log"][0]["status"] == "simulated"
+
+    def test_no_alerts_means_nothing_may_be_touched(self):
+        """Fail closed: not knowing what the incident is about is not a reason
+        to allow an irreversible action."""
+        result, executor, _ = self._run(isolate_action(), alerts=[])
+        assert executor.performed == []
+        assert result["execution_log"][0]["status"] == "refused"
