@@ -78,8 +78,6 @@ class TestImpossibleTravel:
         )
         assert not result.fired
         assert "no single account" in result.rationale
-        # It looked and concluded, rather than having nothing to look at — the
-        # difference decides whether the alert can be closed at all.
         assert result.examined
 
     def test_one_account_moving_is_still_caught_among_several_users(self):
@@ -97,7 +95,6 @@ class TestImpossibleTravel:
         assert result.facts["username"] == "alice"
 
     def test_london_to_new_york_in_eight_hours_does_not_fire(self):
-        # ~5,570 km in 8 h is about 700 km/h. That is a flight.
         result = impossible_travel(
             alert(auth_events=[auth(0, city="london"), auth(8 * 3600, city="new_york")])
         )
@@ -166,8 +163,6 @@ class TestImpossibleTravel:
         )
         assert not result.fired
         assert "no single account" in result.rationale
-        # It looked and concluded, rather than having nothing to look at — the
-        # difference decides whether the alert can be closed at all.
         assert result.examined
 
     def test_events_out_of_order_still_compare_correctly(self):

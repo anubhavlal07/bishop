@@ -23,8 +23,6 @@ from typing import Any
 
 __all__ = ["configure_logging"]
 
-#: Attributes present on every LogRecord. Anything else was passed via `extra`
-#: and is what we actually want in the structured output.
 _STANDARD = frozenset(
     {
         "args",
@@ -68,8 +66,6 @@ class JsonFormatter(logging.Formatter):
             if key not in _STANDARD and not key.startswith("_"):
                 payload[key] = value
         if record.exc_info:
-            # The type and message, not the frames. A traceback in an
-            # aggregator is noise at best; the file and line are already here.
             exc_type, exc_value, _ = record.exc_info
             payload["error"] = f"{getattr(exc_type, '__name__', exc_type)}: {exc_value}"
             payload["where"] = f"{record.pathname}:{record.lineno}"
@@ -105,9 +101,6 @@ def configure_logging(*, json_logs: bool = False, level: str = "INFO") -> None:
     root.addHandler(handler)
     root.setLevel(level.upper())
 
-    # Uvicorn installs its own access log with a different shape, which would
-    # produce two lines per request in two formats. `RequestContextMiddleware`
-    # already emits one structured line with more in it.
     logging.getLogger("uvicorn.access").handlers = []
     logging.getLogger("uvicorn.access").propagate = False
     logging.getLogger("uvicorn.error").handlers = []

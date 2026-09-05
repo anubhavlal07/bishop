@@ -27,7 +27,9 @@ function Metric({
     >
       <div className="muted text-[11px] leading-tight">{label}</div>
       <div className="mono mt-1 text-lg">{value}</div>
-      {note && <div className="muted mt-0.5 text-[10px] leading-tight">{note}</div>}
+      {note && (
+        <div className="muted mt-0.5 text-[10px] leading-tight">{note}</div>
+      )}
     </div>
   );
 }
@@ -53,8 +55,7 @@ export default function ScorecardPage() {
 
   return (
     <div className="space-y-4">
-      {/* The caveats come first on purpose. They are the most credible thing on
-          this page, and a reader who only sees the numbers has been misled. */}
+      {}
       <Panel title="Read this before quoting any number below">
         <ul className="space-y-2">
           {card.notes.map((note) => (
@@ -69,7 +70,9 @@ export default function ScorecardPage() {
         title="Scorecard"
         subtitle={`${card.corpus_size} alerts · ${card.provider} (${card.model}) · ATT&CK v${card.attack_version}`}
       >
-        <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide muted">Detection</h3>
+        <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide muted">
+          Detection
+        </h3>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Metric
             label="False-negative rate on true positives"
@@ -78,8 +81,14 @@ export default function ScorecardPage() {
             highlight
           />
           <Metric label="Verdict accuracy" value={pct(card.verdict_accuracy)} />
-          <Metric label="False-positive rate" value={pct(card.false_positive_rate)} />
-          <Metric label="Benign-TP accuracy" value={pct(card.benign_tp_accuracy)} />
+          <Metric
+            label="False-positive rate"
+            value={pct(card.false_positive_rate)}
+          />
+          <Metric
+            label="Benign-TP accuracy"
+            value={pct(card.benign_tp_accuracy)}
+          />
         </div>
 
         <h3 className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wide muted">
@@ -125,7 +134,11 @@ export default function ScorecardPage() {
           <Metric
             label="Cost per alert"
             value={`$${card.usd_per_alert.toFixed(6)}`}
-            note={card.provider === "mock" ? "zero because no request was made" : undefined}
+            note={
+              card.provider === "mock"
+                ? "zero because no request was made"
+                : undefined
+            }
           />
         </div>
       </Panel>
@@ -133,23 +146,38 @@ export default function ScorecardPage() {
       <Panel title="Per-alert outcomes">
         <ul className="divide-y" style={{ borderColor: "var(--edge)" }}>
           {card.outcomes.map((outcome) => (
-            <li key={outcome.alert_id} className="flex flex-wrap items-center gap-3 py-2">
+            <li
+              key={outcome.alert_id}
+              className="flex flex-wrap items-center gap-3 py-2"
+            >
               <span
                 className="text-xs"
-                style={{ color: outcome.correct ? "var(--color-fp)" : "var(--color-tp)" }}
+                style={{
+                  color: outcome.correct
+                    ? "var(--color-fp)"
+                    : "var(--color-tp)",
+                }}
               >
                 {outcome.correct ? "✓" : "✗"}
               </span>
-              <span className="mono w-64 shrink-0 text-xs">{outcome.alert_id}</span>
+              <span className="mono w-64 shrink-0 text-xs">
+                {outcome.alert_id}
+              </span>
               <VerdictPill label={outcome.expected} />
               {!outcome.correct && (
                 <>
                   <span className="muted text-xs">got</span>
-                  <VerdictPill label={outcome.actual} confidence={outcome.confidence} />
+                  <VerdictPill
+                    label={outcome.actual}
+                    confidence={outcome.confidence}
+                  />
                 </>
               )}
               {outcome.missed_true_positive && (
-                <span className="text-[10px] uppercase" style={{ color: "var(--color-tp)" }}>
+                <span
+                  className="text-[10px] uppercase"
+                  style={{ color: "var(--color-tp)" }}
+                >
                   missed true positive
                 </span>
               )}
@@ -165,7 +193,9 @@ export default function ScorecardPage() {
                   injection {outcome.injection_caught ? "caught" : "missed"}
                 </span>
               )}
-              <span className="mono muted ml-auto text-[10px]">{outcome.duration_ms}ms</span>
+              <span className="mono muted ml-auto text-[10px]">
+                {outcome.duration_ms}ms
+              </span>
             </li>
           ))}
         </ul>

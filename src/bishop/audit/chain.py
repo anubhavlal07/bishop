@@ -36,7 +36,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-#: The `prev_hash` of the first entry. A chain always starts somewhere.
 GENESIS_HASH = "0" * 64
 
 
@@ -123,8 +122,6 @@ class AuditEntry:
         self.entry_hash = self._compute_hash()
 
     def _compute_hash(self) -> str:
-        # The payload enters via its hash, so the link is verifiable even if the
-        # payload itself is later redacted for privacy.
         return hashlib.sha256(
             canonical(
                 {
@@ -163,7 +160,6 @@ class AuditEntry:
             payload=data.get("payload") or {},
             prev_hash=str(data["prev_hash"]),
         )
-        # Preserve what was stored so verification compares rather than assumes.
         stored_hash = str(data.get("entry_hash", ""))
         if stored_hash and stored_hash != entry.entry_hash:
             entry.entry_hash = stored_hash
@@ -193,7 +189,6 @@ class AuditChain:
     ) -> None:
         self.run_id = run_id
         self.path = path
-        #: Injectable so tests and the offline demo produce identical bytes.
         self._clock = clock or (lambda: datetime.now(UTC))
         self._entries: list[AuditEntry] = []
         self._lock = threading.Lock()
@@ -201,8 +196,6 @@ class AuditChain:
             path.parent.mkdir(parents=True, exist_ok=True)
             if path.exists():
                 self._entries = list(_read_jsonl(path))
-
-    # ── writing ─────────────────────────────────────────────────────────────
 
     def append(
         self, actor: str, action: AuditAction | str, payload: dict[str, Any] | None = None
@@ -218,10 +211,6 @@ class AuditChain:
                 payload=payload or {},
                 prev_hash=self._entries[-1].entry_hash if self._entries else GENESIS_HASH,
             )
-            # Disk first. If the write fails, the exception propagates and the
-            # entry is in neither place — which is recoverable. Appending to
-            # memory first would leave the two diverged, with the in-memory
-            # chain claiming a link the file does not have.
             if self.path is not None:
                 with self.path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(entry.to_dict(), sort_keys=True, default=str) + "\n")
@@ -251,8 +240,6 @@ class AuditChain:
             },
         )
 
-    # ── reading ─────────────────────────────────────────────────────────────
-
     @property
     def head(self) -> str:
         return self._entries[-1].entry_hash if self._entries else GENESIS_HASH
@@ -269,8 +256,6 @@ class AuditChain:
     def by_action(self, action: AuditAction | str) -> list[AuditEntry]:
         wanted = AuditAction(action) if not isinstance(action, AuditAction) else action
         return [e for e in self._entries if e.action is wanted]
-
-    # ── verification ────────────────────────────────────────────────────────
 
     def verify(
         self, *, expected_head: str | None = None, expected_length: int | None = None

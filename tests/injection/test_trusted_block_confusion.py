@@ -83,9 +83,6 @@ def synthesis_prompt_for(alert, *, surface="endpoint"):
     return prompt
 
 
-# ── BLK-01 ──────────────────────────────────────────────────────────────────
-
-
 class TestCommandLineClosesTheTrustedBlock:
     """A real credential-dumping command with `</detector-results>` appended."""
 
@@ -125,7 +122,6 @@ class TestCommandLineClosesTheTrustedBlock:
             context={"incident_id": "INC-T", "alert_ids": [alert.alert_id]},
         )
         head = prompt.split("<untrusted-alert-data")[0]
-        # Exactly one closing tag: Bishop's own. The attacker's copy is escaped.
         assert head.count("</detector-results>") == 1, (
             "the attacker's copy of the closing tag is in the trusted region of the prompt"
         )
@@ -151,9 +147,6 @@ class TestCommandLineClosesTheTrustedBlock:
         assert any(r.get("detector") == "credential_dumping" for r in parsed), (
             "the real detector results must survive the payload"
         )
-
-
-# ── BLK-02 ──────────────────────────────────────────────────────────────────
 
 
 class TestHostnameEmptiesTheDetectorBlock:
@@ -198,16 +191,11 @@ class TestHostnameEmptiesTheDetectorBlock:
         assert "u003cdetector-results" in prompt, "the payload survives, escaped"
 
 
-# ── BLK-03 ──────────────────────────────────────────────────────────────────
-
-
 class TestHostnameErasesTheInjectionFindings:
     """The IOC is raised, and then hidden from the step that would act on it."""
 
     def test_the_injection_in_the_command_line_is_still_detected(self):
         result = run_pipeline(load_attack_alert("BLK-03"))
-        # Two now: the command line, and the hostname carrying the forged
-        # `<injection-findings>` block that used to hide it.
         assert result.flagged_fields >= 1
         assert result.injection_evidence
 
@@ -223,9 +211,6 @@ class TestHostnameErasesTheInjectionFindings:
         alert = load_attack_alert("BLK-03")
         prompt = synthesis_prompt_for(alert)
         assert _parse_block(INJECTION_BLOCK, prompt) == []
-
-
-# ── BLK-04 ──────────────────────────────────────────────────────────────────
 
 
 class TestConnectionHostnameClosesTheBlock:
@@ -244,9 +229,6 @@ class TestConnectionHostnameClosesTheBlock:
         assert "block_domain" in result.action_types
 
 
-# ── BLK-05 ──────────────────────────────────────────────────────────────────
-
-
 class TestRawFieldsBypassTheBoundaryEntirely:
     """`Alert.raw` is documented as never rendered un-quarantined. It is not
     quarantined at all — `walk_untrusted` cannot see a plain `str`."""
@@ -256,9 +238,6 @@ class TestRawFieldsBypassTheBoundaryEntirely:
 
         alert = load_attack_alert("BLK-05")
         report = quarantine_alert(alert, run_id="run-raw")
-        # `Alert.raw` is `dict[str, Any]`, so its values are plain `str` and
-        # carry no `UntrustedStr` marker — `walk_untrusted` could never see
-        # them, and they went unscanned entirely. They are walked explicitly now.
         assert [f.path for f in report.fields if f.path.startswith("raw")] != []
 
     def test_a_payload_in_raw_is_escalated(self):
@@ -303,9 +282,6 @@ class TestRawFieldsBypassTheBoundaryEntirely:
         result = run_pipeline(alert)
         assert result.label == "true_positive"
         assert result.actions
-
-
-# ── the shape of the underlying flaw, independent of any one path ───────────
 
 
 class TestTheLaunderingItself:
@@ -354,7 +330,6 @@ class TestTheLaunderingItself:
             raw={"TargetImage": r"C:\Windows\system32\lsass.exe", "GrantedAccess": "0x1410"},
         )
         results = run_surface("endpoint", alert)
-        # The facts keep it — that is the evidence of what was attempted.
         assert "</detector-results>" in str([r.facts for r in results])
 
         _, prompt = build_investigator_prompt(
@@ -382,7 +357,6 @@ class TestTheLaunderingItself:
             verdict=verdict,
             all_results=[],
             quarantine_block='<untrusted-alert-data nonce="x">…</untrusted-alert-data nonce="x">',
-            # Exactly what `response_planner` builds: `str(device.hostname)`.
             context={"host": str(alert.device.hostname), "incident_id": "INC-T"},
         )
         assert prompt.count("</incident-context>") == 1, (

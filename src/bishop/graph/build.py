@@ -115,11 +115,6 @@ def after_critic(
     return "synthesis"
 
 
-#: Bishop's own types that travel through a checkpoint. Declared explicitly so
-#: the checkpointer can run under `LANGGRAPH_STRICT_MSGPACK`, which restricts
-#: deserialisation to an allowlist. That matters here: the checkpoint holds a
-#: suspended run, and anyone who can write to the checkpoint store of a security
-#: tool should not also get arbitrary type construction on resume.
 CHECKPOINT_TYPES: tuple[type, ...] = (
     Alert,
     AlertCategory,
@@ -206,8 +201,6 @@ def build_graph(*, checkpointer: Any | None = None):
         "adversarial_critic", after_critic, ["synthesis", "response_planner"]
     )
     builder.add_edge("response_planner", "response_gate")
-    # There is exactly one edge into `response_execute`, and it comes from the
-    # gate. `tests/graph/test_gate.py` asserts that stays true.
     builder.add_edge("response_gate", "response_execute")
     builder.add_edge("response_execute", "report")
     builder.add_edge("report", END)
@@ -215,6 +208,5 @@ def build_graph(*, checkpointer: Any | None = None):
     return builder.compile(checkpointer=checkpointer or default_checkpointer())
 
 
-#: The node that must be the only predecessor of the executor.
 EXECUTOR_NODE = "response_execute"
 GATE_NODE = "response_gate"

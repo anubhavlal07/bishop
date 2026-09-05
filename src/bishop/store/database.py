@@ -47,8 +47,6 @@ from sqlalchemy.engine import Engine
 from bishop.audit import AuditChain, AuditEntry, verify_entries
 from bishop.schema import Incident
 
-#: Where SQLite lands when no `DATABASE_URL` is set. Under `storage/`, which is
-#: gitignored — a database of triage results is not repository content.
 DEFAULT_SQLITE_PATH = Path("storage") / "bishop.db"
 
 metadata = MetaData()
@@ -64,12 +62,6 @@ incidents = Table(
     Column("alert_count", Integer),
     Column("escalated", Boolean, index=True),
     Column("created_at", DateTime(timezone=True), index=True),
-    # The chain head at the time the incident was written. Verifying a stored
-    # chain against a stored head is what makes truncation detectable later.
-    # The run that produced this incident. Stored rather than derived: the
-    # chain lookup used to guess `cli-{incident_id}` from a naming
-    # convention, and a verification path that guesses is a verification
-    # path that reports CHAIN BROKEN when someone renames something.
     Column("run_id", String(128), index=True),
     Column("audit_head", String(64)),
     Column("audit_length", Integer),
@@ -153,9 +145,6 @@ def connection(engine: Engine | None = None) -> Iterator[Any]:
         yield conn
 
 
-# ── writing ─────────────────────────────────────────────────────────────────
-
-
 def save_incident(
     incident: Incident, *, chain: AuditChain | None = None, engine: Engine | None = None
 ) -> None:
@@ -201,9 +190,6 @@ def save_incident(
             conn.execute(delete(audit_entries).where(audit_entries.c.run_id == chain.run_id))
             for entry in chain:
                 conn.execute(insert(audit_entries).values(**entry.to_dict()))
-
-
-# ── reading ─────────────────────────────────────────────────────────────────
 
 
 def load_incident(incident_id: str, *, engine: Engine | None = None) -> Incident | None:
@@ -283,11 +269,6 @@ def verify_stored_chain(incident_id: str, *, engine: Engine | None = None) -> tu
         return False, f"no incident {incident_id}"
 
     head, length, run_id = row
-    # Looked up by the stored run id, not by guessing it from the incident id.
-    # The guess (`cli-{incident_id}`) was wrong for every run whose incident id
-    # was not derived from its run id, and reported CHAIN BROKEN on a chain
-    # that was intact — the worst possible failure for a verification path,
-    # because it teaches people to ignore it.
     stored = load_chain(run_id, engine=engine) if run_id else []
     if not stored:
         return False, "no audit entries stored for this incident"

@@ -25,7 +25,6 @@ from bishop.models.base import (
 )
 from bishop.models.mock import MockModel
 
-#: Set to `anthropic` for a live run. Anything else, including unset, is the mock.
 PROVIDER_ENV = "BISHOP_MODEL_PROVIDER"
 
 

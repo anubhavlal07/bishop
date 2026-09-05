@@ -21,8 +21,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-#: The ATLAS release these IDs were read from. Numbering has been reorganised
-#: between ATLAS releases before, so a report names the release.
 ATLAS_VERSION = "2026.08"
 ATLAS_FORMAT_VERSION = "6.0.0"
 ATLAS_SOURCE = "https://atlas.mitre.org/"
@@ -32,7 +30,6 @@ ATLAS_SOURCE = "https://atlas.mitre.org/"
 class AtlasTechnique:
     id: str
     name: str
-    #: Why Bishop can claim this one — what it actually observed.
     relevance: str
     parent: str | None = None
 
@@ -45,8 +42,6 @@ class AtlasTechnique:
         return f"{self.id} {self.name}"
 
 
-#: Only the techniques Bishop can actually produce evidence for. A wider list
-#: would be decoration.
 ATLAS_TECHNIQUES: dict[str, AtlasTechnique] = {
     t.id: t
     for t in (
@@ -89,11 +84,8 @@ ATLAS_TECHNIQUES: dict[str, AtlasTechnique] = {
     )
 }
 
-#: Every injection Bishop catches is indirect by construction — it arrived in a
-#: log field, not from a person typing at it.
 BASE_INJECTION_TECHNIQUES: tuple[str, ...] = ("AML.T0051", "AML.T0051.001")
 
-#: Injection signal name -> the additional ATLAS techniques it evidences.
 SIGNAL_TO_ATLAS: dict[str, tuple[str, ...]] = {
     "instruction_override": ("AML.T0054",),
     "role_hijack": ("AML.T0054",),
@@ -106,7 +98,6 @@ SIGNAL_TO_ATLAS: dict[str, tuple[str, ...]] = {
     "invisible_text": ("AML.T0068",),
     "homoglyph": ("AML.T0068",),
     "multilingual_instruction": ("AML.T0068",),
-    # A forged approval is aimed at the output Bishop is trusted to produce.
     "forged_provenance": ("AML.T0067",),
     "oversized_field": (),
 }

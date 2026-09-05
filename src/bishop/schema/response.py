@@ -37,9 +37,6 @@ class ActionType(StrEnum):
     MONITOR = "monitor"
 
 
-#: Actions that cannot be undone by reversing them — a disabled executive
-#: account during a board meeting is not "reversible" in any sense the business
-#: recognises, even though re-enabling it is one API call.
 IRREVERSIBLE_ACTIONS: frozenset[ActionType] = frozenset(
     {
         ActionType.ISOLATE_HOST,
@@ -57,25 +54,17 @@ class BlastRadius(BishopModel):
     users_affected: int = 0
     hosts_affected: int = 0
     services_affected: list[str] = Field(default_factory=list)
-    #: Plain English, written for someone deciding under time pressure.
     summary: str = ""
-    #: business_hours | after_hours | unknown — changes the cost of being wrong.
     timing_context: str = "unknown"
 
 
 class ResponseAction(BishopModel):
     action_id: str
     action_type: ActionType
-    #: Hostname, account, IP, or file path. Rendered to the analyst verbatim.
     target: str
     rationale: str
     blast_radius: BlastRadius = Field(default_factory=BlastRadius)
-    #: Evidence IDs behind this action. Populated with the incident's evidence
-    #: rather than per-action attribution — the planner does not currently know
-    #: which finding drove which action, and claiming otherwise would be worse
-    #: than admitting it.
     evidence_ids: list[str] = Field(default_factory=list)
-    #: How to undo it, if it can be undone. Shown in the approval prompt.
     rollback: str | None = None
     priority: int = 50
 
@@ -86,9 +75,7 @@ class ResponseAction(BishopModel):
 
 class ResponsePlan(BishopModel):
     actions: list[ResponseAction] = Field(default_factory=list)
-    #: Why this set and not a more aggressive one.
     strategy: str = ""
-    #: Set when Bishop concludes the right response is to do nothing.
     no_action_rationale: str | None = None
 
     @property
@@ -116,7 +103,6 @@ class HumanDecision(BishopModel):
 
     decided_by: str
     decision: Decision
-    #: Action IDs the human actually approved — a subset when they edited the plan.
     approved_action_ids: list[str] = Field(default_factory=list)
     note: str = ""
     decided_at: str = ""

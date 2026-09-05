@@ -24,7 +24,6 @@ class VerdictLabel(StrEnum):
     TRUE_POSITIVE = "true_positive"
     FALSE_POSITIVE = "false_positive"
     BENIGN_TRUE_POSITIVE = "benign_true_positive"
-    #: Not a classification — an explicit refusal to classify. See module docstring.
     ESCALATE = "escalate"
 
 
@@ -50,25 +49,18 @@ class AttackStage(BishopModel):
     technique_id: str
     technique_name: str
     summary: str
-    #: Evidence IDs supporting this step. A stage with none does not render.
     evidence_ids: list[str] = Field(default_factory=list)
 
 
 class Verdict(BishopModel):
     label: VerdictLabel
     confidence: float = 0.0
-    #: Why, in the analyst's own terms. Cites evidence, does not restate the alert.
     rationale: str = ""
-    #: The reconstructed story. Empty when the verdict is not a true positive.
     narrative: str = ""
     stages: list[AttackStage] = Field(default_factory=list)
-    #: Validated against the ATT&CK bundle before it gets here. Never raw model output.
     technique_ids: list[str] = Field(default_factory=list)
-    #: Bishop's own severity assessment, which may differ from the sensor's.
     assessed_severity: Severity = Severity.MEDIUM
-    #: Populated by the critic: what would make this verdict wrong.
     counter_arguments: list[str] = Field(default_factory=list)
-    #: Set when the graph routes to a human instead of standing behind a label.
     escalation_reason: str | None = None
 
     @property

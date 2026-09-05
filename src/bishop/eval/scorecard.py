@@ -45,8 +45,6 @@ from bishop.schema import EvidenceKind, VerdictLabel
 RESULTS_DIR = Path(__file__).resolve().parents[3] / "eval" / "results"
 BASELINE_PATH = RESULTS_DIR / "baseline.json"
 
-#: A human tier-1 analyst on a alert like these. Used only as a stated point of
-#: comparison, and labelled as an assumption rather than a measurement.
 HUMAN_BASELINE_SECONDS = 20 * 60
 
 
@@ -57,7 +55,6 @@ class AlertOutcome:
     actual: str
     correct: bool
     confidence: float
-    #: True when the label is wrong in the direction that matters most.
     missed_true_positive: bool
     escalated: bool
     should_escalate: bool
@@ -83,9 +80,6 @@ class Scorecard:
     attack_version: str
     corpus_size: int
     corpus_is_synthetic: bool
-    #: Which set this was run on. "golden" is the tuned development corpus;
-    #: "holdout" is the set written after the thresholds were fixed and run
-    #: once. The two numbers mean different things and are never averaged.
     corpus_name: str = "golden"
 
     verdict_accuracy: float = 0.0
@@ -128,9 +122,6 @@ def _run_one(item: LabelledAlert, *, provider: ModelProvider | None, index: int)
     started = time.perf_counter()
     result = graph.invoke(state, config=config)
 
-    # The gate suspends the run. For evaluation, reject: the scorecard measures
-    # triage quality, and approving containment on every alert to make the graph
-    # finish would be a strange thing to bake into a benchmark.
     if result.get("__interrupt__"):
         from langgraph.types import Command
 
@@ -150,8 +141,6 @@ def _run_one(item: LabelledAlert, *, provider: ModelProvider | None, index: int)
     actual = str(verdict.label) if verdict else "none"
     reported = list(verdict.technique_ids) if verdict else []
 
-    # Everything in the verdict should already be valid; check anyway, because
-    # this is the number the README claims.
     invalid = [r.proposed for r in validate_techniques(reported).rejected]
 
     injections = [
@@ -434,7 +423,6 @@ def load_baseline(path: Path | None = None) -> dict[str, Any] | None:
     return json.loads(target.read_text(encoding="utf-8"))
 
 
-#: Metrics where a drop is a regression, and metrics where a rise is.
 _HIGHER_IS_BETTER = (
     "verdict_accuracy",
     "escalation_precision",

@@ -22,10 +22,6 @@ from bishop.schema import Alert
 
 CORPUS_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "alerts"
 
-#: The held-out set. Written after the fusion thresholds were fixed, run
-#: separately, and never used to tune anything — see `scripts/build_holdout.py`
-#: for the protocol it is kept under. It is a separate directory rather than a
-#: flag on the golden set so that `load_corpus()` cannot pick it up by accident.
 HOLDOUT_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "holdout"
 
 
@@ -57,7 +53,6 @@ def load_corpus(directory: Path | None = None) -> list[LabelledAlert]:
     for path in sorted(source.glob("*.json")):
         payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         labels = payload.pop("labels", {})
-        # The alert handed to the graph carries no ground truth.
         alert = Alert.model_validate(payload)
         loaded.append(
             LabelledAlert(

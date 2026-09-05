@@ -55,8 +55,6 @@ def build_incident(state: BishopState, *, audit_head: str | None = None) -> Inci
     alerts = state.get("alerts") or []
     reports: list[InvestigatorReport] = list(state.get("reports") or [])
 
-    # Quarantine findings are their own report so the console can show which
-    # component raised them, and so they survive a run where nothing else fired.
     injections = state.get("quarantine_evidence") or []
     if injections:
         reports = [

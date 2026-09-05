@@ -1,17 +1,5 @@
 "use client";
 
-/**
- * The agent graph, animating as SSE events arrive.
- *
- * The layout is deliberate: the five investigators sit in one column so the
- * fan-out reads as parallel. That is the architectural claim this view exists
- * to demonstrate — they are not a loop with four iterations, they run at the
- * same time against disjoint inputs.
- *
- * Node state comes from the event stream rather than from polling, so a node
- * lights up the moment its work lands.
- */
-
 import { useEffect, useMemo } from "react";
 import ReactFlow, {
   Background,
@@ -57,40 +45,123 @@ function BishopNode({ data }: NodeProps<BishopNodeData>) {
         opacity: data.state === "idle" ? 0.45 : 1,
       }}
     >
-      <Handle type="target" position={Position.Left} style={{ background: colour }} />
-      <div className="font-medium" style={{ color: data.state === "idle" ? undefined : colour }}>
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: colour }}
+      />
+      <div
+        className="font-medium"
+        style={{ color: data.state === "idle" ? undefined : colour }}
+      >
         {data.label}
       </div>
-      {data.detail && <div className="muted mt-0.5 text-[10px]">{data.detail}</div>}
-      <Handle type="source" position={Position.Right} style={{ background: colour }} />
+      {data.detail && (
+        <div className="muted mt-0.5 text-[10px]">{data.detail}</div>
+      )}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{ background: colour }}
+      />
     </div>
   );
 }
 
 const nodeTypes = { bishop: BishopNode };
 
-const INVESTIGATORS = ["identity", "endpoint", "network", "threatintel", "context"] as const;
+const INVESTIGATORS = [
+  "identity",
+  "endpoint",
+  "network",
+  "threatintel",
+  "context",
+] as const;
 
 function baseNodes(): Node<BishopNodeData>[] {
   const nodes: Node<BishopNodeData>[] = [
-    { id: "ingest", position: { x: 0, y: 180 }, data: { label: "ingest", detail: "quarantine", state: "idle", kind: "stage" }, type: "bishop" },
-    { id: "triage_supervisor", position: { x: 190, y: 180 }, data: { label: "triage_supervisor", state: "idle", kind: "stage" }, type: "bishop" },
+    {
+      id: "ingest",
+      position: { x: 0, y: 180 },
+      data: {
+        label: "ingest",
+        detail: "quarantine",
+        state: "idle",
+        kind: "stage",
+      },
+      type: "bishop",
+    },
+    {
+      id: "triage_supervisor",
+      position: { x: 190, y: 180 },
+      data: { label: "triage_supervisor", state: "idle", kind: "stage" },
+      type: "bishop",
+    },
   ];
   INVESTIGATORS.forEach((surface, index) => {
     nodes.push({
       id: `investigator:${surface}`,
       position: { x: 410, y: index * 76 },
-      data: { label: `${surface}_investigator`, state: "idle", kind: "investigator" },
+      data: {
+        label: `${surface}_investigator`,
+        state: "idle",
+        kind: "investigator",
+      },
       type: "bishop",
     });
   });
   nodes.push(
-    { id: "synthesis", position: { x: 640, y: 145 }, data: { label: "synthesis", detail: "ATT&CK mapping", state: "idle", kind: "stage" }, type: "bishop" },
-    { id: "adversarial_critic", position: { x: 640, y: 225 }, data: { label: "adversarial_critic", state: "idle", kind: "stage" }, type: "bishop" },
-    { id: "response_planner", position: { x: 860, y: 145 }, data: { label: "response_planner", state: "idle", kind: "stage" }, type: "bishop" },
-    { id: "response_gate", position: { x: 860, y: 225 }, data: { label: "response_gate", detail: "human decides", state: "idle", kind: "gate" }, type: "bishop" },
-    { id: "response_execute", position: { x: 1080, y: 185 }, data: { label: "response_execute", detail: "mocked", state: "idle", kind: "stage" }, type: "bishop" },
-    { id: "report", position: { x: 1080, y: 105 }, data: { label: "report", state: "idle", kind: "stage" }, type: "bishop" },
+    {
+      id: "synthesis",
+      position: { x: 640, y: 145 },
+      data: {
+        label: "synthesis",
+        detail: "ATT&CK mapping",
+        state: "idle",
+        kind: "stage",
+      },
+      type: "bishop",
+    },
+    {
+      id: "adversarial_critic",
+      position: { x: 640, y: 225 },
+      data: { label: "adversarial_critic", state: "idle", kind: "stage" },
+      type: "bishop",
+    },
+    {
+      id: "response_planner",
+      position: { x: 860, y: 145 },
+      data: { label: "response_planner", state: "idle", kind: "stage" },
+      type: "bishop",
+    },
+    {
+      id: "response_gate",
+      position: { x: 860, y: 225 },
+      data: {
+        label: "response_gate",
+        detail: "human decides",
+        state: "idle",
+        kind: "gate",
+      },
+      type: "bishop",
+    },
+    {
+      id: "response_execute",
+      position: { x: 1080, y: 185 },
+      data: {
+        label: "response_execute",
+        detail: "mocked",
+        state: "idle",
+        kind: "stage",
+      },
+      type: "bishop",
+    },
+    {
+      id: "report",
+      position: { x: 1080, y: 105 },
+      data: { label: "report", state: "idle", kind: "stage" },
+      type: "bishop",
+    },
   );
   return nodes;
 }
@@ -118,11 +189,16 @@ function baseEdges(): Edge[] {
     { id: "e5", source: "response_gate", target: "response_execute" },
     { id: "e6", source: "response_execute", target: "report" },
   );
-  return edges.map((edge) => ({ ...edge, animated: false, style: { stroke: "var(--edge)" } }));
+  return edges.map((edge) => ({
+    ...edge,
+    animated: false,
+    style: { stroke: "var(--edge)" },
+  }));
 }
 
-/** Fold the event stream into per-node state. */
-function statesFor(events: RunEvent[]): Record<string, { state: NodeState; detail?: string }> {
+function statesFor(
+  events: RunEvent[],
+): Record<string, { state: NodeState; detail?: string }> {
   const out: Record<string, { state: NodeState; detail?: string }> = {};
   const set = (id: string, state: NodeState, detail?: string) => {
     out[id] = { state, detail: detail ?? out[id]?.detail };
@@ -147,7 +223,8 @@ function statesFor(events: RunEvent[]): Record<string, { state: NodeState; detai
       case "dispatched": {
         set("triage_supervisor", "done");
         const surfaces = (event.surfaces as string[]) ?? [];
-        for (const surface of surfaces) set(`investigator:${surface}`, "active");
+        for (const surface of surfaces)
+          set(`investigator:${surface}`, "active");
         break;
       }
       case "detectors_ran": {
@@ -174,7 +251,11 @@ function statesFor(events: RunEvent[]): Record<string, { state: NodeState; detai
         set("adversarial_critic", "active");
         break;
       case "critique":
-        set("adversarial_critic", "done", `${String(event.arguments ?? 0)} counter-arguments`);
+        set(
+          "adversarial_critic",
+          "done",
+          `${String(event.arguments ?? 0)} counter-arguments`,
+        );
         set("response_planner", "active");
         break;
       case "response_planned":
@@ -209,7 +290,8 @@ function statesFor(events: RunEvent[]): Record<string, { state: NodeState; detai
 }
 
 export function Topology({ events }: { events: RunEvent[] }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState<BishopNodeData>(baseNodes());
+  const [nodes, setNodes, onNodesChange] =
+    useNodesState<BishopNodeData>(baseNodes());
   const [edges, setEdges, onEdgesChange] = useEdgesState(baseEdges());
 
   const states = useMemo(() => statesFor(events), [events]);
@@ -221,7 +303,11 @@ export function Topology({ events }: { events: RunEvent[] }) {
         if (!next) return node;
         return {
           ...node,
-          data: { ...node.data, state: next.state, detail: next.detail ?? node.data.detail },
+          data: {
+            ...node.data,
+            state: next.state,
+            detail: next.detail ?? node.data.detail,
+          },
         };
       }),
     );
@@ -229,7 +315,9 @@ export function Topology({ events }: { events: RunEvent[] }) {
       current.map((edge) => {
         const sourceState = states[edge.source]?.state;
         const targetState = states[edge.target]?.state;
-        const live = sourceState === "done" && (targetState === "active" || targetState === "waiting");
+        const live =
+          sourceState === "done" &&
+          (targetState === "active" || targetState === "waiting");
         return {
           ...edge,
           animated: live,

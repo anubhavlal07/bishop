@@ -1,21 +1,5 @@
 "use client";
 
-/**
- * Subscribe to one run's SSE stream and keep the run state fresh.
- *
- * Two things about Bishop's stream shape drive this hook:
- *
- * The server closes the stream when the run settles — including at
- * `awaiting_approval`, which is a pause rather than an end. So after the
- * analyst submits a decision the stream has to be re-opened, which is what
- * `resubscribe` is for.
- *
- * The stream replays everything that already happened before returning to
- * live. A console opened halfway through a run therefore renders the whole
- * run, and the events list is rebuilt from scratch on each subscription rather
- * than appended to.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, eventStreamUrl } from "./api";
@@ -51,8 +35,6 @@ export function useRunStream(runId: string | null): UseRunStream {
   useEffect(() => {
     if (!runId) return;
 
-    // Replay arrives on every subscription, so start from empty rather than
-    // accumulating duplicates across reconnects.
     setEvents([]);
     setError(null);
 
@@ -77,8 +59,6 @@ export function useRunStream(runId: string | null): UseRunStream {
       }
     };
 
-    // The server names each event, so a bare `onmessage` never fires. Listen
-    // for the kinds Bishop emits.
     const kinds = [
       "started",
       "continued",
@@ -103,11 +83,10 @@ export function useRunStream(runId: string | null): UseRunStream {
       "heartbeat",
       "message",
     ];
-    for (const kind of kinds) source.addEventListener(kind, handle as EventListener);
+    for (const kind of kinds)
+      source.addEventListener(kind, handle as EventListener);
 
     source.onerror = () => {
-      // EventSource fires this on a normal close too, so only surface it when
-      // the run has not settled.
       setConnected(false);
       void refreshState();
     };
@@ -115,7 +94,8 @@ export function useRunStream(runId: string | null): UseRunStream {
     void refreshState();
 
     return () => {
-      for (const kind of kinds) source.removeEventListener(kind, handle as EventListener);
+      for (const kind of kinds)
+        source.removeEventListener(kind, handle as EventListener);
       source.close();
       sourceRef.current = null;
     };

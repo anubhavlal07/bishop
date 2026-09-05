@@ -1,16 +1,5 @@
 "use client";
 
-/**
- * Findings, grouped by the investigator that produced them.
- *
- * Two things this view insists on. First, the detector and its score sit next
- * to every finding — the claim Bishop makes is that a unit-tested function
- * decided and the model only narrated, and this is where a reader checks it.
- * Second, injection and mitigating evidence are visually distinct from ordinary
- * observations, because they mean opposite things and a uniform list would let
- * a reader miss both.
- */
-
 import { useState } from "react";
 
 import type { Evidence, InvestigatorReport } from "@/lib/types";
@@ -27,7 +16,8 @@ const KIND_STYLE: Record<string, { colour: string; label: string }> = {
 function EvidenceRow({ evidence }: { evidence: Evidence }) {
   const [open, setOpen] = useState(evidence.kind === "injection");
   const style = KIND_STYLE[evidence.kind] ?? KIND_STYLE.observation;
-  const notable = evidence.kind === "injection" || evidence.kind === "mitigating";
+  const notable =
+    evidence.kind === "injection" || evidence.kind === "mitigating";
 
   return (
     <li
@@ -46,12 +36,17 @@ function EvidenceRow({ evidence }: { evidence: Evidence }) {
         <span className="flex-1">
           <span className="text-sm">{evidence.title}</span>
           {notable && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide" style={{ color: style.colour }}>
+            <span
+              className="ml-2 text-[10px] uppercase tracking-wide"
+              style={{ color: style.colour }}
+            >
               {style.label}
             </span>
           )}
         </span>
-        <span className="mono text-xs muted">{evidence.confidence.toFixed(2)}</span>
+        <span className="mono text-xs muted">
+          {evidence.confidence.toFixed(2)}
+        </span>
       </button>
 
       {open && (
@@ -73,26 +68,32 @@ function EvidenceRow({ evidence }: { evidence: Evidence }) {
                     </span>
                   )}
                   {signal.rationale && (
-                    <p className="muted mt-0.5 leading-relaxed">{signal.rationale}</p>
+                    <p className="muted mt-0.5 leading-relaxed">
+                      {signal.rationale}
+                    </p>
                   )}
                 </div>
               ))}
             </div>
           )}
 
-          {evidence.kind === "injection" && typeof evidence.facts.raw_value === "string" && (
-            <div className="mt-2">
-              <p className="text-[10px] uppercase tracking-wide muted">
-                the field, verbatim — preserved, not stripped
-              </p>
-              <pre
-                className="mono mt-1 max-h-40 overflow-auto rounded p-2 text-[11px] whitespace-pre-wrap break-all"
-                style={{ background: "var(--bg)", border: "1px solid var(--edge)" }}
-              >
-                {evidence.facts.raw_value}
-              </pre>
-            </div>
-          )}
+          {evidence.kind === "injection" &&
+            typeof evidence.facts.raw_value === "string" && (
+              <div className="mt-2">
+                <p className="text-[10px] uppercase tracking-wide muted">
+                  the field, verbatim — preserved, not stripped
+                </p>
+                <pre
+                  className="mono mt-1 max-h-40 overflow-auto rounded p-2 text-[11px] whitespace-pre-wrap break-all"
+                  style={{
+                    background: "var(--bg)",
+                    border: "1px solid var(--edge)",
+                  }}
+                >
+                  {evidence.facts.raw_value}
+                </pre>
+              </div>
+            )}
         </div>
       )}
     </li>
@@ -100,7 +101,8 @@ function EvidenceRow({ evidence }: { evidence: Evidence }) {
 }
 
 export function EvidencePanel({ reports }: { reports: InvestigatorReport[] }) {
-  if (reports.length === 0) return <Empty>No investigator has reported yet.</Empty>;
+  if (reports.length === 0)
+    return <Empty>No investigator has reported yet.</Empty>;
 
   return (
     <div className="space-y-4">
@@ -109,12 +111,18 @@ export function EvidencePanel({ reports }: { reports: InvestigatorReport[] }) {
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-medium">{report.investigator}</h3>
             {report.duration_ms > 0 && (
-              <span className="mono text-[10px] muted">{report.duration_ms}ms</span>
+              <span className="mono text-[10px] muted">
+                {report.duration_ms}ms
+              </span>
             )}
-            {report.skipped && <span className="text-[10px] muted">(skipped)</span>}
+            {report.skipped && (
+              <span className="text-[10px] muted">(skipped)</span>
+            )}
           </div>
           {report.summary && (
-            <p className="muted mt-1 text-xs leading-relaxed">{report.summary}</p>
+            <p className="muted mt-1 text-xs leading-relaxed">
+              {report.summary}
+            </p>
           )}
           {report.evidence.length > 0 ? (
             <ul className="mt-2 space-y-1.5">

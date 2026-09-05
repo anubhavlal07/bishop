@@ -28,10 +28,6 @@ from datetime import timedelta
 
 from bishop.schema import Alert
 
-#: Alerts further apart than this are not correlated even if they share a host.
-#: An hour is a compromise: long enough to span a hands-on-keyboard sequence,
-#: short enough that a laptop generating one alert a day does not accumulate a
-#: month-long "incident".
 DEFAULT_WINDOW = timedelta(hours=1)
 
 
@@ -104,7 +100,7 @@ def correlate(alerts: list[Alert], *, window: timedelta = DEFAULT_WINDOW) -> lis
     for index in range(len(ordered)):
         for earlier in range(index - 1, -1, -1):
             if ordered[index].detected_at - ordered[earlier].detected_at > window:
-                break  # everything before this is further away still
+                break
             if entities[index] & entities[earlier]:
                 union(earlier, index)
 

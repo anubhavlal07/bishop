@@ -55,15 +55,9 @@ class ProviderSpec:
     key: str
     label: str
     default_model: str
-    #: Models offered in the console's picker. Not a restriction — any id the
-    #: vendor accepts works — just the ones worth suggesting.
     models: tuple[str, ...]
-    #: Roughly what a key looks like, so an obvious paste error is caught in the
-    #: browser rather than after a failed run. Deliberately loose: vendors
-    #: change their formats and a strict check would reject valid keys.
     key_hint: str
     key_pattern: str
-    #: Azure needs a customer-specific endpoint; nothing else does.
     needs_endpoint: bool = False
     help_url: str = ""
 
@@ -116,11 +110,6 @@ PROVIDERS: dict[str, ProviderSpec] = {
     ),
 }
 
-#: Hostnames an Azure endpoint may end with. Without this, the endpoint field is
-#: an arbitrary URL that the server will send a request to with a secret
-#: attached — which is server-side request forgery, and the fact that the user
-#: typed the URL themselves does not make it safe, because the user is not
-#: necessarily the person who chose it.
 _ALLOWED_ENDPOINT_SUFFIXES = (
     ".openai.azure.com",
     ".cognitiveservices.azure.com",
@@ -142,8 +131,6 @@ class Credentials:
     endpoint: str = ""
 
     def __repr__(self) -> str:
-        # Explicit rather than relying on `field(repr=False)` alone, so that a
-        # future field cannot silently become loggable.
         return (
             f"Credentials(provider={self.provider!r}, model_id={self.model_id!r}, key=<redacted>)"
         )

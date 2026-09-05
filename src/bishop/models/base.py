@@ -45,8 +45,6 @@ class Usage:
         )
 
 
-#: USD per million tokens, `(input, output)`. Read from the Anthropic pricing
-#: table; the mock is free, which is the point of it.
 PRICING: dict[str, tuple[float, float]] = {
     "claude-opus-5": (5.00, 25.00),
     "claude-sonnet-5": (2.00, 10.00),
@@ -67,7 +65,6 @@ def cost_usd(model: str, usage: Usage) -> float:
 @dataclass(slots=True)
 class ModelResponse:
     text: str
-    #: Parsed JSON when a schema was requested. Never partially parsed.
     data: dict[str, Any] | None = None
     usage: Usage = field(default_factory=Usage)
     model: str = "mock"

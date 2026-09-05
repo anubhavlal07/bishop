@@ -25,9 +25,6 @@ from bishop.detectors.base import (
     shannon_entropy,
 )
 
-#: The investigator surfaces, in dispatch order. `context` runs on every alert:
-#: it is the only surface that can argue *against* malice, and an alert with no
-#: exculpatory evidence looked at is one where nobody checked.
 SURFACES: tuple[str, ...] = ("identity", "endpoint", "network", "threatintel", "context")
 
 __all__ = [

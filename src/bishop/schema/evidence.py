@@ -23,15 +23,10 @@ from bishop.schema.alert import BishopModel
 
 
 class EvidenceKind(StrEnum):
-    #: A deterministic detector fired.
     DETECTOR = "detector"
-    #: An investigator's reading of the detector output plus alert context.
     OBSERVATION = "observation"
-    #: A cached threat-intelligence match.
     INTEL = "intel"
-    #: An attempt to manipulate Bishop through an alert field. Always escalated.
     INJECTION = "injection"
-    #: A reason the activity may be legitimate. Weighed against the rest.
     MITIGATING = "mitigating"
 
 
@@ -46,30 +41,14 @@ class DetectorResult(BishopModel):
     detector: str
     fired: bool
     score: float = 0.0
-    #: Every number the detector computed. This is what makes a finding checkable.
     facts: dict[str, Any] = Field(default_factory=dict)
-    #: One sentence, plain English, no hedging.
     rationale: str = ""
-    #: True when firing *argues against* malice rather than for it — an
-    #: authorised actor, a signed vendor binary, a sanctioned destination.
-    #: Without this, a detector could only ever add suspicion, and Bishop could
-    #: never reach `benign_true_positive` at all.
     mitigating: bool = False
-    #: Techniques this detector *suggests*. Validated before any of them ship.
     technique_hints: list[str] = Field(default_factory=list)
-    #: Whether the detector had data in its remit and reached a conclusion, as
-    #: opposed to having nothing to work with. `run_surface` has always
-    #: described this as "the difference between 'no beaconing' and 'nobody
-    #: checked for beaconing'" — this is the field that carries the distinction
-    #: as far as the verdict, which is the only place it changes an outcome.
-    #: `clear()` sets it; `miss()` does not.
     examined: bool = False
 
     @model_validator(mode="after")
     def _firing_implies_examining(self) -> DetectorResult:
-        # A detector that fired plainly looked at something. Deriving it here
-        # rather than asking every detector to remember means the flag cannot
-        # drift out of agreement with `fired`.
         if self.fired and not self.examined:
             object.__setattr__(self, "examined", True)
         return self
@@ -82,13 +61,11 @@ class Evidence(BishopModel):
     """One finding, attributable to a named producer."""
 
     evidence_id: str
-    #: Detector name, investigator name, or intel feed name.
     producer: str
     kind: EvidenceKind
     title: str
     detail: str = ""
     confidence: float = 0.5
-    #: Detector results this finding rests on. Empty for pure observations.
     signals: list[DetectorResult] = Field(default_factory=list)
     technique_ids: list[str] = Field(default_factory=list)
     facts: dict[str, Any] = Field(default_factory=dict)

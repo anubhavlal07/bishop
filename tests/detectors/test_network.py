@@ -73,9 +73,6 @@ class TestBeaconing:
         assert not result.fired
 
     def test_a_missed_check_in_does_not_break_detection(self):
-        # Eight regular check-ins, one long gap where the laptop slept, then
-        # four more. Coefficient of variation would call this irregular; the
-        # median absolute deviation correctly does not.
         connections = beacon_series(8, 60.0)
         elapsed = 8 * 60.0 + 7200.0
         for _ in range(5):
@@ -84,7 +81,6 @@ class TestBeaconing:
         result = beaconing(alert(connections=connections))
         assert result.fired
         assert result.facts["gaps_dropped_as_missed_checkins"] > 0
-        # The raw series looks wildly irregular; the trimmed one is metronomic.
         assert result.facts["coefficient_of_variation"] > 2.0
         assert result.facts["trimmed_coefficient_of_variation"] == 0.0
 
@@ -135,7 +131,6 @@ class TestDnsExfiltration:
         assert not result.fired
 
     def test_a_few_long_random_hostnames_are_not_enough(self):
-        # A CDN produces high-entropy names. Three of them is not a tunnel.
         queries = [dns(float(i), f"a7f3k9{i}.cdn.example") for i in range(3)]
         result = dns_exfiltration(alert(dns_events=queries))
         assert not result.fired

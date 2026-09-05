@@ -7,7 +7,10 @@ import type { DetectorSpec } from "@/lib/types";
 import { ApiDown, Panel } from "@/components/primitives";
 
 export default function DetectorsPage() {
-  const [data, setData] = useState<{ surfaces: string[]; detectors: DetectorSpec[] } | null>(null);
+  const [data, setData] = useState<{
+    surfaces: string[];
+    detectors: DetectorSpec[];
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,15 +25,21 @@ export default function DetectorsPage() {
   }, []);
 
   if (error) return <ApiDown message={error} />;
-  if (!data) return <p className="muted text-xs">Loading the detector library…</p>;
+  if (!data)
+    return <p className="muted text-xs">Loading the detector library…</p>;
 
   return (
-    <Panel title="Detector library" subtitle={`${data.detectors.length} deterministic primitives`}>
+    <Panel
+      title="Detector library"
+      subtitle={`${data.detectors.length} deterministic primitives`}
+    >
       <p className="muted mb-4 text-xs leading-relaxed">
-        Every signal behind a verdict starts here, in a pure function with a unit test beside it.
-        No model call, no network, no clock read, no randomness — the same alert produces the same
-        result on any machine. Agents interpret and correlate these; they do not invent signals,
-        and a finding citing a detector that did not fire is dropped rather than downgraded.
+        Every signal behind a verdict starts here, in a pure function with a
+        unit test beside it. No model call, no network, no clock read, no
+        randomness — the same alert produces the same result on any machine.
+        Agents interpret and correlate these; they do not invent signals, and a
+        finding citing a detector that did not fire is dropped rather than
+        downgraded.
       </p>
 
       <div className="space-y-5">
@@ -39,7 +48,10 @@ export default function DetectorsPage() {
           if (specs.length === 0) return null;
           return (
             <div key={surface}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--color-btp)" }}>
+              <h3
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--color-btp)" }}
+              >
                 {surface}
                 <span className="muted ml-2 font-normal normal-case">
                   {specs.length} detector{specs.length === 1 ? "" : "s"}
@@ -61,13 +73,18 @@ export default function DetectorsPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="mono rounded px-1 text-[10px]"
-                          style={{ border: "1px solid var(--edge)", color: "var(--muted)" }}
+                          style={{
+                            border: "1px solid var(--edge)",
+                            color: "var(--muted)",
+                          }}
                         >
                           {technique}
                         </a>
                       ))}
                     </div>
-                    <p className="muted mt-1 text-xs leading-relaxed">{spec.summary}</p>
+                    <p className="muted mt-1 text-xs leading-relaxed">
+                      {spec.summary}
+                    </p>
                   </li>
                 ))}
               </ul>

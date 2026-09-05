@@ -1,19 +1,5 @@
 "use client";
 
-/**
- * Bring your own alert.
- *
- * Everything else in this console reads the thirty committed fixtures. This is
- * the page where someone points Bishop at an alert they actually have, which
- * is the difference between watching a demo and using a tool.
- *
- * The flow is deliberately two-step. Paste, then *preview*, then run. The
- * preview shows what Bishop understood and — the part that matters — which
- * detectors have jurisdiction over what survived the mapping. Bishop reads a
- * subset of any real alert, and a verdict is only worth as much as the fields
- * behind it, so seeing the subset before the verdict is not a nicety.
- */
-
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,7 +9,6 @@ import { Panel } from "@/components/primitives";
 import { api, ApiError } from "@/lib/api";
 import type { IngestPreview } from "@/lib/types";
 
-/** Starting points, so the page is not an empty box with no way in. */
 const SAMPLES: { name: string; blurb: string; body: unknown }[] = [
   {
     name: "Sysmon process create",
@@ -110,7 +95,6 @@ export default function TriagePage() {
       .catch(() => setFormats(null));
   }, []);
 
-  /** Parse locally first, so a typo is a typo and not a round trip. */
   const parse = useCallback((): unknown | null => {
     const trimmed = text.trim();
     if (!trimmed) {

@@ -21,19 +21,12 @@ from bishop.detectors.base import (
 from bishop.schema.alert import Alert, AuthEvent
 from bishop.schema.evidence import DetectorResult
 
-#: Cruising speed of a commercial airliner, rounded down. Below this, "they
-#: flew" is an ordinary explanation and the detector should stay quiet.
 PLAUSIBLE_TRAVEL_KMH = 900.0
 
-#: Above this, no combination of aircraft and time zones explains it.
 IMPOSSIBLE_TRAVEL_KMH = 1200.0
 
-#: Under this gap, no travel explains the distance at any speed, so the pair is
-#: a change of network egress rather than a person moving. Reported, not fired.
 NETWORK_ARTEFACT_SECONDS = 300.0
 
-#: Consumer geolocation is accurate to a city at best. Below this, apparent
-#: movement is database imprecision.
 SAME_METRO_KM = 50.0
 
 SUCCESS_OUTCOMES = {"success", "mfa_success"}
@@ -77,7 +70,6 @@ def impossible_travel(alert: Alert) -> DetectorResult:
 
     Three cases are separated rather than collapsed, because they mean different
     things and a single "impossible travel" label would be wrong for two of them:
-
     - **A gap under `NETWORK_ARTEFACT_SECONDS`** cannot be travel at any speed,
       so it is not reported as travel. It is a VPN or proxy egress change, and
       the detector deliberately does *not* fire — this is the single largest
@@ -93,11 +85,6 @@ def impossible_travel(alert: Alert) -> DetectorResult:
     comparable = {user: events for user, events in grouped.items() if len(events) >= 2}
     if not comparable:
         if grouped:
-            # There *were* geolocated logins; they just did not stack up on any
-            # one account. That is a conclusion, not an absence of one — it is
-            # precisely the finding that exonerates an alert which correlated
-            # two different people's sessions on tenant rather than on account.
-            # Reporting it as "nothing to work with" threw away the answer.
             plural = "" if len(grouped) == 1 else "s"
             return clear(
                 "impossible_travel",
@@ -112,14 +99,14 @@ def impossible_travel(alert: Alert) -> DetectorResult:
         )
 
     best: dict[str, object] | None = None
-    best_rank = (-1.0, 0.0)  # (case weight, velocity) — concurrent ranks below travel
+    best_rank = (-1.0, 0.0)
     pairs_compared = 0
     suppressed: list[dict[str, object]] = []
 
     for username, events in comparable.items():
         ordered = ordered_by_time(events, key=lambda pair: pair[1].timestamp)
         for (earlier_index, earlier), (later_index, later) in pairwise(ordered):
-            assert earlier.geo and later.geo  # guarded by _located_by_principal
+            assert earlier.geo and later.geo
             distance = haversine_km(
                 float(earlier.geo.latitude),
                 float(earlier.geo.longitude),
@@ -127,7 +114,7 @@ def impossible_travel(alert: Alert) -> DetectorResult:
                 float(later.geo.longitude),
             )
             if distance < SAME_METRO_KM:
-                continue  # geolocation is not precise enough to call this movement
+                continue
             pairs_compared += 1
             gap = seconds_between(earlier.timestamp, later.timestamp)
 
@@ -202,8 +189,6 @@ def impossible_travel(alert: Alert) -> DetectorResult:
         return DetectorResult(
             detector="impossible_travel",
             fired=True,
-            # Capped: duplicated events and collector clock skew produce this
-            # too, and neither is an intrusion.
             score=0.55,
             facts=facts,
             rationale=(
@@ -219,7 +204,6 @@ def impossible_travel(alert: Alert) -> DetectorResult:
     return DetectorResult(
         detector="impossible_travel",
         fired=True,
-        # A near-threshold value is a weaker signal than a physically absurd one.
         score=round(
             0.55 + 0.45 * scale(velocity, PLAUSIBLE_TRAVEL_KMH, IMPOSSIBLE_TRAVEL_KMH * 3), 3
         ),
@@ -305,8 +289,6 @@ def mfa_fatigue(alert: Alert) -> DetectorResult:
             f"{window_seconds / 60:.1f} minutes, then one approved — the pattern of a user "
             f"worn down by repeated pushes"
         ),
-        # The approval means the adversary now holds a working session, which
-        # is the T1078 half of what happened and the half that matters next.
         technique_hints=["T1621", "T1078"],
     )
 
@@ -357,8 +339,6 @@ def password_spray(alert: Alert) -> DetectorResult:
         "compromised_accounts": successes_after,
     }
 
-    #: Spraying is wide and shallow. Deep and narrow is brute force, which is a
-    #: different technique and would be a different detector.
     if len(targets) < 5 or max_per_account > 5:
         return clear(
             "password_spray",
@@ -390,9 +370,6 @@ def password_spray(alert: Alert) -> DetectorResult:
     )
 
 
-#: Binaries that can actually change group membership or create accounts. The
-#: detector will not infer a group change from a command line unless the process
-#: being run is one of these — see `account_manipulation` for why.
 GROUP_MANAGEMENT_TOOLS: frozenset[str] = frozenset(
     {
         "net.exe",
@@ -466,8 +443,6 @@ def account_manipulation(alert: Alert) -> DetectorResult:
     """
     hits: list[dict[str, object]] = []
 
-    # Preferred source: the directory's own audit events, normalised into `raw`
-    # by the collector. Windows writes these as 4728/4732/4756.
     for index, change in enumerate(alert.raw.get("group_changes") or []):
         if not isinstance(change, dict):
             continue
@@ -500,8 +475,6 @@ def account_manipulation(alert: Alert) -> DetectorResult:
             }
         )
 
-    # Fallback source: command lines, and only from a binary that could actually
-    # have made the change.
     haystacks: list[tuple[str, str, str]] = []
     for label, process in (("process", alert.process), ("parent_process", alert.parent_process)):
         if process and process.command_line:

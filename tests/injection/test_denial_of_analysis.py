@@ -110,9 +110,6 @@ class TestContextFlooding:
         )
         report = quarantine_alert(alert, run_id=RUN_ID)
         paths = {field.path for field in report.fields}
-        # The process command line is declared before dns_events, so it survives
-        # this ordering. If the schema is reordered it will not, and that is the
-        # thing to notice.
         assert "process.command_line" in paths, (
             "field discovery order decides what an attacker can push out of the block"
         )

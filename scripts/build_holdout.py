@@ -42,8 +42,6 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "fixtures" / "holdout"
 
-#: A different month from the dev corpus, so an alert from one is never mistaken
-#: for an alert from the other in a log.
 BASE = datetime(2026, 7, 9, 0, 0, 0, tzinfo=UTC)
 
 
@@ -99,10 +97,6 @@ def alert(
 
 def build() -> list[dict[str, Any]]:
     alerts: list[dict[str, Any]] = []
-
-    # ── true positives Bishop has no detector for ───────────────────────────
-    # It should escalate rather than close these. A confident false_positive
-    # here is a missed intrusion and the worst outcome on the sheet.
 
     alerts.append(
         alert(
@@ -203,8 +197,6 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
-    # ── true positives that look boring ─────────────────────────────────────
-
     alerts.append(
         alert(
             "HO-04-quiet-beacon",
@@ -268,8 +260,6 @@ def build() -> list[dict[str, Any]]:
             ],
         )
     )
-
-    # ── false positives built to look like the dev set's true positives ─────
 
     alerts.append(
         alert(
@@ -411,8 +401,6 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
-    # ── benign true positives, unauthorised by Bishop's policy file ─────────
-
     alerts.append(
         alert(
             "HO-11-authorised-scan-exploit",
@@ -488,8 +476,6 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
-    # ── injection, in phrasings and fields the dev set does not use ─────────
-
     alerts.append(
         alert(
             "HO-13-injection-email-subject",
@@ -554,8 +540,6 @@ def build() -> list[dict[str, Any]]:
             raw={"TargetImage": r"C:\Windows\system32\lsass.exe", "GrantedAccess": "0x1410"},
         )
     )
-
-    # ── genuinely ambiguous ────────────────────────────────────────────────
 
     alerts.append(
         alert(

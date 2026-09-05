@@ -1,11 +1,3 @@
-/**
- * Shapes returned by Bishop's API.
- *
- * Hand-written rather than generated, and deliberately narrow: these describe
- * only the fields the console actually reads. A type that claims more than the
- * component uses is a type that lies the first time the API changes.
- */
-
 export type VerdictLabel =
   "true_positive" | "false_positive" | "benign_true_positive" | "escalate";
 
@@ -28,7 +20,6 @@ export interface Health {
   deployment?: DeploymentInfo;
 }
 
-/** The redacted deployment configuration. Never carries a secret. */
 export interface DeploymentInfo {
   environment: "development" | "production";
   auth_required: boolean;
@@ -40,7 +31,6 @@ export interface DeploymentInfo {
   json_logs: boolean;
 }
 
-/** What it would take to run against a real model, rather than just that it isn't. */
 export interface LiveReadiness {
   selected: string;
   package_installed: boolean;
@@ -182,7 +172,6 @@ export interface Incident {
   audit_head: string | null;
 }
 
-/** What the analyst is shown at the gate. */
 export interface ApprovalRequest {
   kind: string;
   incident_id: string;
@@ -295,21 +284,12 @@ export interface Scorecard {
   notes: string[];
 }
 
-/** One SSE message. `kind` drives the topology animation. */
 export interface RunEvent {
   kind: string;
   at?: string;
   [key: string]: unknown;
 }
 
-/**
- * What the normaliser understood about a submitted alert.
- *
- * `detectors_with_jurisdiction` is the field worth reading first: it is
- * computed by running the detectors and asking which had data in their remit,
- * so an empty list means Bishop will escalate whatever the alert says because
- * it has nothing to measure.
- */
 export interface MappingReport {
   detected_format: string;
   mapped: { from: string; to: string }[];

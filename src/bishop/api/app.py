@@ -37,8 +37,6 @@ from bishop.eval import load_corpus
 from bishop.logging_setup import configure_logging
 from bishop.models import get_provider, is_offline
 
-# Validated here, at import, so a misconfigured production deployment fails to
-# start rather than serving. See `config.py` for what is enforced.
 settings = get_settings()
 configure_logging(json_logs=settings.json_logs, level=settings.log_level)
 logger = logging.getLogger("bishop.api")
@@ -71,27 +69,16 @@ app = FastAPI(
     title="Bishop",
     version=__version__,
     description="An autonomous SOC analyst. Investigates and proposes; never contains alone.",
-    # The interactive docs render the schema, which is fine, but they are an
-    # unauthenticated surface in production and there is nothing in them a
-    # deployed user needs.
     docs_url=None if settings.is_production else "/docs",
     redoc_url=None,
     lifespan=lifespan,
 )
 
-# Ordering matters and reads backwards: the last middleware added is the
-# outermost. So a request passes headers -> context (request id, body cap) ->
-# auth -> rate limit, which means an unauthenticated request is rejected before
-# it can consume a rate-limit slot belonging to a real key, and every rejection
-# still carries a request id.
 app.add_middleware(RateLimiter, settings=settings)
 app.add_middleware(AuthMiddleware, settings=settings)
 app.add_middleware(RequestContextMiddleware, settings=settings)
 app.add_middleware(SecurityHeadersMiddleware)
 
-# `allow_credentials` stays False: Bishop authenticates with a header, never a
-# cookie, so the browser never needs to send credentials cross-origin — and
-# with it False, a wildcard origin cannot be combined with credentials at all.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.origins),
@@ -150,8 +137,6 @@ class IngestPreview(BaseModel):
 
 class Decision(BaseModel):
     decision: str = Field(..., description="approved | rejected | modified")
-    #: Required for anything other than a rejection. An approval that names no
-    #: action approves nothing — see `response_gate._parse_decision`.
     approved_action_ids: list[str] = Field(default_factory=list)
     decided_by: str = "console"
     note: str = ""
@@ -194,9 +179,6 @@ def health() -> dict[str, Any]:
         "offline": is_offline(provider),
         "store": store_health(),
         "deployment": settings.redacted(),
-        # What it would take to run live, reported rather than implied. A
-        # console that says "mock model" without saying what is missing leaves
-        # the reader to guess between "no key", "no dependency" and "by design".
         "live": _live_readiness(),
     }
 
@@ -225,10 +207,6 @@ def _live_readiness() -> dict[str, Any]:
         "api_key_present": key_present,
         "ready": not missing,
         "missing": missing,
-        # Said plainly because "mock" invites the assumption that nothing is
-        # real. The detectors, ATT&CK validation, injection scanning,
-        # correlation and the audit chain run identically either way; the model
-        # only interprets and narrates what they produced.
         "what_mock_still_does": (
             "Detectors, ATT&CK validation, injection scanning, correlation and the "
             "audit chain are the same code in both modes. What the mock replaces is "
@@ -399,7 +377,7 @@ def _credentials_from(request: Request):
 
     provider = request.headers.get("x-model-provider")
     if not provider:
-        return None  # fall back to whatever the server is configured with
+        return None
     try:
         return parse(
             provider,
@@ -465,9 +443,6 @@ def start_run(body: StartRun, request: Request) -> dict[str, Any]:
         except (TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
         run = runs.start(alert, alert_id=alert.alert_id, provider=provider)
-        # The mapping travels with the run so the console can show what Bishop
-        # read alongside what it concluded. A verdict without that is a verdict
-        # you cannot audit.
         return {
             "run_id": run.run_id,
             "status": run.status,
@@ -522,7 +497,6 @@ async def run_events(run_id: str) -> StreamingResponse:
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            # Nginx and friends buffer SSE into uselessness without this.
             "X-Accel-Buffering": "no",
         },
     )

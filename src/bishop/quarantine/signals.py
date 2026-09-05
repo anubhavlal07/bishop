@@ -51,9 +51,7 @@ class InjectionSignal(BishopModel):
     """One match. Carries enough to argue with."""
 
     technique: InjectionTechnique
-    #: Which transformation of the field matched: raw, despaced, base64, ...
     form: str
-    #: The matched text, truncated. Kept verbatim — it is the evidence.
     excerpt: str
     weight: float
     note: str = ""
@@ -78,12 +76,8 @@ class FieldRisk(BishopModel):
         return list(seen)
 
 
-#: Tuned on `fixtures/injection/`. Below this a field is odd but not actionable;
-#: at or above it Bishop raises an IOC and tells a human.
 INJECTION_THRESHOLD = 0.5
 
-#: Fields that are long by nature. A 4 KB command line is normal; a 4 KB
-#: username is not, so the size check is per-field rather than global.
 _LENGTH_BUDGET: dict[str, int] = {
     "command_line": 8192,
     "description": 4096,
@@ -100,20 +94,7 @@ def _rx(*patterns: str) -> re.Pattern[str]:
     return re.compile("|".join(f"(?:{p})" for p in patterns), re.IGNORECASE | re.DOTALL)
 
 
-# ── multilingual instruction detection ──────────────────────────────────────
-#
-# The first version of this enumerated whole phrases per language, and the
-# red-team corpus walked through it 18 times out of 19 — a different verb, a
-# synonym, an intervening word, a language nobody listed. Enumerating sentences
-# in every language is not a defence, it is a list.
-#
-# This matches on **co-occurrence** instead: a verb meaning "ignore" or
-# "disregard" near a noun meaning "instructions" or "rules". Both lists are far
-# smaller than the space of sentences they cover, and adding a language means
-# adding two words rather than a paragraph.
-
 _IGNORE_VERBS = (
-    # English and Romance
     "ignore",
     "pay no attention",
     "take no notice",
@@ -137,12 +118,10 @@ _IGNORE_VERBS = (
     "bortse fra",
     "bortse från",
     "ignorer",
-    # Germanic and Turkic
     "yoksay",
     "gormezden gel",
     "görmezden gel",
     "dikkate alma",
-    # Slavic
     "игнорируй",
     "игнорируйте",
     "не обращай внимания",
@@ -150,7 +129,6 @@ _IGNORE_VERBS = (
     "пренебрегай",
     "проигноруй",
     "ігноруй",
-    # CJK
     "忽略",
     "无视",
     "無視",
@@ -161,7 +139,6 @@ _IGNORE_VERBS = (
     "무시",
     "무시하고",
     "무시하십시오",
-    # Indic, Semitic, SEA, other
     "अनदेखा",
     "उपेक्षा",
     "नजरअंदाज",
@@ -256,9 +233,6 @@ def _non_ascii(words: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(w for w in words if not w.isascii())
 
 
-#: Two patterns from one lexicon. An English payload is an instruction override
-#: and reporting it as "multilingual" as well is just wrong — the technique
-#: means "instruction-shaped text in a script the analyst may not read".
 _ENGLISH_COOCCURRENCE = _cooccurrence(_ascii_only(_IGNORE_VERBS), _ascii_only(_INSTRUCTION_NOUNS))
 _MULTILINGUAL = (
     _cooccurrence(
@@ -269,9 +243,6 @@ _MULTILINGUAL = (
     else _cooccurrence(_non_ascii(_IGNORE_VERBS), _INSTRUCTION_NOUNS)
 )
 
-# Each entry: technique -> (compiled pattern, weight, note).
-# Patterns are deliberately phrase-shaped rather than keyword-shaped. "ignore"
-# appears in benign log text constantly; "ignore the above instructions" does not.
 _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.INSTRUCTION_OVERRIDE,
@@ -282,11 +253,7 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"forget\s+(?:everything|all\s+(?:previous|prior)|what\s+you\s+were\s+told)",
             r"(?:new|updated|revised)\s+(?:instruction|directive|system\s+prompt)s?\s*[:\-]",
             r"override\s+(?:your|the|all)\s+(?:previous\s+)?(?:instruction|directive|rule|safety)",
-            # `.{0,40}?` rather than an immediate imperative: the old pattern
-            # demanded the verb right after "instead of", which almost no
-            # natural sentence does.
             r"instead\s+of\s+\w+ing\b.{0,40}?(?:you\s+(?:should|must|will)|do\s+the|just\s+)",
-            # Override by supersession or reframing rather than by negation.
             r"supersed(?:es?|ing)\s+(?:anything|any|all|everything|the)\b",
             r"(?:everything|all|the\s+text)\s+(?:before|above|preceding)\b.{0,40}?"
             r"(?:example|placeholder|template|sample|test\s+data|not\s+real)",
@@ -316,9 +283,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"^\s*(?:system|assistant|developer|user)\s*:",
             r"\n\s*(?:system|assistant|developer|user|human)\s*:",
             r"<\|?\s*(?:im_start|im_end|endoftext|system|assistant)\s*\|?>",
-            # Chat-template control tokens across model families. Llama-2 uses
-            # `<<SYS>>`, Llama-3 uses `<|start_header_id|>`; a pattern written
-            # for one family silently misses the others.
             r"<<\s*/?\s*SYS\s*>>",
             r"<\|\s*(?:start|end)_header_id\s*\|>",
             r"<\|\s*(?:eot_id|eom_id|begin_of_text|end_of_text|reserved_special_token)\w*\s*\|>",
@@ -333,21 +297,10 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.DELIMITER_BREAK,
         _rx(
-            # `(?:\s[^>]*)?` matters: the real fence closes with
-            # `</untrusted-alert-data nonce="...">`, and a pattern demanding `>`
-            # immediately after the tag name missed the exact shape an attacker
-            # copying the fence would write.
             r"</\s*untrusted[\w-]*(?:\s[^>]*)?>",
-            # Opening a second fence is as good as closing the first: the model
-            # sees a new block header and the region after it looks fresh.
             r"<\s*untrusted[\w-]*(?:\s[^>]*)?>",
-            # Forging the renderer's own flag marker, to make a flagged field
-            # read as one Bishop already cleared.
             r"\[!!\s*flagged",
             r"\[\s*(?:cleared|reviewed|dismissed)\s+by\s+analyst",
-            # Bishop's own trusted block names. A field containing one is trying
-            # to forge the region the prompt describes as Bishop's own output.
-            # `safe_block` stops the forgery from working; this makes it visible.
             r"</?\s*(?:detector-results|injection-findings|incident-context|"
             r"investigator-reports|proposed-verdict|settled-verdict|validation-failure)"
             r"(?:\s[^>]*)?>",
@@ -361,10 +314,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.VERDICT_MANIPULATION,
         _rx(
-            # The alternation used to be `(?:this|it|the\s+alert)\s+as`, which
-            # matched "this" and then demanded "as" — so "mark this alert as
-            # benign", the most natural phrasing there is, scored zero. Allow
-            # intervening words instead of enumerating the nouns.
             r"(?:mark|classify|label|treat|report|record|set|flag)\s+"
             r"(?:this|it|that|the)(?:\s+\w+){0,3}\s+as\s+(?:an?\s+)?"
             r"(?:benign|safe|false[\s_-]?positive|authoris?zed|approved|clean|resolved|"
@@ -377,16 +326,10 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:do\s+not|don't|never)\s+(?:escalate|alert|notify|report)\b",
             r"(?:whitelist|allowlist)(?:ed)?\s+(?:by|per|process|binary|host)",
             r"confidence\s*[:=]\s*(?:0(?:\.0+)?|low)\b",
-            # Declarative rather than imperative. An alert field asserting a
-            # verdict is steering just as hard as one demanding it, and reads
-            # as ordinary prose to a keyword filter.
             r"(?:the\s+)?(?:correct\s+|final\s+|previous\s+)?verdict\s+(?:for\s+\w+(?:\s+\w+)?\s+)?is\s+"
             r"(?:an?\s+)?(?:benign|false[\s_-]?positive|true[\s_-]?positive|authoris?zed|approved)",
             r"this\s+(?:alert|incident|event|activity|detection)\s+is\s+(?:an?\s+)?"
             r"(?:false[\s_-]?positive|benign|expected|routine|authoris?zed|approved|known[\s-]good)",
-            # A field shaped like Bishop's own output. VRD-03 and VRD-04: a JSON
-            # verdict object or a bare `field: value` pair, ready to be copied
-            # into a report by anything that reads structure out of free text.
             r"[\"']?(?:label|verdict|classification)[\"']?\s*[:=]\s*[\"']?"
             r"(?:false_positive|benign|benign_true_positive|no[_\s-]?action)",
             r"[\"']?(?:assessed_severity|severity|priority|queue)[\"']?\s*[:=]\s*[\"']?"
@@ -398,11 +341,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         InjectionTechnique.FORGED_PROVENANCE,
         _rx(
-            # Authorisation reaches Bishop from environment policy — the CMDB,
-            # the identity provider, the change calendar — and never from the
-            # alert. A field *claiming* to be approved is therefore always
-            # either a mistake or an attempt to be believed, and the confused
-            # deputy it is aiming at is the one that would otherwise check.
             r"approved\s+by\s+\S",
             r"authoris?zed[\s-]+by[\s:=]+\S",
             r"--?authoris?ed[\s-]by[\s=]",
@@ -411,23 +349,14 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"\b(?:CHG|CR|RFC|INC|TICKET)[\s-]?\d{3,}\b.{0,60}?"
             r"(?:approved|authoris?zed|sanctioned|sign(?:ed)?[\s-]?off|auto[\s-]?close)",
             r"(?:approved|authoris?zed|sanctioned).{0,60}?\b(?:CHG|CR|RFC|INC|TICKET)[\s-]?\d{3,}\b",
-            # Fabricated triage history: a claim that a human already decided.
             r"(?:previously|already)\s+(?:triaged|reviewed|investigated|assessed)\b",
             r"clos(?:ed|ure)\s+as\s+(?:benign|false[\s_-]?positive|no[\s-]?action|duplicate)",
             r"duplicate\s+of\s+(?:INC|TICKET|CASE)[\s-]?\d+",
             r"\b(?:engagement|rules?\s+of\s+engagement|roe)\b[\s:=-]+\S+.{0,40}?"
             r"(?:in[\s-]?scope|authoris?ed|approved)",
-            # An allowlist claim living in a path or a name. The directory is
-            # attacker-chosen; the claim is not evidence of anything.
             r"[\\/](?:allow[\s_-]?list(?:ed)?|white[\s_-]?list(?:ed)?|approved[\s_-]?binaries|"
             r"known[\s_-]?good|trusted|sanctioned)[\\/]",
         ),
-        # Below the threshold on its own, deliberately. A sensor description
-        # quoting a prior analyst note and an attacker fabricating one are the
-        # same string — `fixtures/injection/` has a matched pair, BEN-33 and
-        # VRD-09, that differ only in who wrote them. One provenance claim is
-        # genuinely ambiguous; three stacked in one field is a fabrication, and
-        # the probabilistic OR gets there on its own.
         0.45,
         "text asserts an approval, an owner, or a prior decision that Bishop cannot confirm",
     ),
@@ -439,9 +368,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"approve\s+(?:the\s+)?(?:containment|response|action|plan)\s+(?:automatically|without)",
             r"(?:skip|bypass|disable)\s+(?:the\s+)?(?:human|approval|hitl|review|gate|confirmation)",
             r"set\s+(?:require_approval|requires_approval|approval)\s*[:=]\s*(?:false|no|0)",
-            # Arguing the containment plan down. Bishop proposes actions; a
-            # field arguing against one is steering the response, which is
-            # attacker goal 2 in the threat model.
             r"(?:containment|isolation|remediation|quarantine)\s+is\s+"
             r"(?:unnecessary|not\s+(?:needed|required|warranted))",
             r"propose\s+no\s+(?:actions|containment|response)",
@@ -464,9 +390,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
             r"(?:curl|wget|Invoke-WebRequest|fetch)\s+[\"']?https?://",
             r"(?:include|append|embed)\s+(?:the\s+)?(?:api[\s_-]?key|secret|token|password)\b",
             r"email\s+(?:this|the\s+\w+)\s+to\s+\S+@",
-            # Exfiltration by asking Bishop to *write* the secret somewhere it
-            # will be read, rather than to send it. A markdown image renders as
-            # a GET the moment a console displays it.
             r"!\[[^\]]*\]\(\s*https?://",
             r"(?:append|include|add|attach)\s+(?:your\s+)?(?:full\s+|entire\s+|complete\s+)?"
             r"(?:prior\s+|previous\s+)?(?:context|conversation|history|prompt|transcript)",
@@ -499,12 +422,6 @@ _PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
 ]
 
 
-#: The same patterns with every `\s+` relaxed to `\s*`, for the fully-collapsed
-#: form. Compiled once rather than per scan.
-#:
-#: Only applied to `tight`, which `text.tighten()` returns exclusively when a
-#: split run was actually present. Running these against ordinary prose would
-#: match across word boundaries and invent findings.
 _TIGHT_PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = [
     (
         technique,
@@ -515,8 +432,6 @@ _TIGHT_PATTERNS: list[tuple[InjectionTechnique, re.Pattern[str], float, str]] = 
     for technique, pattern, weight, note in _PATTERNS
 ]
 
-#: Instruction keywords that make a *decoded* payload interesting. Applied only
-#: to decoded forms, where any imperative at all is suspicious.
 _DECODED_IMPERATIVE = _rx(
     r"\bignore\b",
     r"\bdisregard\b",
@@ -553,9 +468,6 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
 
     seen: set[tuple[str, str]] = set()
 
-    #: Email subjects and bodies are third-party text by nature — quoting a
-    #: change ticket there is what email is for. Every other field is Bishop
-    #: being told something about the alert it is triaging.
     quoted_field = field.rsplit(".", 1)[-1] in {"subject", "body_excerpt"}
 
     for form_name, form_text in analysis_forms(value):
@@ -568,9 +480,6 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
             "tight",
             "depig",
         }
-        # The tight form has had every separator removed, so a pattern
-        # requiring `\s+` between words can never match it. Run the
-        # whitespace-optional copies against it instead.
         patterns = _TIGHT_PATTERNS if form_name == "tight" else _PATTERNS
 
         for technique, pattern, weight, note in patterns:
@@ -581,8 +490,6 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
                 if key in seen:
                     continue
                 seen.add(key)
-                # A payload that had to be encoded to get here is worse than the
-                # same text in the clear: encoding is evidence of intent.
                 bonus = 0.15 if is_decoded else 0.0
                 risk.signals.append(
                     InjectionSignal(
@@ -612,12 +519,8 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
     if hidden:
         overrides = [c for c in hidden if c in BIDI_CONTROLS]
         if overrides:
-            # A right-to-left override in a file name is the `exe.doc` trick and
-            # has no legitimate use in a Windows path. It stands on its own.
             weight, note = 0.5, f"{len(overrides)} bidirectional override characters"
         else:
-            # A stray soft hyphen is not an attack. Three of them inside one
-            # value is not a stray anything — that is a keyword being split.
             weight = 0.35 if len(hidden) < 3 else 0.55
             note = f"{len(hidden)} zero-width characters splitting the visible text"
         risk.signals.append(
@@ -646,11 +549,6 @@ def scan_text(value: str, *, field: str = "value") -> FieldRisk:
         )
 
     if homoglyphs := mixed_script_words(value):
-        # 0.4 alone is below the threshold on purpose: a single mixed-script
-        # word is sometimes a genuinely multilingual hostname. What makes the
-        # attack land is the *instruction* spelled that way, and the folded
-        # analysis form above now matches that directly — so this signal reports
-        # the deception and lets the phrase rules carry the weight.
         risk.signals.append(
             InjectionSignal(
                 technique=InjectionTechnique.HOMOGLYPH,

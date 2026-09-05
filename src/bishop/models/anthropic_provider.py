@@ -67,9 +67,6 @@ class AnthropicProvider:
         request: dict[str, Any] = {
             "model": self.model_id,
             "max_tokens": max_tokens,
-            # The system prompt is identical for every alert of a given task, so
-            # it is the stable prefix worth caching. The alert-specific content
-            # goes in `messages`, after the breakpoint.
             "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             "messages": [{"role": "user", "content": prompt}],
             "thinking": {"type": "adaptive"},
@@ -90,9 +87,6 @@ class AnthropicProvider:
             raise ModelError(f"{task}: could not reach the provider") from exc
 
         if response.stop_reason == "refusal":
-            # Worth surfacing rather than retrying: Bishop's prompts contain
-            # attacker payloads by design, and a refusal here is a finding about
-            # the corpus, not a transient error.
             detail = getattr(response.stop_details, "category", None)
             raise ModelError(f"{task}: the model declined to answer (category: {detail})")
 

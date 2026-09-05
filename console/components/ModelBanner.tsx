@@ -1,20 +1,5 @@
 "use client";
 
-/**
- * What "mock model" actually means, and how to leave it.
- *
- * The nav used to say `offline · mock model` and stop there, which invites the
- * reader to assume nothing on screen is real. That is the wrong conclusion:
- * the detectors, the ATT&CK validation, the injection scanning, the
- * correlation and the audit chain are the same code in both modes. What the
- * mock replaces is the *judgement* — the narrative is assembled from detector
- * rationales and the weighing is arithmetic.
- *
- * So this states the distinction, and lists exactly what is missing to run
- * live rather than leaving the reader to guess between "no key", "no
- * dependency" and "on purpose".
- */
-
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";

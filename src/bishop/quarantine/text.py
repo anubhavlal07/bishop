@@ -23,38 +23,33 @@ import unicodedata
 from contextlib import suppress
 from urllib.parse import unquote
 
-#: Characters with no visible width, used to break up keywords or smuggle text.
 ZERO_WIDTH = {
-    "​",  # zero width space
-    "‌",  # zero width non-joiner
-    "‍",  # zero width joiner
-    "⁠",  # word joiner
-    "﻿",  # zero width no-break space
-    "­",  # soft hyphen
-    "᠎",  # Mongolian vowel separator
-    "⁡",  # function application
-    "⁢",  # invisible times
-    "⁣",  # invisible separator
-    "⁤",  # invisible plus
-    "͏",  # combining grapheme joiner
-    "ᅟ",  # Hangul choseong filler
-    "ᅠ",  # Hangul jungseong filler
-    "ㅤ",  # Hangul filler
-    "ﾠ",  # halfwidth Hangul filler
+    "​",
+    "‌",
+    "‍",
+    "⁠",
+    "﻿",
+    "­",
+    "᠎",
+    "⁡",
+    "⁢",
+    "⁣",
+    "⁤",
+    "͏",
+    "ᅟ",
+    "ᅠ",
+    "ㅤ",
+    "ﾠ",
 }
 
-#: Variation selectors. Invisible, and enough of them can encode a whole
-#: message; the VS15/VS16 pair also flips emoji presentation, which is how a
-#: keyword can be split without a zero-width character.
 VARIATION_SELECTORS = range(0xFE00, 0xFE10)
 
-#: Bidirectional controls. The RTL override is the classic filename-spoofing trick.
 BIDI_CONTROLS = {
     "‪",
     "‫",
     "‬",
     "‭",
-    "‮",  # RLO — "cod.exe" renders as "exe.doc"
+    "‮",
     "⁦",
     "⁧",
     "⁨",
@@ -63,7 +58,6 @@ BIDI_CONTROLS = {
     "‏",
 }
 
-#: Unicode tag characters. Invisible to a human, tokenised by a model.
 TAG_RANGE = range(0xE0000, 0xE0080)
 
 _B64_RUN = re.compile(r"[A-Za-z0-9+/]{16,}={0,2}")
@@ -126,12 +120,8 @@ def mixed_script_words(text: str) -> list[str]:
     return suspicious
 
 
-#: Latin lookalikes from other alphabets. Not exhaustive — Unicode's confusables
-#: table has thousands of entries — but these are the substitutions that actually
-#: appear, because they are the ones that render identically in a sans-serif UI.
 _CONFUSABLES = str.maketrans(
     {
-        # Cyrillic
         "\u0430": "a",
         "\u0435": "e",
         "\u043e": "o",
@@ -160,7 +150,6 @@ _CONFUSABLES = str.maketrans(
         "\u041c": "M",
         "\u0422": "T",
         "\u0412": "B",
-        # Greek
         "\u03b1": "a",
         "\u03bf": "o",
         "\u03c1": "p",
@@ -181,7 +170,6 @@ _CONFUSABLES = str.maketrans(
         "\u03a7": "X",
         "\u0392": "B",
         "\u039c": "M",
-        # Armenian and others that turn up
         "\u0561": "a",
         "\u0585": "o",
         "\u04cf": "l",
@@ -317,10 +305,6 @@ def _try_alignments(run: str, decoder) -> list[bytes]:
         except (binascii.Error, ValueError):
             continue
         if _printable_ratio(raw) >= 0.85 or _is_utf16le(raw):
-            # Every printable alignment, not the first. A wrong offset often
-            # decodes to printable nonsense — `inotace or secreven` — and
-            # stopping there hides the correct decode one offset along. The
-            # scanner reads all of them; nonsense matches nothing.
             out.append(raw)
     return out
 
@@ -345,8 +329,6 @@ def decoded_candidates(text: str, *, max_candidates: int = 12) -> list[tuple[str
         if len(cleaned) >= 8 and cleaned != text and all(cleaned != v for _, v in results):
             results.append((encoding, cleaned))
 
-    # Chunked base64: whitespace inside the run defeats a contiguous-run regex,
-    # so try the whole string with separators removed as well.
     compact = re.sub(r"\s", "", text)
     for candidate, label in ((text, "base64"), (compact, "base64-chunked")):
         for match in _B64_RUN.findall(candidate)[:max_candidates]:
@@ -380,8 +362,6 @@ def decoded_candidates(text: str, *, max_candidates: int = 12) -> list[tuple[str
         with suppress(UnicodeDecodeError, ValueError):
             add("hex-escape", text.encode("ascii", "ignore").decode("unicode_escape"))
 
-    # Percent-encoding, sparse as well as dense: a payload with only a few
-    # encoded characters (`ign%6fre`) never produces four consecutive escapes.
     if _PERCENT.search(text):
         add("percent", unquote(text))
 
@@ -403,15 +383,8 @@ def decoded_candidates(text: str, *, max_candidates: int = 12) -> list[tuple[str
     return results
 
 
-#: Separators an attacker puts between letters. Widened from whitespace and
-#: `.-_*` after the red-team corpus used `/`, `|`, `,`, `+` and `:` — each of
-#: which sailed past a class that did not list it. The class is the whole
-#: defence here, so enumerate generously.
 _SEP = r"[\s.\-_*/|,+:;~^]"
 
-#: A run of at least six single characters, each followed by one to four
-#: separators. Ordinary prose never matches: "The" fails at the first unit,
-#: because 'T' is followed by a word character rather than a separator.
 _SPLIT_RUN = re.compile(rf"(?:\w{_SEP}{{1,4}}){{5,}}\w")
 
 
@@ -499,9 +472,6 @@ def analysis_forms(text: str, *, depth: int = 0) -> list[tuple[str, str]]:
     add("invisible-stripped", stripped)
     add("despaced", despaced(stripped))
 
-    # Normalisation last, over the already-stripped form, so a payload that
-    # combines tricks — fullwidth letters split by zero-width spaces — still
-    # reduces to something the phrase patterns can match.
     normalised = confusable_fold(nfkc(stripped))
     add("normalised", normalised)
     add("normalised-despaced", despaced(normalised))
@@ -514,8 +484,6 @@ def analysis_forms(text: str, *, depth: int = 0) -> list[tuple[str, str]]:
     if (pig := depig(stripped)) is not None:
         add("depig", pig)
 
-    # One level of recursion. Double-encoding is cheap to do and cheap to
-    # defend against; unbounded recursion on attacker-supplied input is not.
     for encoding, decoded in decoded_candidates(stripped):
         add(encoding, decoded)
         if depth < 1:
@@ -535,4 +503,4 @@ def shannon_entropy(text: str) -> float:
     counts = Counter(text)
     length = len(text)
     bits = -sum((c / length) * log2(c / length) for c in counts.values())
-    return abs(bits)  # a single repeated character yields -0.0 otherwise
+    return abs(bits)

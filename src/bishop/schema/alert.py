@@ -80,7 +80,6 @@ class Device(BishopModel):
     hostname: Untrusted | None = None
     ip: str | None = None
     os: str | None = None
-    #: From asset inventory, not from the alert payload. Trusted.
     criticality: str | None = None
     is_server: bool = False
 
@@ -96,7 +95,6 @@ class Principal(BishopModel):
     upn: Untrusted | None = None
     domain: Untrusted | None = None
     sid: str | None = None
-    #: From HR/IdP inventory, not the alert. Trusted.
     is_privileged: bool = False
     is_service_account: bool = False
 
@@ -157,7 +155,6 @@ class AuthEvent(BishopModel):
 
     timestamp: datetime
     username: Untrusted
-    #: success | failure | denied | mfa_denied | mfa_success
     outcome: str
     source_ip: str | None = None
     geo: GeoLocation | None = None
@@ -183,7 +180,6 @@ class NetworkConnection(BishopModel):
     protocol: str = "tcp"
     bytes_out: int | None = None
     bytes_in: int | None = None
-    #: The Host header and SNI are whatever the client chose to send.
     hostname: Untrusted | None = None
     user_agent: Untrusted | None = None
     url: Untrusted | None = None
@@ -204,13 +200,11 @@ class Alert(BishopModel):
     alert_id: str
     source: str
     rule_id: str | None = None
-    #: The detection rule's own title, written by a detection engineer. Trusted.
     rule_name: str
     detected_at: datetime
     severity: Severity = Severity.MEDIUM
     category: AlertCategory = AlertCategory.OTHER
 
-    #: Free text from the sensor. Vendors interpolate attacker data into these.
     description: Untrusted | None = None
 
     device: Device | None = None
@@ -229,10 +223,8 @@ class Alert(BishopModel):
     service_installs: list[ServiceInstall] = Field(default_factory=list)
     child_processes: list[Process] = Field(default_factory=list)
 
-    #: Sensor-specific leftovers. Never rendered into a prompt un-quarantined.
     raw: dict[str, Any] = Field(default_factory=dict)
 
-    #: Populated only in fixtures and eval. Never read by the graph.
     labels: dict[str, Any] = Field(default_factory=dict)
 
     def entity_key(self) -> str:

@@ -27,8 +27,6 @@ from typing import Any
 
 from bishop.models.base import ModelResponse, Usage
 
-#: Nodes embed detector output here. Trusted data — it is Bishop's own, not the
-#: alert's — so unlike the quarantine block it is parsed rather than fenced.
 DETECTOR_BLOCK = re.compile(r"<detector-results>\s*(.*?)\s*</detector-results>", re.DOTALL)
 INJECTION_BLOCK = re.compile(r"<injection-findings>\s*(.*?)\s*</injection-findings>", re.DOTALL)
 CONTEXT_BLOCK = re.compile(r"<incident-context>\s*(.*?)\s*</incident-context>", re.DOTALL)
@@ -58,9 +56,6 @@ def _fired(results: list[dict], *, mitigating: bool = False) -> list[dict]:
     )
 
 
-#: Nothing Bishop reports is certain, so nothing it reports reads as certain.
-#: Four strong detectors combine to 0.9996 under a probabilistic OR, which
-#: renders as "1.00 confidence" and is a claim no evidence supports.
 MAX_CONFIDENCE = 0.95
 
 
@@ -72,10 +67,6 @@ def _combine(scores: list[float]) -> float:
     return round(min(MAX_CONFIDENCE, 1.0 - remaining), 4)
 
 
-#: The guillemets `prompts._mark_quoted` puts around string leaves. They tell a
-#: model "this is an excerpt, not Bishop's prose". They are a rendering concern,
-#: so anything reading Bishop's own output back drops them — a real model would
-#: paraphrase rather than copy them into a report an analyst reads.
 _MARKS = str.maketrans({"«": "", "»": ""})
 
 
@@ -99,8 +90,6 @@ class MockModel:
     def __init__(self, *, model_id: str = "mock") -> None:
         self.model_id = model_id
         self.calls: list[tuple[str, int]] = []
-
-    # ── provider interface ──────────────────────────────────────────────────
 
     def complete(
         self,
@@ -126,9 +115,6 @@ class MockModel:
         )
 
         text = json.dumps(data, indent=2, sort_keys=False)
-        # Token counts are approximate but real measurements of the actual
-        # payload — a quarter of a character each, the usual English rule of
-        # thumb. Cost is genuinely zero because no request was made.
         usage = Usage(
             input_tokens=(len(system) + len(prompt)) // 4,
             output_tokens=len(text) // 4,
@@ -136,12 +122,7 @@ class MockModel:
         self.calls.append((task, usage.input_tokens))
         return ModelResponse(text=text, data=data, usage=usage, model=self.model_id)
 
-    # ── per-task composition ────────────────────────────────────────────────
-
     def _investigate(self, detectors: list[dict], injections: list[dict], context: dict) -> dict:
-        # Both sides of the argument. A mitigating detector that fired is a
-        # finding — it is the only way an authorising change record reaches
-        # synthesis, because evidence is what travels between nodes.
         fired = _fired(detectors) + _fired(detectors, mitigating=True)
         surface = context.get("surface", "unknown")
         findings = [
@@ -202,8 +183,6 @@ class MockModel:
                 if hint not in techniques:
                     techniques.append(hint)
 
-        # An injection attempt is an aggravating factor, never a mitigating one:
-        # somebody targeting the SOC's tooling is not a false positive.
         if injections:
             combined = _combine([combined, 0.5])
 
@@ -398,8 +377,6 @@ class MockModel:
             "no_action_rationale": None,
         }
 
-    # ── helpers ─────────────────────────────────────────────────────────────
-
     @staticmethod
     def _title_for(result: dict) -> str:
         detector = str(result.get("detector", "signal"))
@@ -426,15 +403,12 @@ class MockModel:
         authorised = "authorised_activity" in by_detector
         mitigation_strength = _combine([float(m.get("score") or 0.0) for m in mitigations])
 
-        # Which suspicious findings have an innocent account of them.
         explained: set[str] = set()
         for mitigation in mitigations:
             explained.update((mitigation.get("facts") or {}).get("explains") or [])
         suspicious = {str(r.get("detector")) for r in fired}
         all_explained = bool(suspicious) and suspicious <= explained
 
-        # An injection attempt is never excused by context. Someone writing
-        # instructions into a log field is not doing authorised work.
         if injections:
             if combined >= 0.7:
                 return "true_positive", None
@@ -450,22 +424,9 @@ class MockModel:
         if not fired:
             return "false_positive", None
 
-        # Authorisation is checked before the routine explanation, because when
-        # both apply the authorised reading carries more information: it names
-        # the party who approved the activity, which a "the rule is noisy"
-        # answer does not. An approved change window that also happens to look
-        # like ordinary software is still a change somebody signed off.
-        #
-        # `combined >= 0.5` is what keeps a noisy rule out of this branch: a
-        # backup job tripping a weak archive heuristic is a mis-tuned rule, not
-        # an authorised intrusion, and calling it a benign true positive would
-        # tell the detection engineer their rule is fine when it is not.
         if authorised and mitigation_strength >= 0.5 and combined >= 0.5:
             return "benign_true_positive", None
 
-        # Every suspicious signal has a specific innocent explanation from
-        # environment policy, and nobody had to authorise it. The rule fired on
-        # ordinary activity: a tuning problem, not a paperwork one.
         if all_explained:
             return "false_positive", None
 
@@ -497,14 +458,11 @@ class MockModel:
         if label == "true_positive":
             return combined
         if label == "benign_true_positive":
-            # How sure we are of the authorisation, not of the malice.
             return mitigation_strength
         if label == "false_positive":
             if mitigations:
                 return max(mitigation_strength, 1.0 - combined)
-            # Nothing fired at all. That is a confident negative.
             return round(min(MAX_CONFIDENCE, 1.0 - combined), 4)
-        # escalate: the confidence is precisely what was not enough.
         return combined
 
     @staticmethod

@@ -6,7 +6,6 @@ import { api } from "@/lib/api";
 import type { Coverage, CoverageEntry } from "@/lib/types";
 import { ApiDown, Panel } from "@/components/primitives";
 
-/** ATT&CK's tactic order, so the matrix reads left to right as an intrusion does. */
 const TACTIC_ORDER = [
   "Reconnaissance",
   "Resource Development",
@@ -59,17 +58,20 @@ export default function CoveragePage() {
   }, [coverage]);
 
   if (error) return <ApiDown message={error} />;
-  if (!coverage) return <p className="muted text-xs">Loading the coverage matrix…</p>;
+  if (!coverage)
+    return <p className="muted text-xs">Loading the coverage matrix…</p>;
 
   return (
     <Panel title="ATT&CK coverage" subtitle={`v${coverage.attack_version}`}>
       <p className="text-xs leading-relaxed">{coverage.summary}.</p>
       <p className="muted mt-2 text-xs leading-relaxed">
-        <span style={{ color: "var(--color-fp)" }}>Covered</span> means a deterministic detector
-        maps to the technique <em>and</em> a labelled fixture exercises it.{" "}
-        <span style={{ color: "var(--color-escalate)" }}>Untested</span> means the detector
-        exists but nothing in the golden set produces it — real coverage, unproven coverage.
-        Coverage of a technique is also not detection of every implementation of it.
+        <span style={{ color: "var(--color-fp)" }}>Covered</span> means a
+        deterministic detector maps to the technique <em>and</em> a labelled
+        fixture exercises it.{" "}
+        <span style={{ color: "var(--color-escalate)" }}>Untested</span> means
+        the detector exists but nothing in the golden set produces it — real
+        coverage, unproven coverage. Coverage of a technique is also not
+        detection of every implementation of it.
       </p>
 
       <div className="mt-4 overflow-x-auto">
@@ -94,9 +96,14 @@ export default function CoveragePage() {
                       <li
                         key={`${tactic}-${entry.technique_id}`}
                         className="rounded border px-2 py-1.5"
-                        style={{ borderColor: colour, background: `${colour}0f` }}
+                        style={{
+                          borderColor: colour,
+                          background: `${colour}0f`,
+                        }}
                         title={`${entry.detectors.join(", ")}${
-                          entry.fixtures.length ? ` · fixtures: ${entry.fixtures.join(", ")}` : ""
+                          entry.fixtures.length
+                            ? ` · fixtures: ${entry.fixtures.join(", ")}`
+                            : ""
                         }`}
                       >
                         <a
@@ -108,7 +115,9 @@ export default function CoveragePage() {
                         >
                           {entry.technique_id}
                         </a>
-                        <div className="text-[11px] leading-tight">{entry.name}</div>
+                        <div className="text-[11px] leading-tight">
+                          {entry.name}
+                        </div>
                         <div className="muted mt-0.5 text-[10px]">
                           {entry.detectors.join(", ") || "no detector"}
                         </div>

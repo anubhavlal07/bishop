@@ -18,23 +18,13 @@ from langchain_core.runnables import RunnableConfig
 from bishop.audit import AuditChain
 from bishop.models import ModelProvider, get_provider
 
-#: Where `configurable` carries the runtime.
 RUNTIME_KEY = "bishop_runtime"
 
 
 @dataclass(slots=True)
 class Settings:
-    #: Bounded so a disagreeing critic cannot loop forever.
-    #:
-    #: At 1 the critic runs once and the graph moves on — `after_critic` never
-    #: routes back to synthesis. That is the shipped default because a second
-    #: synthesis pass costs a model call to reconsider evidence that has not
-    #: changed. Raise it to let the critic actually send a verdict back; the
-    #: edge exists and `build.py` wires it.
     max_critic_rounds: int = 1
-    #: Below this, the verdict is handed to a human instead of asserted.
     escalation_threshold: float = 0.45
-    #: Investigator surfaces available for dispatch.
     surfaces: tuple[str, ...] = ("identity", "endpoint", "network", "threatintel", "context")
     max_tokens: int = 4096
 
@@ -45,18 +35,13 @@ class Runtime:
     provider: ModelProvider
     chain: AuditChain
     settings: Settings = field(default_factory=Settings)
-    #: Streamed to the console over SSE. Appended to, never read by nodes.
     events: list[dict[str, Any]] = field(default_factory=list)
-    #: Optional live subscriber — the API attaches one to feed its SSE queue.
-    #: A callback rather than a patched method so the dataclass can keep slots,
-    #: and so a failing listener cannot take a run down with it.
     listener: Callable[[dict[str, Any]], None] | None = None
 
     def emit(self, kind: str, **payload: Any) -> None:
         event = {"kind": kind, **payload}
         self.events.append(event)
         if self.listener is not None:
-            # A broken console must not take a triage run down with it.
             with suppress(Exception):
                 self.listener(event)
 

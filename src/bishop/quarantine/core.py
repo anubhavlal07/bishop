@@ -33,11 +33,8 @@ from bishop.schema.alert import Alert, BishopModel
 from bishop.schema.evidence import DetectorResult, Evidence, EvidenceKind
 from bishop.schema.untrusted import UntrustedStr, walk_untrusted
 
-#: Per-value render budget. Long enough for a real command line, short enough
-#: that one field cannot flood the context window.
 MAX_RENDERED_CHARS = 2000
 
-#: Cap on how many untrusted fields render into one block.
 MAX_RENDERED_FIELDS = 120
 
 
@@ -52,7 +49,6 @@ class UntrustedLeakError(RuntimeError):
 
 class QuarantinedField(BishopModel):
     path: str
-    #: The original bytes, unmodified. This is evidence; it is never rewritten.
     value: str
     risk: FieldRisk
 
@@ -60,7 +56,6 @@ class QuarantinedField(BishopModel):
 class QuarantineReport(BishopModel):
     """What the boundary found in one alert."""
 
-    #: Unguessable-per-run fence marker. See `fence_nonce`.
     nonce: str
     fields: list[QuarantinedField] = Field(default_factory=list)
     truncated_fields: int = 0
@@ -107,13 +102,9 @@ def _escape(value: str, nonce: str) -> tuple[str, bool]:
         .replace("\t", "\\t")
         .replace('"', '\\"')
     )
-    # Defensive: an attacker who somehow learned the nonce still cannot close
-    # the fence, because their copy of it is neutralised on the way in.
     if nonce in body:
         body = body.replace(nonce, "[nonce-redacted]")
     if truncated:
-        # No bare quote here: the caller wraps this in quotes, and a stray one
-        # would let a long value forge the end of its own field.
         body += f" …[truncated, {len(value) - MAX_RENDERED_CHARS} more characters]"
     return body, truncated
 
@@ -130,9 +121,6 @@ def quarantine_alert(alert: Alert, *, run_id: str) -> QuarantineReport:
     for path, value in _untrusted_values(alert):
         if not value:
             continue
-        # Scan first, truncate second. Dropping a field before scanning it means
-        # an attacker can bury a payload behind a hundred harmless ones and have
-        # it silently ignored — the field is not rendered *and* not detected.
         field = QuarantinedField(path=path, value=str(value), risk=scan_text(value, field=path))
         if len(report.fields) >= MAX_RENDERED_FIELDS and not field.risk.is_injection:
             report.truncated_fields += 1
@@ -207,9 +195,6 @@ def render_block(report: QuarantineReport, *, title: str = "untrusted-alert-data
             flag = f"  [!! flagged: {', '.join(field.risk.techniques)}]"
         lines.append(f'[{index}] {field.path} = "{rendered}"{flag}')
     if report.truncated_fields:
-        # "Omitted" alone reads as "not checked", which would be the more
-        # alarming of the two meanings and is not the one that applies. Every
-        # dropped field was scanned; anything that scored was kept.
         lines.append(
             f"[…] {report.truncated_fields} further fields omitted for length. "
             f"All of them were scanned for injection attempts; none scored."
@@ -231,9 +216,9 @@ def injection_evidence(report: QuarantineReport, *, alert_id: str) -> list[Evide
         techniques = field.risk.techniques
         hints: list[str] = []
         if "encoding_evasion" in techniques:
-            hints.append("T1027")  # Obfuscated Files or Information
+            hints.append("T1027")
         if "homoglyph" in techniques or "invisible_text" in techniques:
-            hints.append("T1036")  # Masquerading
+            hints.append("T1036")
         evidence.append(
             Evidence(
                 evidence_id=f"{alert_id}-injection-{index}",
@@ -281,10 +266,6 @@ def injection_evidence(report: QuarantineReport, *, alert_id: str) -> list[Evide
     return evidence
 
 
-# ── trusted blocks ──────────────────────────────────────────────────────────
-
-#: Characters that can open or close a block tag. Escaped in *everything*
-#: serialised into a trusted region, whatever its provenance.
 _STRUCTURAL = {"<": "\\u003c", ">": "\\u003e"}
 
 

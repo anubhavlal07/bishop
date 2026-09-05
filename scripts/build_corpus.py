@@ -101,8 +101,6 @@ def alert(
 def build() -> list[dict[str, Any]]:
     alerts: list[dict[str, Any]] = []
 
-    # ── 6 true positives ────────────────────────────────────────────────────
-
     alerts.append(
         alert(
             "TP-01-credential-dumping",
@@ -301,8 +299,6 @@ def build() -> list[dict[str, Any]]:
             severity="high",
             category="endpoint",
             label="true_positive",
-            # T1102 as well as T1567: transfer.sh is a legitimate web service being
-            # abused, which is what T1102 describes, and the upload is the T1567 half.
             techniques=["T1560.001", "T1074.001", "T1567", "T1102"],
             why=(
                 "A password-protected archive of the finance share written to "
@@ -331,8 +327,6 @@ def build() -> list[dict[str, Any]]:
             ],
         )
     )
-
-    # ── 8 false positives ───────────────────────────────────────────────────
 
     alerts.append(
         alert(
@@ -590,8 +584,6 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
-    # ── 4 benign true positives ─────────────────────────────────────────────
-
     alerts.append(
         alert(
             "BTP-01-sanctioned-pentest",
@@ -726,15 +718,6 @@ def build() -> list[dict[str, Any]]:
             ],
         )
     )
-
-    # ── coverage fixtures ───────────────────────────────────────────────────
-    #
-    # Techniques that had a detector and no labelled alert exercising it.
-    # `docs/COVERAGE.md` called those "untested": real coverage, unproven
-    # coverage. Each of these exists to move one row of that table, and every
-    # one is a case the detector should genuinely fire on — a fixture written to
-    # satisfy a matrix rather than to be right would make the matrix worse than
-    # leaving the row red.
 
     alerts.append(
         alert(
@@ -1009,15 +992,6 @@ def build() -> list[dict[str, Any]]:
         )
     )
 
-    # ── 3 correlated alerts: one intrusion, three low-severity alerts ───────
-    #
-    # These exist to exercise correlation, and they are the case that argues
-    # for it. Individually each is medium at best and a tier-1 analyst would
-    # reasonably close all three. Together they are a lateral movement chain,
-    # and the join is the finding. `bishop.correlate` links them transitively:
-    # CHAIN-01 and CHAIN-02 share the account, CHAIN-02 and CHAIN-03 share the
-    # host, and the first and last share nothing directly.
-
     alerts.append(
         alert(
             "CHAIN-01-initial-access",
@@ -1116,8 +1090,6 @@ def build() -> list[dict[str, Any]]:
             file={"name": "hr.7z", "path": r"C:\ProgramData\hr.7z", "size_bytes": 89_400_000},
         )
     )
-
-    # ── 2 injection-laced ───────────────────────────────────────────────────
 
     alerts.append(
         alert(

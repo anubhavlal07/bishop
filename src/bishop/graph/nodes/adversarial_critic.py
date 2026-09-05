@@ -90,7 +90,6 @@ def adversarial_critic(
             },
         )
     except ModelError as exc:
-        # A failed critic must not silently become a passed critic.
         errors.append(f"critic: {exc}")
         arguments = [
             f"The adversarial pass did not run ({exc}). This verdict has not been "
@@ -98,7 +97,6 @@ def adversarial_critic(
         ]
         adjustment = -0.1
 
-    # The critic may only reduce confidence. See the module docstring.
     adjustment = min(0.0, adjustment)
     revised = round(max(0.0, min(1.0, verdict.confidence + adjustment)), 3)
 

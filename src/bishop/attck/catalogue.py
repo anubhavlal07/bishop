@@ -26,10 +26,8 @@ from pathlib import Path
 
 CATALOGUE_PATH = Path(__file__).resolve().parent / "catalogue.json"
 
-#: ATT&CK technique IDs are `T` plus four digits, optionally `.` plus three.
 TECHNIQUE_PATTERN = re.compile(r"^T\d{4}(?:\.\d{3})?$")
 
-#: What a model tends to emit around an ID: "T1059.001 - PowerShell", "(T1078)".
 _EXTRACT = re.compile(r"\bT(\d{4})(?:\.(\d{1,3}))?\b", re.IGNORECASE)
 
 
@@ -67,7 +65,6 @@ class Rejection:
 class Validation:
     accepted: tuple[Technique, ...]
     rejected: tuple[Rejection, ...]
-    #: IDs that were reformatted rather than refused — `t1059.1` to `T1059.001`.
     normalised: tuple[tuple[str, str], ...] = ()
 
     @property
@@ -123,8 +120,6 @@ class TechniqueCatalogue:
 
     def tactic_name(self, shortname: str) -> str:
         return self.tactics.get(shortname, shortname)
-
-    # ── validation ──────────────────────────────────────────────────────────
 
     def normalise(self, proposal: str) -> tuple[str | None, str | None]:
         """Coerce a proposal into canonical form.

@@ -47,7 +47,6 @@ class UntrustedStr(str):
         )
 
 
-#: Use in Pydantic models for any attacker-influenced field.
 Untrusted = Annotated[UntrustedStr, "attacker-influenced"]
 
 

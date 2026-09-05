@@ -53,8 +53,6 @@ def build(bundle_path: Path) -> dict:
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     objects = bundle["objects"]
 
-    # x-mitre-collection carries the release version. Without it the catalogue
-    # cannot honestly name which ATT&CK it came from.
     version = ""
     modified = ""
     for obj in objects:

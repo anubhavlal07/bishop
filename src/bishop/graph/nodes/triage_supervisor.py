@@ -103,8 +103,6 @@ def triage_supervisor(
             reasons.append(f"{surface} (no data on that surface)")
 
     if not dispatch:
-        # Every alert has *something*. Dispatching endpoint by default beats
-        # producing a verdict nobody investigated.
         dispatch = ["endpoint"]
         reasons.append("fell back to endpoint: no surface matched the alert's contents")
 
@@ -112,9 +110,6 @@ def triage_supervisor(
     if reasons:
         rationale += f"; skipped {', '.join(reasons)}"
     if len(alerts) > 1:
-        # Correlation happened before the graph ran, in `bishop.correlate`. The
-        # supervisor says so, because "three alerts" and "one alert" are very
-        # different things to be reading and the report should not bury it.
         rationale = f"{len(alerts)} correlated alerts in this incident; " + rationale
 
     runtime.chain.append(

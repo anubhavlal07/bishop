@@ -1,11 +1,3 @@
-/**
- * The API client.
- *
- * Every function throws `ApiError` on failure rather than returning a default.
- * That is deliberate: an empty alert list and an unreachable API look identical
- * on screen, and the second one is the analyst's problem to know about.
- */
-
 import { credentialHeaders } from "./credentials";
 import type {
   AlertSummary,
@@ -23,24 +15,12 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_BISHOP_API?.replace(/\/$/, "") ??
   "http://localhost:8000";
 
-/**
- * The API key, when the deployment has authentication on.
- *
- * `NEXT_PUBLIC_` means this is baked into the client bundle and readable by
- * anyone who opens devtools. That is acceptable only because of what the key
- * is: a shared read-and-triage credential for one deployment, rotatable from
- * the dashboard. It is not a user identity and must not be treated as one —
- * a per-user login needs a session flow the API does not have yet, and the
- * README says so rather than implying otherwise.
- */
 const API_KEY = process.env.NEXT_PUBLIC_BISHOP_API_KEY ?? "";
 
 function withAuth(init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   if (API_KEY) headers.set("Authorization", `Bearer ${API_KEY}`);
-  // The viewer's own model key, read fresh on every request rather than
-  // captured at module load — otherwise changing it in Settings would not take
-  // effect until a reload.
+
   for (const [name, value] of Object.entries(credentialHeaders())) {
     headers.set(name, value);
   }
@@ -121,7 +101,6 @@ export const api = {
       body: JSON.stringify({ alert_id: alertId }),
     }),
 
-  /** Map a submitted alert and report what Bishop understood, without running. */
   previewIngest: (alert: unknown) =>
     get<IngestPreview>("/ingest/preview", {
       method: "POST",
@@ -129,7 +108,6 @@ export const api = {
       body: JSON.stringify({ alert }),
     }),
 
-  /** Triage an alert the user supplied rather than one from the corpus. */
   startRunFromAlert: (alert: unknown) =>
     get<{
       run_id: string;
@@ -161,16 +139,6 @@ export const api = {
     }),
 };
 
-/**
- * The SSE URL, with the key as a query parameter.
- *
- * `EventSource` cannot send headers — that is a gap in the browser API, not a
- * choice — so the key travels in the query string for this one endpoint. It is
- * therefore visible in server access logs, which is why Bishop's own access log
- * records a fingerprint rather than the URL's query. Behind TLS it is not on
- * the wire in clear, but it is the weakest link in this scheme and is written
- * down as such.
- */
 export function eventStreamUrl(runId: string): string {
   const base = `${API_BASE}/runs/${runId}/events`;
   return API_KEY ? `${base}?api_key=${encodeURIComponent(API_KEY)}` : base;

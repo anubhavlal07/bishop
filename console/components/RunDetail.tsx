@@ -1,7 +1,5 @@
 "use client";
 
-/** Everything about one run: topology, verdict, evidence, response, audit. */
-
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -82,36 +80,50 @@ function AuditPanel({ runId, entries }: { runId: string; entries: number }) {
             : "Chain does not verify. Something was rewritten."}
         </p>
       )}
-      {error && <p className="text-xs" style={{ color: "var(--color-tp)" }}>{error}</p>}
+      {error && (
+        <p className="text-xs" style={{ color: "var(--color-tp)" }}>
+          {error}
+        </p>
+      )}
       {open && rows && (
         <ol className="max-h-80 space-y-1 overflow-auto">
           {rows.map((entry) => (
             <li key={entry.entry_hash} className="mono text-[11px]">
-              <span className="muted">{String(entry.seq).padStart(3, "0")}</span>{" "}
+              <span className="muted">
+                {String(entry.seq).padStart(3, "0")}
+              </span>{" "}
               <span style={{ color: "var(--color-btp)" }}>{entry.action}</span>{" "}
               <span className="muted">{entry.actor}</span>{" "}
-              <span className="muted opacity-60">{entry.entry_hash.slice(0, 12)}…</span>
+              <span className="muted opacity-60">
+                {entry.entry_hash.slice(0, 12)}…
+              </span>
             </li>
           ))}
         </ol>
       )}
       {!open && (
         <p className="muted text-xs">
-          Every step, model call, evidence artefact and human decision, chained. A correction is
-          a new entry, never an edit.
+          Every step, model call, evidence artefact and human decision, chained.
+          A correction is a new entry, never an edit.
         </p>
       )}
     </Panel>
   );
 }
 
-function Timeline({ events }: { events: Array<{ kind: string; at?: string }> }) {
+function Timeline({
+  events,
+}: {
+  events: Array<{ kind: string; at?: string }>;
+}) {
   if (events.length === 0) return <Empty>Waiting for the first event.</Empty>;
   return (
     <ol className="max-h-72 space-y-1 overflow-auto">
       {events.map((event, index) => (
         <li key={`${event.kind}-${index}`} className="text-[11px]">
-          <span className="mono muted">{event.at?.slice(11, 19) ?? "--:--:--"}</span>{" "}
+          <span className="mono muted">
+            {event.at?.slice(11, 19) ?? "--:--:--"}
+          </span>{" "}
           <span
             style={{
               color:
@@ -136,7 +148,8 @@ export function RunDetail({ runId }: { runId: string }) {
 
   const incident: Incident | null = state?.incident ?? null;
   const verdict = incident?.verdict ?? null;
-  const showGate = state?.status === "awaiting_approval" && state.approval_request && !decided;
+  const showGate =
+    state?.status === "awaiting_approval" && state.approval_request && !decided;
 
   if (error && !state) return <ApiDown message={error} />;
 
@@ -144,7 +157,10 @@ export function RunDetail({ runId }: { runId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-semibold">{state?.alert_id ?? runId}</h1>
-        <VerdictPill label={verdict?.label ?? null} confidence={verdict?.confidence} />
+        <VerdictPill
+          label={verdict?.label ?? null}
+          confidence={verdict?.confidence}
+        />
         <span className="muted text-xs">
           {state?.status === "awaiting_approval"
             ? "paused — waiting for a human"
@@ -153,14 +169,17 @@ export function RunDetail({ runId }: { runId: string }) {
         {incident?.cost && (
           <span className="mono ml-auto text-[11px] muted">
             {incident.cost.model_calls} model calls ·{" "}
-            {incident.cost.input_tokens + incident.cost.output_tokens} tokens · $
-            {incident.cost.usd.toFixed(6)}
+            {incident.cost.input_tokens + incident.cost.output_tokens} tokens ·
+            ${incident.cost.usd.toFixed(6)}
           </span>
         )}
       </div>
 
       {state?.error && (
-        <div className="panel p-3 text-xs" style={{ borderColor: "var(--color-tp)", color: "var(--color-tp)" }}>
+        <div
+          className="panel p-3 text-xs"
+          style={{ borderColor: "var(--color-tp)", color: "var(--color-tp)" }}
+        >
           {state.error}
         </div>
       )}
@@ -191,7 +210,9 @@ export function RunDetail({ runId }: { runId: string }) {
                   <h3 className="mt-3 text-xs font-medium uppercase tracking-wide muted">
                     Attack narrative
                   </h3>
-                  <p className="mt-1 text-xs leading-relaxed">{verdict.narrative}</p>
+                  <p className="mt-1 text-xs leading-relaxed">
+                    {verdict.narrative}
+                  </p>
                 </>
               )}
               {verdict.technique_ids.length > 0 && (
@@ -203,7 +224,10 @@ export function RunDetail({ runId }: { runId: string }) {
                       target="_blank"
                       rel="noreferrer"
                       className="mono rounded px-1.5 py-0.5 text-[11px]"
-                      style={{ border: "1px solid var(--edge)", color: "var(--color-btp)" }}
+                      style={{
+                        border: "1px solid var(--edge)",
+                        color: "var(--color-btp)",
+                      }}
                     >
                       {id}
                     </a>
@@ -217,7 +241,10 @@ export function RunDetail({ runId }: { runId: string }) {
                   </h3>
                   <ul className="mt-1 list-disc space-y-1 pl-4">
                     {verdict.counter_arguments.map((argument) => (
-                      <li key={argument} className="muted text-xs leading-relaxed">
+                      <li
+                        key={argument}
+                        className="muted text-xs leading-relaxed"
+                      >
                         {argument}
                       </li>
                     ))}
@@ -235,20 +262,26 @@ export function RunDetail({ runId }: { runId: string }) {
             <Panel title="Proposed response">
               {incident.response_plan.actions.length > 0 ? (
                 <>
-                  <p className="text-xs leading-relaxed">{incident.response_plan.strategy}</p>
+                  <p className="text-xs leading-relaxed">
+                    {incident.response_plan.strategy}
+                  </p>
                   <ExecutionLog log={incident.execution_log} />
                 </>
               ) : (
                 <p className="muted text-xs leading-relaxed">
-                  {incident.response_plan.no_action_rationale ?? incident.response_plan.strategy}
+                  {incident.response_plan.no_action_rationale ??
+                    incident.response_plan.strategy}
                 </p>
               )}
-              {incident.human_decision && incident.human_decision.decided_by !== "system" && (
-                <p className="muted mt-3 text-[11px]">
-                  {incident.human_decision.decision} by {incident.human_decision.decided_by}
-                  {incident.human_decision.note && ` — ${incident.human_decision.note}`}
-                </p>
-              )}
+              {incident.human_decision &&
+                incident.human_decision.decided_by !== "system" && (
+                  <p className="muted mt-3 text-[11px]">
+                    {incident.human_decision.decision} by{" "}
+                    {incident.human_decision.decided_by}
+                    {incident.human_decision.note &&
+                      ` — ${incident.human_decision.note}`}
+                  </p>
+                )}
             </Panel>
           )}
         </div>
@@ -267,8 +300,7 @@ export function RunDetail({ runId }: { runId: string }) {
           onDecide={async (body) => {
             await api.decide(runId, body);
             setDecided(true);
-            // The stream closed when the run paused. Re-open it to watch the
-            // rest of the run.
+
             resubscribe();
           }}
         />

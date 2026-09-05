@@ -25,8 +25,6 @@ export function Nav() {
   );
 
   useEffect(() => {
-    // After mount only: localStorage does not exist during a server render, and
-    // reading it while rendering breaks hydration.
     const read = () => setCredentials(loadCredentials());
     read();
     window.addEventListener("bishop:credentials", read);

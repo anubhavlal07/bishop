@@ -54,7 +54,6 @@ def _fired_detectors(reports: list[InvestigatorReport]) -> list[DetectorResult]:
     return [r for r in _all_results(reports) if r.fired]
 
 
-#: The one surface that argues *against* malice rather than for it.
 _MITIGATING_INVESTIGATOR = "context_investigator"
 
 
@@ -89,10 +88,6 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
 
     context: dict[str, Any] = {
         "incident_id": state.get("incident_id"),
-        # Built by `Alert.entity_key()` with f-string interpolation of the
-        # hostname and username, so the marker is gone and the value is
-        # attacker-influenced. Marked rather than dropped: the analyst and
-        # the model both need to know which entity this is about.
         "entity_key_quoted": f"«{state.get('entity_key')}»",
         "investigators_run": [r.investigator for r in reports],
         "detectors_fired": len(fired),
@@ -139,7 +134,6 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
             },
         )
 
-        # ── technique validation, with one re-prompt ────────────────────────
         proposed = [str(t) for t in (data.get("technique_ids") or [])]
         validation = validate_techniques(proposed)
 
@@ -176,15 +170,12 @@ def synthesis(state: BishopState, config: Optional[RunnableConfig] = None) -> di
                 usd=round(cost.usd + retry.cost_usd, 8),
             )
             second = validate_techniques([str(t) for t in (retry_data.get("technique_ids") or [])])
-            # Whatever survives the second pass is what ships. Nothing that
-            # failed validation is carried through with a caveat.
             data = retry_data or data
             validation = second
 
     except ModelError as exc:
         errors.append(f"synthesis: {exc}")
         runtime.chain.append("synthesis", AuditAction.RUN_FAILED, {"error": str(exc)})
-        # Fall back to the deterministic core rather than producing nothing.
         validation = validate_techniques([hint for r in fired for hint in r.technique_hints])
         data = {
             "label": "escalate",
@@ -273,9 +264,6 @@ def _build_verdict(
     confidence = float(data.get("confidence") or 0.0)
     escalation_reason = data.get("escalation_reason")
 
-    # Grounding, in all three directions. A malicious verdict needs a measurement
-    # behind it — an injection attempt counts, being a deterministic finding
-    # from the quarantine scan.
     if label is VerdictLabel.TRUE_POSITIVE and not fired and not injections:
         label = VerdictLabel.ESCALATE
         escalation_reason = (
@@ -284,12 +272,6 @@ def _build_verdict(
         )
         confidence = min(confidence, threshold)
 
-    # And an *exculpatory* verdict needs one too. Grounding only the accusing
-    # side left the suppression path open, which is the attacker's higher-value
-    # goal: a model asserting "authorised by change ticket CHG-4471" at 0.93,
-    # with nothing measured either way, closed the alert. A benign true positive
-    # is a claim that something was authorised, and that claim has to come from
-    # environment policy — a mitigating detector — rather than from prose.
     if label is VerdictLabel.BENIGN_TRUE_POSITIVE and not mitigating:
         label = VerdictLabel.ESCALATE
         escalation_reason = (
@@ -299,20 +281,6 @@ def _build_verdict(
         )
         confidence = min(confidence, threshold)
 
-    # And the third direction, which was missing until the held-out set found
-    # it. `false_positive` is the verdict that closes the ticket, and it was the
-    # one verdict needing no evidence at all: when no detector had jurisdiction
-    # over an alert — a Kerberoasting ticket count, a cloud token replay,
-    # nothing in Bishop's remit — every detector returned `miss`, none fired,
-    # and the model, seeing an empty evidence table, concluded there was nothing
-    # wrong. It read "nobody checked" as "nothing to find".
-    #
-    # `run_surface`'s own docstring has always insisted those are different
-    # things. This is where the difference finally changes an outcome: closing
-    # an alert is a claim that someone looked, so at least one detector has to
-    # have actually reached a conclusion. Absence of evidence is not evidence
-    # of absence, and on a tool whose 31 techniques cover a fraction of ATT&CK
-    # it is the most common situation there is.
     if label is VerdictLabel.FALSE_POSITIVE and not examined:
         label = VerdictLabel.ESCALATE
         escalation_reason = (
@@ -322,7 +290,6 @@ def _build_verdict(
         )
         confidence = min(confidence, threshold)
 
-    # Abstention: below the threshold Bishop declines rather than guesses.
     if (
         label in {VerdictLabel.TRUE_POSITIVE, VerdictLabel.BENIGN_TRUE_POSITIVE}
         and confidence < threshold
@@ -344,7 +311,7 @@ def _build_verdict(
     for index, stage in enumerate(data.get("stages") or [], start=1):
         technique_id = str(stage.get("technique_id") or "")
         if technique_id not in accepted_ids:
-            continue  # a stage citing an unvalidated technique does not render
+            continue
         technique = catalogue.get(technique_id)
         stages.append(
             AttackStage(

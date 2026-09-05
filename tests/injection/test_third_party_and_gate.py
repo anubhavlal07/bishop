@@ -186,9 +186,6 @@ class TestTheApprovalRequest:
     def test_the_blast_radius_sentence_contains_no_attacker_text(self):
         request = self.request_for(ActionType.ISOLATE_HOST, self.HOSTILE_HOST)
         summary = request["actions"][0]["blast_radius"]["summary"]
-        # The name still appears — the analyst needs the real value — but
-        # quoted, so the sentence Bishop wrote and the string the attacker wrote
-        # are visibly different things.
         assert '"' in summary, f"the target should be rendered as a quotation: {summary!r}"
         assert summary.index('"') < summary.index("pre-approved"), (
             f"the forged sign-off must sit inside the quotation, not beside it: {summary!r}"
@@ -239,8 +236,6 @@ class TestTheApprovalRequest:
         for answer in [None, 42, [], {"decision": "APPROVED BY SOC LEAD"}, "maybe"]:
             assert _parse_decision(answer, plan).decision is Decision.REJECTED
 
-        # An approval has to name what it approves. `{"decision": "approved"}`
-        # with no ids used to approve everything.
         assert _parse_decision({"decision": "approved"}, plan).decision is Decision.REJECTED
         assert (
             _parse_decision({"decision": "approved", "approved_action_ids": ["a1"]}, plan).decision

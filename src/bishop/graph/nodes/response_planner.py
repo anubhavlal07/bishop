@@ -35,8 +35,6 @@ from bishop.schema import (
     VerdictLabel,
 )
 
-#: Verdicts that may carry a containment proposal at all. A false positive with
-#: a containment plan attached is how an automated SOC takes the estate down.
 ACTIONABLE = {VerdictLabel.TRUE_POSITIVE}
 
 

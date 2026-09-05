@@ -159,7 +159,6 @@ class TestTheGraphAcceptsAGroup:
 
         verdict = result["verdict"]
         assert verdict.label is VerdictLabel.TRUE_POSITIVE
-        # Techniques spanning the whole chain, not just one alert's worth.
         assert {"T1566.001", "T1543.003", "T1560.001"} <= set(verdict.technique_ids)
 
     def test_the_supervisor_says_how_many_alerts_it_had(self):

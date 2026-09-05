@@ -1,25 +1,5 @@
 "use client";
 
-/**
- * First-run model setup.
- *
- * Opens once, when the viewer has made no choice yet, and from Settings after
- * that. It asks for a provider and a key, verifies the key against the vendor
- * with one cheap call, and stores it in this browser.
- *
- * Two things this dialog deliberately does rather than skips:
- *
- * It **verifies before saving**. The failure is identical whether you discover
- * a bad key now or three minutes into a run, but here it is attached to the
- * field you just typed, and a stored key that has never worked is worse than
- * no key at all.
- *
- * It **says where the key goes**, in the dialog rather than in a doc nobody
- * opens. Someone pasting a credential into a web page is entitled to know it
- * stays in their browser, that this deployment never stores it, and that a
- * script on this origin could read it.
- */
-
 import { useCallback, useEffect, useState } from "react";
 
 import { API_BASE } from "@/lib/api";
@@ -95,8 +75,6 @@ export function ProviderSetup({
 
     setBusy(true);
     try {
-      // Verified before it is stored. A key that has never worked, sitting in
-      // storage, fails later and further from the cause.
       const headers: Record<string, string> = {
         "X-Model-Provider": credentials.provider,
         "X-Model-Key": credentials.apiKey,

@@ -98,9 +98,6 @@ def response_execute(
     engine = executor or MockExecutor()
 
     if plan is None or not plan.actions:
-        # Write the entry anyway. "The executor ran and had nothing to do" and
-        # "the executor never ran" are different facts, and a chain that records
-        # only one of them cannot tell you which happened.
         runtime.chain.append(
             "response_execute",
             AuditAction.ACTION_REFUSED,

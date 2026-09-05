@@ -25,15 +25,10 @@ from bishop.detectors.base import (
 from bishop.schema.alert import Alert
 from bishop.schema.evidence import DetectorResult
 
-#: Below this, inter-arrival times are too regular to be a human at a keyboard.
-#: Automated software also beacons regularly — the detector says "automation",
-#: and synthesis decides whose.
 REGULAR_CV_THRESHOLD = 0.25
 
-#: Fewer than this and any apparent rhythm is coincidence.
 MIN_BEACON_SAMPLES = 5
 
-#: Public suffixes get one extra label before the interesting part.
 _TWO_PART_TLDS = frozenset({"co.uk", "com.au", "co.jp", "co.nz", "com.br", "co.in", "org.uk"})
 
 
@@ -120,12 +115,8 @@ def beaconing(alert: Alert) -> DetectorResult:
 
         score = 0.45 + 0.35 * (1.0 - scale(regularity, 0.0, REGULAR_CV_THRESHOLD))
         if uniform_payload:
-            # Near-identical request sizes on a fixed schedule is a check-in,
-            # not a person browsing.
             score += 0.15
         if 0.02 <= regularity <= 0.2:
-            # The deliberate-jitter band: too regular for a human, too irregular
-            # for a scheduler.
             score += 0.05
         score = min(0.93, score)
 
@@ -167,8 +158,6 @@ def beaconing(alert: Alert) -> DetectorResult:
 
     hints = ["T1071.001"]
     if _mostly_tls(alert.connections, str(best["destination"])):
-        # A beacon over 443 is an encrypted channel, which is the property that
-        # makes the payload unavailable and the rhythm the only thing left.
         hints.append("T1573")
 
     return DetectorResult(
@@ -258,7 +247,6 @@ def dns_exfiltration(alert: Alert) -> DetectorResult:
         mean_length = sum(len(s) for s in unique) / len(unique)
         uniqueness = len(unique) / len(subdomains)
 
-        # Encoded data sits above ~3.5 bits/char; English hostnames sit below.
         entropy_signal = scale(mean_entropy, 3.2, 4.3)
         length_signal = scale(mean_length, 20, 55)
         volume_signal = scale(len(unique), 5, 50)
@@ -270,7 +258,6 @@ def dns_exfiltration(alert: Alert) -> DetectorResult:
             0.92,
             0.3 * entropy_signal + 0.3 * length_signal + 0.25 * volume_signal + 0.15 * uniqueness,
         )
-        # Two weak legs and one strong one is not a tunnel.
         if sum(1 for s in (entropy_signal, length_signal, volume_signal) if s > 0.35) < 2:
             continue
         if score <= best_score:
@@ -307,9 +294,6 @@ def dns_exfiltration(alert: Alert) -> DetectorResult:
             f"{best['mean_entropy_bits_per_char']} bits per character — that is encoded data, "
             f"not hostnames"
         ),
-        # DNS carrying data out is exfiltration over a non-C2 protocol as much
-        # as it is application-layer C2; which one it is depends on direction,
-        # and the volume here says data is leaving.
         technique_hints=["T1071.004", "T1048.003"],
     )
 
@@ -346,9 +330,6 @@ def outbound_volume(alert: Alert) -> DetectorResult:
     ratio = sent / received if received else float(sent)
 
     sizes = [c.bytes_out for c in worst_group if c.bytes_out]
-    # Near-identical transfer sizes across many connections is a deliberate
-    # chunk size, which is what T1030 describes — data split to stay under a
-    # threshold rather than sent in one stream.
     uniform_chunks = len(sizes) >= 5 and len(set(sizes)) <= max(2, len(sizes) // 5)
 
     facts = {
@@ -361,7 +342,6 @@ def outbound_volume(alert: Alert) -> DetectorResult:
         "megabytes_out": round(sent / 1_000_000, 2),
     }
 
-    #: 10 MB and 10:1. Below either, ordinary application traffic explains it.
     if sent < 10_000_000 or ratio < 10:
         return clear(
             "outbound_volume",

@@ -76,7 +76,6 @@ class TestHappyPath:
         cost = result["cost"]
         assert cost.model_calls >= 3
         assert cost.input_tokens > 0
-        # The mock is free, and the scorecard should say so rather than invent one.
         assert cost.usd == 0.0
 
 
@@ -201,7 +200,6 @@ class TestGrounding:
         """A dropped finding is a model trying to invent a signal. Record it."""
         graph, state, config, runtime = run(quiet_alert())
         graph.invoke(state, config=config)
-        # The mock never invents findings, so this run should have dropped none.
         refusals = [
             e
             for e in runtime.chain.by_action(AuditAction.ACTION_REFUSED)

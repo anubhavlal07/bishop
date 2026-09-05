@@ -35,13 +35,8 @@ from bishop.models.credentials import Credentials
 
 __all__ = ["build_provider", "verify_credentials"]
 
-#: One completion should never take longer than this. Bishop makes several per
-#: run and a hung call holds a worker thread the whole time.
 TIMEOUT = httpx.Timeout(90.0, connect=10.0)
 
-#: Anything that looks like a credential, scrubbed from an error before it is
-#: shown. Vendors do echo request context back, and an error page that quotes
-#: the key would put it in a log or a screenshot.
 _SECRET_SHAPED = re.compile(r"(sk-ant-[\w\-]+|sk-[\w\-]{20,}|AIza[\w\-]{30,}|Bearer\s+\S+)")
 
 
@@ -154,8 +149,6 @@ class OpenAIHttp(_HttpProvider):
             "max_completion_tokens": max_tokens,
         }
         if schema is not None:
-            # `strict` makes the schema binding enforced rather than advisory,
-            # which is the difference between a parser and a guarantee.
             body["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {"name": "bishop", "schema": _strict(schema), "strict": True},
@@ -202,17 +195,12 @@ class AzureOpenAIHttp(OpenAIHttp):
     """
 
     name = "azure-openai"
-    #: Pinned rather than "latest": a version bump can change the response
-    #: shape, and a security tool should not have its parser change under it on
-    #: the vendor's schedule.
     api_version = "2024-10-21"
 
     def _headers(self) -> dict[str, str]:
         return {"api-key": self._credentials.api_key, "Content-Type": "application/json"}
 
     def _url(self) -> str:
-        # On Azure the deployment name occupies the model's place in the path,
-        # and the `model` field in the body is ignored.
         return (
             f"{self._credentials.endpoint}/openai/deployments/{self.model_id}"
             f"/chat/completions?api-version={self.api_version}"
@@ -242,8 +230,6 @@ class GeminiHttp(_HttpProvider):
 
         payload = self._post(
             f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_id}:generateContent",
-            # The key goes in a header, not the query string as several of
-            # Google's own examples show. A key in a URL lands in proxy logs.
             headers={
                 "x-goog-api-key": self._credentials.api_key,
                 "Content-Type": "application/json",

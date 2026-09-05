@@ -45,27 +45,21 @@ class BishopState(TypedDict, total=False):
     """Everything one run knows."""
 
     run_id: str
-    #: The alerts correlated into this incident. Usually one.
     alerts: list[Alert]
     incident_id: str
     entity_key: str
 
-    #: Rendered, fenced untrusted data. The only alert text a prompt may contain.
     quarantine_block: str
-    #: Injection findings, raised at the boundary. Reaches synthesis directly.
     quarantine_evidence: list[Evidence]
     quarantine_summary: dict[str, Any]
 
-    #: Which investigator surfaces the supervisor chose, and why.
     dispatch: list[str]
     dispatch_rationale: str
 
-    #: Fan-in from the parallel investigators.
     reports: Annotated[list[InvestigatorReport], operator.add]
     cost: Annotated[RunCost, merge_cost]
 
     verdict: Verdict | None
-    #: How many times the critic has sent the verdict back. Bounded — see nodes.
     critic_rounds: int
     critique: list[str]
 
@@ -75,7 +69,6 @@ class BishopState(TypedDict, total=False):
 
     audit_head: str
     errors: Annotated[list[str], operator.add]
-    #: Set when the run finished without producing a verdict it stands behind.
     escalated: bool
 
 

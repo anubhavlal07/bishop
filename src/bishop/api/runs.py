@@ -25,9 +25,6 @@ from bishop.graph import build_graph, build_runtime, initial_state, runtime_conf
 from bishop.graph.nodes.report import build_incident
 from bishop.schema import Alert
 
-#: Runs are held in memory. A restart loses in-flight runs, which is acceptable
-#: for a demo and is called out in docs/ARCHITECTURE.md rather than papered over
-#: with a database that would not survive contact with a real deployment either.
 MAX_RUNS = 64
 
 
@@ -36,7 +33,7 @@ class Run:
     run_id: str
     alert_id: str
     incident_id: str
-    status: str = "queued"  # queued | running | awaiting_approval | done | failed
+    status: str = "queued"
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     events: list[dict[str, Any]] = field(default_factory=list)
     approval_request: dict[str, Any] | None = None
@@ -92,9 +89,6 @@ class RunManager:
         run_id = f"run-{uuid.uuid4().hex[:12]}"
         run = Run(run_id=run_id, alert_id=alert_id, incident_id=f"INC-{alert_id}")
 
-        # Mirror every node emit onto the run's queue so SSE sees it live.
-        # `provider` is built per request from the caller's own credentials and
-        # is never held beyond this run — see models/credentials.py.
         runtime = build_runtime(run_id=run_id, listener=run.push, provider=provider)
         run._runtime = runtime
         run._graph = build_graph()
@@ -111,9 +105,6 @@ class RunManager:
     def resume(self, run: Run, decision: dict[str, Any]) -> None:
         from langgraph.types import Command
 
-        # Under the lock: two simultaneous decisions could otherwise both pass
-        # the check and both resume the graph, which on a gate means a
-        # duplicated execution.
         with self._lock:
             if run.status != "awaiting_approval":
                 raise ValueError(f"run {run.run_id} is {run.status}, not awaiting approval")
@@ -187,11 +178,8 @@ class RunManager:
             except queue.Empty:
                 if run.status in {"done", "failed", "awaiting_approval"}:
                     return
-                # Keep the connection alive through a slow model call.
                 yield {"kind": "heartbeat", "at": datetime.now(UTC).isoformat()}
                 continue
-            # The replay above already emitted everything up to now; skip
-            # anything the queue hands back that we have already sent.
             yield event
             if event.get("kind") in {"done", "failed", "awaiting_approval"}:
                 return

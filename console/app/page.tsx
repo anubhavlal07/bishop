@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import type { AlertSummary } from "@/lib/types";
-import { ApiDown, Panel, SeverityDot, VerdictPill } from "@/components/primitives";
+import {
+  ApiDown,
+  Panel,
+  SeverityDot,
+  VerdictPill,
+} from "@/components/primitives";
 
 export default function AlertsPage() {
   const router = useRouter();
@@ -43,12 +48,13 @@ export default function AlertsPage() {
         subtitle={alerts ? `${alerts.length} labelled alerts` : "loading…"}
       >
         <p className="muted mb-4 text-xs leading-relaxed">
-          These alerts are synthetic and hand-labelled. They exist so Bishop&apos;s behaviour
-          can be measured against known ground truth — they are not evidence that it works on
-          real-world noise, because they contain none. This is also the set the thresholds were
-          tuned against, so it flatters; the held-out set in{" "}
-          <code>fixtures/holdout/</code> is the honest number. The expected verdict is shown
-          here for reading the demo; Bishop never sees it.
+          These alerts are synthetic and hand-labelled. They exist so
+          Bishop&apos;s behaviour can be measured against known ground truth —
+          they are not evidence that it works on real-world noise, because they
+          contain none. This is also the set the thresholds were tuned against,
+          so it flatters; the held-out set in <code>fixtures/holdout/</code> is
+          the honest number. The expected verdict is shown here for reading the
+          demo; Bishop never sees it.
         </p>
 
         {!alerts ? (
@@ -64,7 +70,9 @@ export default function AlertsPage() {
                   className="flex w-full flex-wrap items-center gap-3 px-1 py-2.5 text-left hover:opacity-80 disabled:opacity-40"
                 >
                   <SeverityDot severity={alert.severity} />
-                  <span className="mono w-64 shrink-0 text-xs">{alert.alert_id}</span>
+                  <span className="mono w-64 shrink-0 text-xs">
+                    {alert.alert_id}
+                  </span>
                   <span className="flex-1 text-sm">{alert.rule_name}</span>
                   <span className="muted hidden w-40 shrink-0 text-xs md:block">
                     {alert.host ?? alert.user ?? alert.source}

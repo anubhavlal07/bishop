@@ -20,14 +20,6 @@ ALERTS_DIR = FIXTURES / "alerts"
 RUN_ID = "run-injection-corpus"
 
 
-#: Findings filed against the current build that change a verdict, drop a
-#: containment action, or put attacker text outside the fence. Every id here has
-#: a strict-xfail test asserting the behaviour Bishop should have; when one is
-#: fixed the test reports XPASS and fails, which is the signal to clear the id
-#: from this list. An entry here means the review is not passed.
-#: Findings that would stop a ship. Empty is the only acceptable value here;
-#: an entry means a demonstrated path from an attacker-controlled field to a
-#: changed verdict or a dropped containment action.
 OPEN_BLOCKERS: tuple[str, ...] = ()
 
 

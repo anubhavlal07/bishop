@@ -67,35 +67,19 @@ class DeploymentSettings(BaseSettings):
 
     environment: Environment = "development"
 
-    #: Comma-separated API keys accepted by the API. Compared in constant time
-    #: against a SHA-256 of the presented key, so a timing difference cannot
-    #: leak how much of a guess was correct.
     api_keys: str = ""
 
-    #: Comma-separated origins the console may call from. `*` is refused in
-    #: production: with credentials disabled it is not an authentication bypass,
-    #: but it does let any page on the internet read incident data from a
-    #: browser that holds a key.
     cors_origins: str = "*"
 
-    #: Requests per minute per API key. Zero disables the limiter, which is
-    #: refused in production.
     rate_limit_per_minute: int = 120
 
-    #: Maximum accepted request body. An alert is kilobytes; anything much
-    #: larger is either a mistake or an attempt to exhaust memory.
     max_request_bytes: int = 1_048_576
 
-    #: Where triage results and audit chains are stored. SQLite is refused in
-    #: production — it does not survive a container restart on most platforms,
-    #: and an audit chain that does not survive is not an audit chain.
     database_url: str = ""
 
-    #: Emit one JSON object per log line instead of human text.
     json_logs: bool = False
     log_level: str = "INFO"
 
-    #: Public base URL, used in logs and error messages. Not load-bearing.
     public_url: str = ""
 
     @field_validator("log_level")
@@ -204,9 +188,6 @@ def _describe_database(url: str) -> str:
     return f"{scheme} (configured)"
 
 
-# ── key handling ────────────────────────────────────────────────────────────
-
-
 def generate_key() -> str:
     """A new API key. 32 bytes of randomness, URL-safe."""
     return secrets.token_urlsafe(32)
@@ -224,14 +205,9 @@ def key_matches(presented: str, accepted: tuple[str, ...]) -> bool:
     candidate = hashlib.sha256(presented.encode("utf-8")).digest()
     matched = False
     for key in accepted:
-        # No early exit: the loop always runs to the end, so the time taken
-        # does not reveal which key matched or how far down the list it was.
         if hmac.compare_digest(candidate, hashlib.sha256(key.encode("utf-8")).digest()):
             matched = True
     return matched
-
-
-# ── access ──────────────────────────────────────────────────────────────────
 
 
 @lru_cache(maxsize=1)

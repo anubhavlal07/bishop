@@ -120,7 +120,6 @@ def lolbin_abuse(alert: Alert) -> DetectorResult:
         return DetectorResult(
             detector="lolbin_abuse",
             fired=True,
-            # Deliberately low. This alone should never carry a verdict.
             score=0.25,
             facts=facts,
             rationale=(
@@ -266,8 +265,6 @@ _LSASS_DUMP_PATTERNS: tuple[tuple[str, str], ...] = (
     ("vssadmin create shadow", "creating a shadow copy to read locked hives"),
 )
 
-#: Access masks that permit reading another process's memory. 0x1010 and 0x1410
-#: are what the common dumpers request against LSASS.
 _DANGEROUS_LSASS_MASKS = {0x1010, 0x1410, 0x1438, 0x143A, 0x1FFFFF, 0x0010}
 
 
@@ -318,8 +315,6 @@ def credential_dumping(alert: Alert) -> DetectorResult:
                     }
                 )
 
-    # Sysmon event 10 (ProcessAccess) lands in `raw` because it is not a field
-    # every source provides. Read defensively.
     target = str(alert.raw.get("TargetImage") or alert.raw.get("target_image") or "").lower()
     granted = alert.raw.get("GrantedAccess") or alert.raw.get("granted_access")
     if "lsass.exe" in target and granted is not None:
@@ -328,7 +323,7 @@ def credential_dumping(alert: Alert) -> DetectorResult:
         except (TypeError, ValueError):
             mask = None
         if mask is not None:
-            readable = bool(mask & 0x0010)  # PROCESS_VM_READ
+            readable = bool(mask & 0x0010)
             findings.append(
                 {
                     "where": "raw.GrantedAccess",
@@ -344,10 +339,6 @@ def credential_dumping(alert: Alert) -> DetectorResult:
 
     if not findings:
         examined = sum(1 for _ in _all_processes(alert))
-        # Not "is raw non-empty" — raw carries whatever the sensor sent, and
-        # most of it is nothing to do with this detector. Only the two keys it
-        # actually reads count as having had something to read; otherwise
-        # "no credential-dumping observed" claims a check that never happened.
         if not examined and not (target or granted):
             return miss(
                 "credential_dumping",
@@ -363,9 +354,6 @@ def credential_dumping(alert: Alert) -> DetectorResult:
     combined = min(0.95, float(strongest["weight"]) + 0.05 * (len(findings) - 1))  # type: ignore[arg-type]
 
     hints = ["T1003"]
-    # The `note` matters as well as the `match`: a raw LSASS handle's match is
-    # an access mask, and searching only matches would map it to T1003 without
-    # the sub-technique that says which credential store was read.
     joined = " ".join(f"{f['match']} {f['note']}" for f in findings).lower()
     if "lsass" in joined or "comsvcs" in joined or "minidump" in joined:
         hints.append("T1003.001")
@@ -472,9 +460,6 @@ def persistence(alert: Alert) -> DetectorResult:
                 }
             )
         if "sc.exe" in command and ("create" in command or "config" in command):
-            # `sc.exe \\HOST create` installs a service on *another* machine.
-            # That is lateral movement as much as persistence, and labelling it
-            # only as persistence loses the half an analyst chases.
             remote = "\\\\" in command
             findings.append(
                 {
@@ -589,10 +574,6 @@ def encoded_command(alert: Alert) -> DetectorResult:
     """
     findings: list[dict[str, object]] = []
 
-    #: Command lines are not the only place a payload runs from. A Run key
-    #: value, a scheduled task action and a service image path are all
-    #: executed, and all three were going unexamined — TP-12 hid an encoded
-    #: PowerShell one-liner in a registry value and this detector saw nothing.
     carriers: list[tuple[str, str]] = [
         (where, _cmd_of(process)) for where, process in _all_processes(alert)
     ]
@@ -643,8 +624,6 @@ def encoded_command(alert: Alert) -> DetectorResult:
     tell_total = sum(len(f["tells"]) for f in findings)  # type: ignore[arg-type]
     decoded_any = [f for f in findings if f.get("decoded")]
 
-    #: Each individual switch has a legitimate use; three together in one
-    #: command line is a deliberate attempt not to be read.
     score = min(0.9, 0.2 + 0.15 * tell_total)
     if decoded_any:
         score = min(0.92, score + 0.2)
@@ -664,9 +643,6 @@ def encoded_command(alert: Alert) -> DetectorResult:
     hints = ["T1027"]
     if decoded_any:
         hints.append("T1140")
-    # The interpreter may be named in the carrier rather than run directly —
-    # a Run key that launches `powershell.exe -enc …` is PowerShell execution
-    # even though the alert's own process is the installer that wrote it.
     everything = " ".join(
         [_name_of(p) for _, p in _all_processes(alert)] + [c for _, c in carriers]
     ).lower()
@@ -728,9 +704,6 @@ def masquerading(alert: Alert) -> DetectorResult:
     for where, name, path in candidates:
         if not name:
             continue
-        # Both, not `path or name`. Checking only the path meant a file with a
-        # right-to-left override in its *name* was never examined whenever the
-        # sensor also supplied a path — and the name is the thing a human reads.
         display = f"{name} {path}".strip()
         lowered_path = path.lower().replace("/", "\\")
 
@@ -1009,7 +982,6 @@ def abused_hosting_contact(alert: Alert) -> DetectorResult:
     uploaded = sum(int(h.get("bytes_out") or 0) for h in hits)
     hints = ["T1102"]
     if uploaded > 1_000_000:
-        # Contact is T1102. Contact carrying a megabyte outbound is T1567.
         hints.append("T1567")
 
     return DetectorResult(

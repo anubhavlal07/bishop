@@ -40,9 +40,6 @@ class TestReadOnly:
 
     def test_alerts_lists_the_corpus(self, client):
         body = client.get("/alerts").json()
-        # Not pinned to an exact count: the corpus grows, and a test that fails
-        # every time a fixture is added trains people to update it without
-        # reading it.
         assert body["count"] >= 20
         assert all(a["synthetic"] for a in body["alerts"])
 
@@ -118,7 +115,6 @@ class TestApprovalFlow:
         assert request["actions"]
         assert any(a["irreversible"] for a in request["actions"])
         assert all(a["blast_radius"]["summary"] for a in request["actions"])
-        # Nothing has run.
         assert not body["incident"]["execution_log"]
 
     def test_rejecting_executes_nothing(self, client):

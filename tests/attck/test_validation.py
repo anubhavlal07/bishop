@@ -50,8 +50,6 @@ class TestValidation:
         assert result.ids == ["T1078"]
 
     def test_plausible_invented_id_is_rejected(self):
-        # T9999 has the right shape and does not exist. This is the failure mode
-        # the whole module exists to prevent.
         result = validate_techniques(["T9999"])
         assert not result.ok
         assert result.ids == []
@@ -137,8 +135,6 @@ class TestAtlas:
         assert unknown == ["AML.T9999"]
 
     def test_atlas_ids_are_not_mistaken_for_attack_ids(self):
-        # An ATLAS ID must never validate as ATT&CK — that is how a report would
-        # end up claiming a technique that does not exist in the bundle.
         assert not validate_techniques(["AML.T0051"]).ok
         assert is_atlas_id("AML.T0051")
         assert not is_atlas_id("T1059")

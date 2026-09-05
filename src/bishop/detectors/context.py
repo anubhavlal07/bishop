@@ -77,9 +77,6 @@ def _all_processes(alert: Alert):
         yield f"child_processes[{index}]", child
 
 
-#: Privilege tiers, least to most. Authorisation at one tier does not imply the
-#: next: an account permitted to add a local administrator is not thereby
-#: permitted to add a Domain Admin.
 _PRIVILEGE_ORDER = ("none", "local", "domain")
 
 _DOMAIN_GROUPS = ("domain admins", "enterprise admins", "schema admins", "account operators")
@@ -194,9 +191,6 @@ def authorised_activity(alert: Alert) -> DetectorResult:
                 }
             )
         else:
-            # Recorded, but as an aggravating observation rather than a
-            # mitigating one. A known account exceeding its remit is a worse
-            # signal than an unknown account doing the same thing.
             out_of_scope.append(
                 {
                     "account": username,
@@ -227,7 +221,7 @@ def authorised_activity(alert: Alert) -> DetectorResult:
             return DetectorResult(
                 detector="authorised_activity",
                 fired=True,
-                mitigating=False,  # this one argues *for* concern, not against
+                mitigating=False,
                 score=0.65,
                 facts={"out_of_scope": out_of_scope, "account": username},
                 rationale=(
@@ -330,9 +324,6 @@ def routine_software(alert: Alert) -> DetectorResult:
                 }
             )
 
-    # Persistence that points back into a trusted install path is an installer
-    # registering its own updater. Persistence pointing at %TEMP% is not, and
-    # this is the difference between the two.
     persistence_targets: list[tuple[str, str]] = []
     for index, change in enumerate(alert.registry_changes):
         persistence_targets.append((f"registry_changes[{index}]", str(change.value_data or "")))

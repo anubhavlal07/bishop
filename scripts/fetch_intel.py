@@ -28,12 +28,9 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-#: Not the committed path. The real cache lands under `data/`, which is
-#: gitignored, and the detector prefers it when present.
 TARGET = REPO_ROOT / "data" / "intel" / "ioc_cache.json"
 
 THREATFOX_URL = "https://threatfox-api.abuse.ch/api/v1/"
-#: One day of recent indicators is plenty for a demo and is polite to the feed.
 DAYS = 1
 
 
@@ -65,7 +62,7 @@ def fetch_threatfox(auth_key: str) -> list[dict[str, Any]]:
         if kind == "ip":
             indicator = indicator.split(":")[0]
         if kind in {"unknown", "md5"}:
-            continue  # Bishop looks up ip, domain, url and sha256 only
+            continue
 
         records.append(
             {

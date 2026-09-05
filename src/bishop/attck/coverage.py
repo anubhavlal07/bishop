@@ -24,7 +24,6 @@ from bishop.detectors.base import registry
 class TechniqueCoverage:
     technique: Technique
     detectors: list[str] = field(default_factory=list)
-    #: Fixture alert IDs whose labels claim this technique.
     fixtures: list[str] = field(default_factory=list)
 
     @property
@@ -40,8 +39,6 @@ class TechniqueCoverage:
 class CoverageMatrix:
     attack_version: str
     entries: list[TechniqueCoverage] = field(default_factory=list)
-    #: Detector hints that did not survive validation. Should always be empty;
-    #: `tests/attck/` fails the build if it is not.
     invalid_hints: list[tuple[str, str]] = field(default_factory=list)
 
     def by_tactic(self) -> dict[str, list[TechniqueCoverage]]:

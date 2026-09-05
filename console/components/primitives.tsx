@@ -28,7 +28,11 @@ export function VerdictPill({
   return (
     <span
       className="inline-flex items-center gap-2 rounded px-2 py-0.5 text-xs font-medium"
-      style={{ color: colour, border: `1px solid ${colour}`, background: `${colour}14` }}
+      style={{
+        color: colour,
+        border: `1px solid ${colour}`,
+        background: `${colour}14`,
+      }}
     >
       {VERDICT_LABEL[label] ?? label}
       {typeof confidence === "number" && (
@@ -40,8 +44,9 @@ export function VerdictPill({
 
 export function SeverityDot({ severity }: { severity: string }) {
   const colour =
-    { critical: "#f2555a", high: "#ff8a4c", medium: "#e3b341", low: "#58a6ff" }[severity] ??
-    "var(--muted)";
+    { critical: "#f2555a", high: "#ff8a4c", medium: "#e3b341", low: "#58a6ff" }[
+      severity
+    ] ?? "var(--muted)";
   return (
     <span
       title={severity}
@@ -81,7 +86,6 @@ export function Panel({
   );
 }
 
-/** Shown instead of an empty state when the API is the problem. */
 export function ApiDown({ message }: { message: string }) {
   return (
     <div
@@ -91,8 +95,8 @@ export function ApiDown({ message }: { message: string }) {
       <p className="font-medium">Bishop&apos;s API did not answer.</p>
       <p className="muted mt-2 text-xs">{message}</p>
       <p className="muted mt-3 text-xs">
-        This is not an empty result — the console could not reach the backend, so it does not
-        know what there is.
+        This is not an empty result — the console could not reach the backend,
+        so it does not know what there is.
       </p>
     </div>
   );

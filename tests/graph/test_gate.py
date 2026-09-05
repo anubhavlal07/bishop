@@ -197,7 +197,6 @@ class TestEndToEndGate:
         assert request["kind"] == "approval_request"
         assert request["actions"], "the analyst was shown no actions"
         assert all("blast_radius" in a for a in request["actions"])
-        # Nothing ran.
         assert not result.get("execution_log")
 
     def test_rejecting_executes_nothing(self, run):
@@ -251,7 +250,6 @@ class TestEndToEndGate:
         assert decisions[0].payload["decided_by"] == "analyst@corp"
         assert decisions[0].payload["decision"] == "approved"
 
-        # The decision commits to what the analyst was shown, not just to ids.
         requested = runtime.chain.by_action(AuditAction.APPROVAL_REQUESTED)
         assert decisions[0].payload["approved_request_hash"] == requested[0].payload["request_hash"]
         assert requested[0].payload["targets"]
@@ -273,7 +271,6 @@ class TestEndToEndGate:
 
         graph, state, config, runtime = run(quiet_alert())
         result = graph.invoke(state, config=config)
-        # No actions, so no interrupt and nothing to execute.
         assert not result.get("__interrupt__")
         assert result["response_plan"].actions == []
         assert result["execution_log"] == []

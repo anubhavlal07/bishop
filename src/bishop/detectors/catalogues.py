@@ -11,9 +11,6 @@ from a customer environment.
 
 from __future__ import annotations
 
-#: Signed Microsoft binaries that execute attacker-supplied code. The abuse is
-#: the point of the technique: the binary is legitimate, so allow-listing by
-#: signature does not help. Source: LOLBAS project.
 LOLBINS: dict[str, str] = {
     "rundll32.exe": "executes exported functions from an arbitrary DLL",
     "regsvr32.exe": "registers a DLL, and will fetch a remote scriptlet to do it",
@@ -45,7 +42,6 @@ LOLBINS: dict[str, str] = {
     "esentutl.exe": "copies files, including locked ones, and reads from UNC paths",
 }
 
-#: Arguments that turn a LOLBin from routine into suspicious.
 LOLBIN_ARGUMENT_TELLS: dict[str, tuple[tuple[str, str], ...]] = {
     "regsvr32.exe": (
         ("scrobj.dll", "loading the script COM object — the Squiblydoo pattern"),
@@ -93,8 +89,6 @@ LOLBIN_ARGUMENT_TELLS: dict[str, tuple[tuple[str, str], ...]] = {
     "esentutl.exe": (("/y", "copying a file, including a locked one"),),
 }
 
-#: Parent-child pairs that are ordinary. Used to keep the process-tree detector
-#: from firing on the entire estate. Values are parents; the key is the child.
 EXPECTED_PARENTS: dict[str, frozenset[str]] = {
     "powershell.exe": frozenset(
         {
@@ -131,8 +125,6 @@ EXPECTED_PARENTS: dict[str, frozenset[str]] = {
     "regsvr32.exe": frozenset({"explorer.exe", "cmd.exe", "msiexec.exe"}),
 }
 
-#: Applications with no business spawning a shell. An Office document that
-#: starts PowerShell is the opening move of most phishing chains.
 NEVER_SPAWNS_SHELL: dict[str, str] = {
     "winword.exe": "Word",
     "excel.exe": "Excel",
@@ -167,8 +159,6 @@ SHELLS: frozenset[str] = frozenset(
     }
 )
 
-#: Windows binaries that only ever live in the system directories. A copy
-#: anywhere else is either a masquerade or a staged tool.
 SYSTEM_BINARY_HOMES: dict[str, tuple[str, ...]] = {
     "svchost.exe": (r"c:\windows\system32", r"c:\windows\syswow64"),
     "lsass.exe": (r"c:\windows\system32",),
@@ -187,7 +177,6 @@ SYSTEM_BINARY_HOMES: dict[str, tuple[str, ...]] = {
     "cmd.exe": (r"c:\windows\system32", r"c:\windows\syswow64"),
 }
 
-#: Directories that are world-writable and therefore favoured for staging.
 STAGING_DIRECTORIES: tuple[str, ...] = (
     r"c:\users\public",
     r"c:\programdata",
@@ -201,8 +190,6 @@ STAGING_DIRECTORIES: tuple[str, ...] = (
     "/dev/shm",
 )
 
-#: Registry paths that survive a reboot. Writing to one is the definition of
-#: the persistence tactic on Windows.
 PERSISTENCE_REGISTRY_KEYS: dict[str, tuple[str, str]] = {
     r"\software\microsoft\windows\currentversion\run": ("T1547.001", "Run key"),
     r"\software\microsoft\windows\currentversion\runonce": ("T1547.001", "RunOnce key"),
@@ -225,7 +212,6 @@ PERSISTENCE_REGISTRY_KEYS: dict[str, tuple[str, str]] = {
     r"\environment\userinitmprlogonscript": ("T1037.001", "logon script"),
 }
 
-#: Tools whose whole purpose is reading credential material out of memory.
 CREDENTIAL_TOOLS: dict[str, str] = {
     "mimikatz": "Mimikatz",
     "sekurlsa": "a Mimikatz sekurlsa module command",
@@ -241,14 +227,10 @@ CREDENTIAL_TOOLS: dict[str, str] = {
     "lazagne": "LaZagne",
 }
 
-#: Archive utilities used to bundle data before it leaves.
 ARCHIVE_TOOLS: frozenset[str] = frozenset(
     {"7z.exe", "7za.exe", "rar.exe", "winrar.exe", "zip.exe", "tar.exe", "makecab.exe", "7z", "zip"}
 )
 
-#: Domains that host arbitrary user content and are therefore common C2 fronts.
-#: Presence is not a verdict — plenty of legitimate traffic goes here — but it
-#: raises the weight of an otherwise-suspicious connection.
 ABUSED_HOSTING: frozenset[str] = frozenset(
     {
         "pastebin.com",

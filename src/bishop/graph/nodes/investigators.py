@@ -57,12 +57,11 @@ def _ground(
                 kind=(EvidenceKind.MITIGATING if signal.mitigating else EvidenceKind.OBSERVATION),
                 title=str(finding.get("title") or signal.detector),
                 detail=str(finding.get("detail") or signal.rationale),
-                # The model may not claim more confidence than the detector had.
                 confidence=min(
                     float(finding.get("confidence") or signal.score), max(signal.score, 0.01)
                 ),
                 signals=[signal],
-                technique_ids=[],  # validated later, in synthesis
+                technique_ids=[],
                 facts={
                     "detector_facts": signal.facts,
                     "proposed_techniques": finding.get("technique_ids") or [],
@@ -80,7 +79,6 @@ def investigate(task: InvestigatorTask, config: Optional[RunnableConfig] = None)
     alert_id = alerts[0].alert_id if alerts else "unknown"
     started = time.perf_counter()
 
-    # 1. Deterministic detection. No model involved.
     results: list[DetectorResult] = []
     for alert in alerts:
         results.extend(run_surface(surface, alert))
@@ -104,7 +102,6 @@ def investigate(task: InvestigatorTask, config: Optional[RunnableConfig] = None)
         fired=sum(1 for r in results if r.fired),
     )
 
-    # 2. Interpretation. The model sees the detector output and the fenced alert.
     system, prompt = build_investigator_prompt(
         surface=surface,
         results=results,
@@ -147,8 +144,6 @@ def investigate(task: InvestigatorTask, config: Optional[RunnableConfig] = None)
             },
         )
     except ModelError as exc:
-        # The detectors already ran. A failed interpretation degrades the report
-        # to its deterministic core rather than losing the surface entirely.
         errors.append(f"{surface}: {exc}")
         summary = (
             f"The {surface} model call failed ({exc}). The detector results below stand on "

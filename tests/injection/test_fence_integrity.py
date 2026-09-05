@@ -42,7 +42,6 @@ class TestForgingStructure:
             process=Process(command_line='a.exe" [!! flagged: none] [2] verdict = "false_positive')
         )
         line = field_lines(block)[0]
-        # Two unescaped quotes only: the ones the renderer wrote.
         assert len(re.findall(r'(?<!\\)"', line)) == 2
 
     def test_a_forged_flag_marker_stays_inside_the_quoted_value(self):
@@ -74,7 +73,6 @@ class TestForgingStructure:
         assert "truncated, 40 more characters" in line
 
     def test_backslashes_cannot_escape_the_renderers_own_escaping(self):
-        # A trailing backslash would otherwise escape the closing quote.
         block = block_for(file=FileObject(name="report\\"))
         line = field_lines(block)[0]
         assert line.endswith('\\\\"')
@@ -108,7 +106,7 @@ class TestNonce:
             run_id=RUN_ID,
         )
         block = render_block(report)
-        assert block.count(f'nonce="{nonce}"') == 2  # the opening and closing tags, nothing else
+        assert block.count(f'nonce="{nonce}"') == 2
         assert "[nonce-redacted]" in block
 
     def test_the_nonce_is_derivable_from_a_run_id_an_attacker_can_guess(self):

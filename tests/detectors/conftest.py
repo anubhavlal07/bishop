@@ -29,7 +29,6 @@ from bishop.schema import (
 
 T0 = datetime(2026, 3, 1, 9, 0, 0, tzinfo=UTC)
 
-#: A handful of real coordinates, so distances in tests are checkable by hand.
 CITIES: dict[str, tuple[float, float]] = {
     "london": (51.5074, -0.1278),
     "manchester": (53.4808, -2.2426),

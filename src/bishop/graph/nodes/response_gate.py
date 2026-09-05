@@ -75,8 +75,6 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
     plan: ResponsePlan | None = state.get("response_plan")
 
     if plan is None or not plan.actions:
-        # Nothing to approve. Recorded explicitly so the audit log distinguishes
-        # "nobody was asked" from "somebody said no".
         runtime.chain.append(
             "response_gate",
             AuditAction.HUMAN_DECIDED,
@@ -96,18 +94,10 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
         }
 
     request = _approval_request(plan, state)
-    # LangGraph re-runs a node from the top when a run resumes, so this line is
-    # reached twice for every approval: once when the request is raised and once
-    # when the human answers. Both are recorded — the chain is append-only and
-    # deleting the first would be a lie about what happened — but the second is
-    # labelled, so a reader is not left thinking two approvals were sought.
     replay = any(
         entry.payload.get("action_ids") == [a.action_id for a in plan.actions]
         for entry in runtime.chain.by_action(AuditAction.APPROVAL_REQUESTED)
     )
-    # The hash commits to *what the analyst was shown* — targets, blast radii,
-    # the verdict — not just to the action ids. Without it the chain can prove
-    # someone approved `INC-X-action-1` and cannot prove what action-1 was.
     request_hash = hash_payload(request)
     runtime.chain.append(
         "response_gate",
@@ -123,7 +113,6 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
     )
     runtime.emit("approval_requested", actions=len(plan.actions))
 
-    # Suspends the run. The graph resumes here when a human answers.
     answer = interrupt(request)
 
     decision = _parse_decision(answer, plan)
@@ -140,8 +129,6 @@ def response_gate(state: BishopState, config: Optional[RunnableConfig] = None) -
             ],
             "note": decision.note,
             "decided_at": decision.decided_at,
-            # Same hash as the APPROVAL_REQUESTED entry above: this is what they
-            # were looking at when they decided.
             "approved_request_hash": request_hash,
         },
     )
@@ -179,15 +166,6 @@ def _parse_decision(answer: Any, plan: ResponsePlan) -> HumanDecision:
     note = str(answer.get("note") or "")
 
     if raw in {"approved", "approve", "yes", "y"}:
-        # An approval names what it approves. `[] or valid_ids` used to mean
-        # everything, which made `{"decision": "approved"}` — a body naming no
-        # actions at all — approve five, two of them irreversible, through an
-        # unauthenticated endpoint. An omitted list and an empty one were
-        # indistinguishable, and both meant "all".
-        #
-        # Both now mean none. Every caller Bishop ships sends the ids
-        # explicitly, so nothing loses a capability it was using, and the
-        # failure direction is the one that does not disable an account.
         approved = [str(i) for i in (answer.get("approved_action_ids") or [])]
         approved = [i for i in approved if i in valid_ids]
         if not approved:

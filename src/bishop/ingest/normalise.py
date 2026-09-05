@@ -58,9 +58,6 @@ __all__ = [
 ]
 
 
-# ── the mapping report ──────────────────────────────────────────────────────
-
-
 @dataclass(slots=True)
 class MappingReport:
     """What the normaliser understood, and what it did not.
@@ -73,12 +70,8 @@ class MappingReport:
     """
 
     detected_format: str
-    #: `(source field, Bishop field)` for everything that was understood.
     mapped: list[tuple[str, str]] = field(default_factory=list)
-    #: Top-level keys that were not recognised. They are kept in `raw`, where
-    #: they are still injection-scanned, but nothing interprets them.
     ignored: list[str] = field(default_factory=list)
-    #: `(field, value, why)` — required fields that were not supplied.
     defaulted: list[tuple[str, str, str]] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     detectors_with_jurisdiction: list[str] = field(default_factory=list)
@@ -108,12 +101,6 @@ def supported_formats() -> dict[str, str]:
         "generic": "Flat or nested JSON matched on common field-name aliases.",
     }
 
-
-# ── field aliases ───────────────────────────────────────────────────────────
-#
-# Ordered by preference: the first alias that resolves wins. Dotted names are
-# tried both as a nested path and as a literal flat key, because exporters
-# disagree about which they emit and a user should not have to care.
 
 _HOSTNAME = (
     "host.hostname",
@@ -293,8 +280,6 @@ _BYTES_IN = ("destination.bytes", "network.bytes_in", "bytes_in", "ReceivedBytes
 _DNS_QUERY = ("dns.question.name", "QueryName", "query", "dns_query", "domain_name")
 _DNS_TYPE = ("dns.question.type", "QueryType", "query_type", "record_type")
 
-#: Keys consumed by the mapper. Anything else is reported as ignored and kept
-#: in `raw`, so the user can see exactly what Bishop did not interpret.
 _ALL_ALIASES: tuple[tuple[str, ...], ...] = (
     _HOSTNAME,
     _HOST_IP,
@@ -329,9 +314,6 @@ _ALL_ALIASES: tuple[tuple[str, ...], ...] = (
     _DNS_QUERY,
     _DNS_TYPE,
 )
-
-
-# ── reading values out of an arbitrary payload ──────────────────────────────
 
 
 def _dig(payload: dict[str, Any], path: str) -> Any:
@@ -385,8 +367,6 @@ def _as_int(value: Any) -> int | None:
 def _basename(path: str) -> str:
     return re.split(r"[\\/]", str(path).strip())[-1]
 
-
-# ── severity and time, which every vendor spells differently ────────────────
 
 _SEVERITY_WORDS = {
     "critical": Severity.CRITICAL,
@@ -457,8 +437,6 @@ def _timestamp_from(value: Any) -> datetime | None:
     if isinstance(value, datetime):
         return value if value.tzinfo else value.replace(tzinfo=UTC)
     if isinstance(value, int | float):
-        # Epoch seconds or milliseconds. The boundary is around the year 2001
-        # in seconds, which no security alert predates.
         seconds = float(value)
         if seconds > 1e11:
             seconds /= 1000.0
@@ -519,9 +497,6 @@ def _category_from(alert_fields: dict[str, Any], rule_name: str, source: str) ->
     return AlertCategory.OTHER
 
 
-# ── format detection ────────────────────────────────────────────────────────
-
-
 def detect_format(payload: dict[str, Any]) -> str:
     """Guess which shape this is. Advisory — the mapper tries everything anyway."""
     if "alert_id" in payload and "rule_name" in payload and "detected_at" in payload:
@@ -533,9 +508,6 @@ def detect_format(payload: dict[str, Any]) -> str:
     if "@timestamp" in payload or isinstance(payload.get("event"), dict):
         return "ecs"
     return "generic"
-
-
-# ── the mapper ──────────────────────────────────────────────────────────────
 
 
 def normalise(
@@ -557,7 +529,6 @@ def normalise(
     if detected == "bishop":
         return _passthrough(payload, report, alert_id=alert_id)
 
-    # ── identity of the alert itself ────────────────────────────────────────
     resolved_id = alert_id or _first(payload, _ALERT_ID, report, "alert_id")
     if not resolved_id:
         resolved_id = f"user-{uuid.uuid4().hex[:12]}"
@@ -580,7 +551,6 @@ def normalise(
 
     source = _first(payload, _SOURCE, report, "source")
     if not source and detected in {"sysmon", "ecs"}:
-        # The shape itself names the sensor when nothing else does.
         source = detected
         report.defaulted.append(
             ("source", detected, f"inferred from the payload shape ({detected})")
@@ -609,7 +579,6 @@ def normalise(
             ("severity", "medium", "no recognisable severity. Bishop assesses its own anyway.")
         )
 
-    # ── the structured objects ──────────────────────────────────────────────
     device = _device(payload, report)
     principal = _principal(payload, report)
     process = _process(payload, report, _PROC_PATH, _PROC_NAME, _PROC_CMD, "process")
@@ -652,9 +621,6 @@ def normalise(
         dns_events=dns_events,
         auth_events=auth_events,
         registry_changes=registry,
-        # Everything, including what was mapped. `raw` is injection-scanned in
-        # full, and dropping the recognised keys from it would mean a payload
-        # hidden in a mapped field escaped that scan.
         raw={k: v for k, v in payload.items() if k != "labels"},
     )
 
@@ -687,9 +653,6 @@ def _passthrough(
     return alert, report
 
 
-# ── per-object mappers ──────────────────────────────────────────────────────
-
-
 def _device(payload: dict[str, Any], report: MappingReport) -> Device | None:
     hostname = _first(payload, _HOSTNAME, report, "device.hostname")
     ip = _first(payload, _HOST_IP, report, "device.ip")
@@ -701,8 +664,6 @@ def _device(payload: dict[str, Any], report: MappingReport) -> Device | None:
         hostname=name or None,
         ip=str(ip) if ip else None,
         os=str(os_name) if os_name else None,
-        # A naming convention is a guess, not a fact, so it only ever sets the
-        # flag — never the criticality, which drives containment blast radius.
         is_server=bool(re.match(r"(?i)^(srv|dc|sql|web|app|db)[-_]", name)),
     )
 
@@ -715,16 +676,12 @@ def _principal(payload: dict[str, Any], report: MappingReport) -> Principal | No
         return None
     name = str(username or "")
 
-    # Windows writes the account as `DOMAIN\user` in most log sources. Leaving
-    # the two joined breaks the entity key that correlation groups on, so two
-    # alerts about the same person from two sensors would never be linked.
     if "\\" in name:
         left, _, right = name.partition("\\")
         if left and right:
             name, domain = right, domain or left
             report.mapped.append((r"(DOMAIN\user split)", "principal.domain"))
 
-    # `user@domain` is the same account written the other way round.
     elif "@" in name and not upn:
         upn, name = name, name.split("@", 1)[0]
 
@@ -750,9 +707,6 @@ def _process(
     command = _first(payload, commands, report, f"{label}.command_line")
     if not any((path, name, command)):
         return None
-    # Sysmon's `Image` is a full path; the name is its basename. Deriving it
-    # matters because `masquerading` reads the name, and a detector that never
-    # sees a name cannot notice a right-to-left override in one.
     resolved_name = str(name) if name else (_basename(str(path)) if path else None)
     fields: dict[str, Any] = {
         "name": resolved_name,
@@ -874,8 +828,6 @@ def _registry(payload: dict[str, Any], report: MappingReport) -> list[RegistryCh
                     )
         return out
 
-    # Sysmon events 12/13 carry the key in `TargetObject` and the value in
-    # `Details`, which is how a Run-key payload actually arrives.
     target = _dig(payload, "TargetObject") or _dig(payload, "registry.key")
     if not target:
         return []
@@ -889,9 +841,6 @@ def _registry(payload: dict[str, Any], report: MappingReport) -> list[RegistryCh
             value_data=str(details) if details else None,
         )
     ]
-
-
-# ── reporting ───────────────────────────────────────────────────────────────
 
 
 def _record_ignored(payload: dict[str, Any], report: MappingReport) -> None:

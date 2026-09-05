@@ -27,7 +27,6 @@ from statistics import median
 from bishop.schema.alert import Alert
 from bishop.schema.evidence import DetectorResult
 
-#: Which investigator consumes a detector. Also groups `docs/DETECTORS.md`.
 Surface = str
 
 DetectorFn = Callable[[Alert], DetectorResult]
@@ -39,10 +38,7 @@ class DetectorSpec:
     fn: DetectorFn
     surface: Surface
     summary: str
-    #: Techniques this detector can support. Proposals — `bishop.attck` validates
-    #: them, and an ID that is not in the bundle never reaches a report.
     techniques: tuple[str, ...] = ()
-    #: Public references a reader can check the logic against.
     references: tuple[str, ...] = ()
 
 
@@ -119,8 +115,6 @@ def clear(detector: str, rationale: str, **facts) -> DetectorResult:
         examined=True,
     )
 
-
-# ── shared maths ────────────────────────────────────────────────────────────
 
 EARTH_RADIUS_KM = 6371.0088
 

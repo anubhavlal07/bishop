@@ -5,7 +5,6 @@ Bishop ships a compact catalogue derived from this bundle
 (`src/bishop/attck/catalogue.json`), so you do not need to run this to use
 Bishop. Run it when you want to rebuild the catalogue against a newer ATT&CK
 release:
-
     uv run python scripts/fetch_attack.py
     uv run python scripts/build_attck_catalogue.py
 
@@ -24,9 +23,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TARGET = REPO_ROOT / "data" / "attack-stix" / "enterprise-attack.json"
 
-#: Pinned rather than "latest" on purpose: a validator whose vocabulary changes
-#: silently under you is a validator that makes yesterday's reports unverifiable.
-#: Bump this deliberately, rebuild the catalogue, and re-run `just eval`.
 ATTACK_VERSION = "17.1"
 URL = (
     "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/"

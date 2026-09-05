@@ -52,18 +52,11 @@ __all__ = [
     "SecurityHeadersMiddleware",
 ]
 
-#: Reachable without a key. `/health` is here so an orchestrator's probe does
-#: not need a credential; it deliberately reports no incident data.
 PUBLIC_PATHS = frozenset(
     {"/health", "/health/live", "/health/ready", "/docs", "/openapi.json", "/redoc"}
 )
 
 
-#: The one path allowed to carry a key in the query string. `EventSource`
-#: cannot set headers — a gap in the browser API, not a design choice — so the
-#: SSE stream has no other way to authenticate. Scoped to this single suffix
-#: rather than allowed generally, because a key in a URL lands in proxy logs,
-#: browser history and `Referer`, and the fewer places that happens the better.
 _QUERY_KEY_PATH_SUFFIX = "/events"
 
 
@@ -97,8 +90,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         presented = _presented_key(request)
         if not key_matches(presented, self._settings.keys):
-            # The same response whether the key was absent, malformed or wrong.
-            # Distinguishing them tells a prober which half they got right.
             logger.warning(
                 "rejected an unauthenticated request",
                 extra={
@@ -107,19 +98,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     "key_presented": bool(presented),
                 },
             )
-            # Returned, not raised. An HTTPException raised inside
-            # BaseHTTPMiddleware travels outside the application's exception
-            # handling, so it surfaces as a 500 — which would turn every
-            # rejected request into a server error and hide the real status
-            # from every client.
             return JSONResponse(
                 status_code=401,
                 content={"detail": "a valid API key is required"},
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # The key itself is never stored on the request; only the fact that one
-        # matched, and a short fingerprint for the rate limiter and the logs.
         request.state.api_key_id = _fingerprint(presented)
         return await call_next(request)
 
@@ -159,8 +143,6 @@ class RateLimiter(BaseHTTPMiddleware):
         self._hits[bucket] += 1
         used = self._hits[bucket]
 
-        # Drop expired windows opportunistically. Without this the dict grows
-        # for the life of the process, which on a long-lived server is a leak.
         if len(self._hits) > 4096:
             self._hits = defaultdict(
                 int, {k: v for k, v in self._hits.items() if k[1] >= window - 1}
@@ -210,8 +192,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
         except Exception:
-            # Logged with the id, then re-raised. The handler in `app.py` turns
-            # it into a response that names the id without leaking the trace.
             logger.exception(
                 "unhandled error", extra={"request_id": request_id, "path": request.url.path}
             )
@@ -243,7 +223,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        # The API serves JSON, never markup, so nothing needs to execute.
         response.headers.setdefault(
             "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
         )

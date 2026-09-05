@@ -89,7 +89,6 @@ class TestTamperDetection:
     def test_editing_a_payload_breaks_the_chain(self, chain):
         populate(chain)
         chain.entries()[1].payload["fields"] = 99
-        # The mutation has to be applied to the live list, not a copy.
         chain._entries[1].payload["fields"] = 99
         with pytest.raises(ChainBroken, match="payload does not match"):
             chain.verify()
@@ -128,7 +127,6 @@ class TestCorrections:
 
         assert len(chain) == 4
         assert correction.action is AuditAction.CORRECTION
-        # The original is untouched, byte for byte.
         assert chain.entries()[2].entry_hash == original.entry_hash
         assert chain.entries()[2].payload == {"label": "true_positive"}
         chain.verify()
@@ -147,7 +145,6 @@ class TestCorrections:
             chain.correct("analyst", 99, reason="no such entry")
 
     def test_the_chain_offers_no_way_to_mutate_or_delete(self):
-        # If either of these ever appears, the append-only guarantee is gone.
         assert not hasattr(AuditChain, "update")
         assert not hasattr(AuditChain, "delete")
         assert not hasattr(AuditChain, "remove")
@@ -170,9 +167,6 @@ class TestPersistence:
         chain = AuditChain(run_id="run-1", path=path, clock=fixed_clock())
         populate(chain)
 
-        # Edit the stored row the way someone with database access would: parse
-        # it, change the payload, write it back as valid JSON. A string replace
-        # is not a realistic tamper and can silently fail to match.
         lines = path.read_text(encoding="utf-8").splitlines()
         row = json.loads(lines[1])
         assert row["payload"]["fields"] == 3
@@ -229,7 +223,7 @@ class TestTruncation:
     def test_truncating_the_tail_passes_a_naive_verify(self, chain):
         populate(chain)
         del chain._entries[2:]
-        chain.verify()  # no exception: this is the gap, stated as a fact
+        chain.verify()
 
     def test_a_retained_head_catches_truncation(self, chain):
         populate(chain)

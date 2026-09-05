@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-import bishop.detectors  # importing registers every detector
+import bishop.detectors
 from bishop.detectors.base import registry
 from bishop.eval import load_corpus
 

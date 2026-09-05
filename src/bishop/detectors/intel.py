@@ -32,11 +32,8 @@ from bishop.schema.evidence import DetectorResult
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
-#: A real cache fetched by `just intel`. Gitignored, so it is absent on a fresh
-#: clone and present after someone runs the fetch script.
 FETCHED_CACHE_PATH = _REPO_ROOT / "data" / "intel" / "ioc_cache.json"
 
-#: The committed synthetic cache. Always present, and honest about being made up.
 SYNTHETIC_CACHE_PATH = _REPO_ROOT / "fixtures" / "intel" / "ioc_cache.json"
 
 
@@ -48,9 +45,8 @@ def default_cache_path() -> Path:
 @dataclass(frozen=True, slots=True)
 class IocRecord:
     indicator: str
-    kind: str  # ip | domain | url | sha256
-    verdict: str  # malicious | suspicious | benign
-    #: Feed name and first-seen date, so a stale hit can be recognised as stale.
+    kind: str
+    verdict: str
     source: str = "unknown"
     first_seen: str = ""
     last_seen: str = ""
@@ -176,15 +172,10 @@ def ioc_reputation(alert: Alert) -> DetectorResult:
     for where, kind, value in checked:
         record = cache.lookup(value)
         if record is None and kind == "url":
-            # A URL misses on the full string but its host may be listed.
             host = value.split("//", 1)[-1].split("/", 1)[0].split(":", 1)[0]
             record = cache.lookup(host)
         if record is None or record.verdict == "benign":
             continue
-        # A feed's free text is written by the feed operator, not by Bishop, and
-        # `docs/THREAT-MODEL.md` puts a compromised or careless feed on the
-        # untrusted side. `IocRecord` types these as plain `str`, so nothing
-        # upstream marks them — scan them here, where they enter Bishop.
         note_risk = scan_text(record.note, field="intel.note")
         family_risk = scan_text(record.malware_family, field="intel.malware_family")
         poisoned = note_risk.is_injection or family_risk.is_injection
@@ -199,8 +190,6 @@ def ioc_reputation(alert: Alert) -> DetectorResult:
                 "malware_family": record.malware_family[:200],
                 "first_seen": record.first_seen,
                 "last_seen": record.last_seen,
-                # A feed carrying an instruction is a feed to distrust. The hit
-                # may still be real; the confidence in it is not.
                 "confidence": 0.3 if poisoned else record.confidence,
                 "note": record.note[:400],
                 "feed_text_flagged": poisoned,

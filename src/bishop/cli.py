@@ -21,8 +21,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# ── terminal formatting ─────────────────────────────────────────────────────
-
 _COLOUR = (sys.stdout.isatty() and os.environ.get("NO_COLOR") is None and os.name != "nt") or (
     sys.stdout.isatty() and os.environ.get("WT_SESSION") is not None
 )
@@ -82,9 +80,6 @@ def wrap(text: str, width: int = 74, indent: str = "  ") -> list[str]:
                 line = f"{line} {word}".strip()
         out.append(indent + line)
     return out
-
-
-# ── commands ────────────────────────────────────────────────────────────────
 
 
 def cmd_alerts(args: argparse.Namespace) -> int:
@@ -316,8 +311,6 @@ def _ask_for_decision(request: dict[str, Any], *, approve: str | None) -> dict[s
         }
 
     if not sys.stdin.isatty():
-        # Non-interactive and no flag: refuse. Defaulting to approve would be
-        # exactly the autonomous containment this project exists not to do.
         print(yellow("  no decision supplied and stdin is not a terminal — rejecting"))
         return {"decision": "rejected", "decided_by": "cli (non-interactive default)"}
 
@@ -585,11 +578,6 @@ def _run_holdout(args, holdout_dir, render_text, run_scorecard, save) -> int:
     if args.save:
         path = _holdout_result_path(card)
         if path.exists():
-            # Refusing rather than overwriting, because of what this file is.
-            # A held-out result is only meaningful the first time; a second run
-            # on the same day is a run made after seeing the first, and letting
-            # it silently take the same filename would replace the one honest
-            # measurement with a flattering one and leave no trace.
             print(red(f"  {path.name} already exists and will not be overwritten"))
             print(dim("  A held-out result is a record of one run, not a file that updates."))
             print(dim("  The first run is the measurement; delete it deliberately or"))
@@ -786,10 +774,6 @@ def cmd_coverage(args: argparse.Namespace) -> int:
     markdown = render_markdown(matrix)
     target = Path(args.output)
     target.parent.mkdir(parents=True, exist_ok=True)
-    # An explicit LF newline rather than the platform default. This file is
-    # committed and CI regenerates it to check it is current, so a CRLF written
-    # on Windows against an LF written on Linux makes every one of its lines
-    # read as changed and fails a build that has nothing wrong with it.
     target.write_text(markdown, encoding="utf-8", newline="\n")
     print(f"  {matrix.summary()}")
     print(dim(f"  written to {target}"))
@@ -841,9 +825,6 @@ def cmd_detectors(args: argparse.Namespace) -> int:
                 print(dim(line))
     print()
     return 0
-
-
-# ── entry point ─────────────────────────────────────────────────────────────
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -935,9 +916,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Bishop's output is full of box-drawing characters and the occasional
-    # attacker payload. Windows terminals default to a codepage that cannot
-    # render either.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
