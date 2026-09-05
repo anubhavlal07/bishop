@@ -4,7 +4,7 @@
 
 Technique coverage against **MITRE ATT&CK v17.1**.
 
-15 techniques covered by a detector and exercised by a fixture, 16 with a detector but no fixture, against ATT&CK v17.1.
+16 techniques covered by a detector and exercised by a fixture, 15 with a detector but no fixture, against ATT&CK v17.1.
 
 `covered` means a deterministic detector maps to the technique *and* a labelled
 fixture exercises it. `untested` means the detector exists but no fixture in the
@@ -15,8 +15,8 @@ point of the table.
 
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
-| [T1074.001](https://attack.mitre.org/techniques/T1074/001) Local Data Staging | `data_staging`, `suspicious_execution_path` | `TP-06-data-staging-exfil` | covered |
-| [T1560.001](https://attack.mitre.org/techniques/T1560/001) Archive via Utility | `data_staging` | `TP-06-data-staging-exfil` | covered |
+| [T1074.001](https://attack.mitre.org/techniques/T1074/001) Local Data Staging | `data_staging`, `suspicious_execution_path` | `CHAIN-03-collection`, `TP-06-data-staging-exfil` | covered |
+| [T1560.001](https://attack.mitre.org/techniques/T1560/001) Archive via Utility | `data_staging` | `CHAIN-03-collection`, `TP-06-data-staging-exfil` | covered |
 
 ## Command and Control
 
@@ -56,7 +56,7 @@ point of the table.
 |---|---|---|---|
 | [T1053.005](https://attack.mitre.org/techniques/T1053/005) Scheduled Task | `persistence` | `BTP-04-approved-remote-admin`, `TP-04-persistence-scheduled-task` | covered |
 | [T1059](https://attack.mitre.org/techniques/T1059) Command and Scripting Interpreter | `lolbin_abuse`, `suspicious_parent_child` | — | untested |
-| [T1059.001](https://attack.mitre.org/techniques/T1059/001) PowerShell | `encoded_command` | `TP-04-persistence-scheduled-task` | covered |
+| [T1059.001](https://attack.mitre.org/techniques/T1059/001) PowerShell | `encoded_command` | `CHAIN-01-initial-access`, `TP-04-persistence-scheduled-task` | covered |
 | [T1204.002](https://attack.mitre.org/techniques/T1204/002) Malicious File | `suspicious_execution_path` | — | untested |
 
 ## Exfiltration
@@ -73,7 +73,13 @@ point of the table.
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
 | [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
-| [T1566.001](https://attack.mitre.org/techniques/T1566/001) Spearphishing Attachment | `suspicious_parent_child` | `TP-01-credential-dumping` | covered |
+| [T1566.001](https://attack.mitre.org/techniques/T1566/001) Spearphishing Attachment | `suspicious_parent_child` | `CHAIN-01-initial-access`, `TP-01-credential-dumping` | covered |
+
+## Lateral Movement
+
+| Technique | Detectors | Fixtures | Status |
+|---|---|---|---|
+| [T1021.002](https://attack.mitre.org/techniques/T1021/002) SMB/Windows Admin Shares | — | `CHAIN-02-lateral-movement` | none |
 
 ## Persistence
 
@@ -83,7 +89,7 @@ point of the table.
 | [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
 | [T1098](https://attack.mitre.org/techniques/T1098) Account Manipulation | `account_manipulation` | `BTP-02-it-automation-priv`, `TP-05-privilege-escalation` | covered |
 | [T1136](https://attack.mitre.org/techniques/T1136) Create Account | `account_manipulation` | `TP-05-privilege-escalation` | covered |
-| [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | — | untested |
+| [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | `CHAIN-02-lateral-movement` | covered |
 | [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | — | untested |
 
 ## Privilege Escalation
@@ -93,7 +99,7 @@ point of the table.
 | [T1053.005](https://attack.mitre.org/techniques/T1053/005) Scheduled Task | `persistence` | `BTP-04-approved-remote-admin`, `TP-04-persistence-scheduled-task` | covered |
 | [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | — | untested |
 | [T1098](https://attack.mitre.org/techniques/T1098) Account Manipulation | `account_manipulation` | `BTP-02-it-automation-priv`, `TP-05-privilege-escalation` | covered |
-| [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | — | untested |
+| [T1543.003](https://attack.mitre.org/techniques/T1543/003) Windows Service | `persistence` | `CHAIN-02-lateral-movement` | covered |
 | [T1547.001](https://attack.mitre.org/techniques/T1547/001) Registry Run Keys / Startup Folder | `persistence` | — | untested |
 
 ## What this table does not say

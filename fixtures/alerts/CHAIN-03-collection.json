@@ -1,0 +1,41 @@
+{
+  "alert_id": "CHAIN-03-collection",
+  "source": "edr",
+  "rule_name": "Archive created on file server",
+  "detected_at": "2026-03-14T12:41:00+00:00",
+  "severity": "low",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-FILE-07",
+    "ip": "10.20.10.17",
+    "os": "Windows Server 2022",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "svc_fileidx",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "process": {
+    "name": "7z.exe",
+    "path": "C:\\ProgramData\\7z.exe",
+    "command_line": "7z.exe a -pS3cr3t C:\\ProgramData\\hr.7z \\\\SRV-FILE-07\\shares\\hr",
+    "signed": false
+  },
+  "file": {
+    "name": "hr.7z",
+    "path": "C:\\ProgramData\\hr.7z",
+    "size_bytes": 89400000
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1560.001",
+      "T1074.001"
+    ],
+    "should_escalate": false,
+    "why": "A low-severity archive alert on the server CHAIN-02 reached, by a different service account. Closed without hesitation in isolation; the third link of the chain once correlated.",
+    "synthetic": true
+  }
+}

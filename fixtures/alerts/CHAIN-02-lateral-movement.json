@@ -1,0 +1,41 @@
+{
+  "alert_id": "CHAIN-02-lateral-movement",
+  "source": "windows-security",
+  "rule_name": "Remote service created from workstation",
+  "detected_at": "2026-03-14T12:13:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-FILE-07",
+    "ip": "10.20.10.17",
+    "os": "Windows Server 2022",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "n.adeyemi",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "sc.exe",
+    "path": "C:\\Windows\\System32\\sc.exe",
+    "command_line": "sc.exe \\\\SRV-FILE-07 create UpdateSvc binPath= C:\\ProgramData\\svc.exe start= auto"
+  },
+  "service_installs": [
+    {
+      "name": "UpdateSvc",
+      "image_path": "C:\\ProgramData\\svc.exe",
+      "start_type": "auto"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1021.002",
+      "T1543.003"
+    ],
+    "should_escalate": false,
+    "why": "The same account, eleven minutes later, creating a service on a file server. Shares the account with CHAIN-01 and the host with CHAIN-03.",
+    "synthetic": true
+  }
+}

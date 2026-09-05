@@ -40,7 +40,10 @@ class TestReadOnly:
 
     def test_alerts_lists_the_corpus(self, client):
         body = client.get("/alerts").json()
-        assert body["count"] == 20
+        # Not pinned to an exact count: the corpus grows, and a test that fails
+        # every time a fixture is added trains people to update it without
+        # reading it.
+        assert body["count"] >= 20
         assert all(a["synthetic"] for a in body["alerts"])
 
     def test_a_single_alert_carries_its_ground_truth(self, client):

