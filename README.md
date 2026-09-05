@@ -91,12 +91,21 @@ Four fixes, in order of how much they closed:
 4. **Fields past the render cap are scanned before they are dropped**, so a payload cannot be
    buried behind a hundred harmless ones.
 
-Current corpus score: **58/132 caught, 38/38 benign samples clean** — no false positives, including
+Current corpus score: **120/132 caught, 38/38 benign samples clean** — no false positives, including
 `-EncodedCommand`, LOLBins, and a rule description that literally reads "analysts should ignore
-previous alerts from this rule". The 74 that still evade are recorded as
+previous alerts from this rule". The 12 that still evade are recorded as
 strict-xfail tests, so the suite fails the moment one is fixed and the ledger stops being able
-to go stale. Most of them are the semantic class: text that supplies plausible benign context
-with no imperative to detect.
+to go stale. They are the semantic class: text that supplies plausible benign context with no
+imperative to detect, which is genuinely hard to separate from a real mitigating fact.
+
+Getting from 58 to 120 was mostly about where the defence sits rather than how many patterns it
+knows. Per-language exact phrases were evaded by 18 of 19 multilingual payloads, because a
+translation is not a string match; a verb/noun co-occurrence lexicon catches the intent instead.
+`rot13` and reversal had been treated as *decodings*, but both are involutions that always
+produce output, so `encoded_command` fired on every command line in the corpus — they are
+transforms, and separating the two removed the noise that was hiding real decodes. And a decoder
+that returned the first printable alignment was returning the wrong one; returning all eight
+found the payloads underneath.
 
 ---
 
@@ -171,8 +180,9 @@ Requires Python 3.12 and `uv`.
 ```bash
 uv sync --extra dev
 just demo                  # triage an alert end to end, including the human gate
-just eval                  # the scorecard
-just test                  # 737 tests, 74 of them xfail (open injection gaps)
+just eval                  # the scorecard, on the tuned development set
+just eval-holdout          # the held-out set — the number that means something
+just test                  # 949 tests, 12 of them xfail (open injection gaps)
 ```
 
 Then the console, if you want to watch it:
@@ -189,6 +199,7 @@ just alerts                # the labelled corpus
 just detectors             # every detector and what it measures
 just run TP-01             # triage one alert by id
 just coverage              # regenerate docs/COVERAGE.md from the code
+just incidents             # how the corpus correlates into incidents
 uv run bishop verify <path>  # verify a saved audit chain
 ```
 
@@ -205,44 +216,71 @@ because a scorecard that quietly changed provider would be meaningless.
 
 ## Evaluation
 
-`just eval`, on a hand-labelled set of 20 alerts — 7 true positives, 8 deliberately hard false
+`just eval`, on a hand-labelled set of 30 alerts — 17 true positives, 8 deliberately hard false
 positives, 4 benign true positives, 1 that should be escalated rather than classified. Two of
-them carry injection payloads.
+them carry injection payloads, and three are a single intrusion split across three low-severity
+alerts that only means anything once correlated.
 
-| | |
-|---|---|
-| False-negative rate on true positives | **0%** |
-| Verdict accuracy | 100% |
-| False-positive rate | 0% |
-| Benign-true-positive accuracy | 100% |
-| Escalation precision / recall | 100% / 100% |
-| Injection attempts caught | 2 / 2 |
-| …and escalated as an IOC | 2 / 2 |
-| ATT&CK technique recall | 81% |
-| Invalid technique IDs emitted | 0 |
-| Median time to triage | 0.01 s |
-| Cost per alert | $0.000000 |
+| | Development set | Held-out set |
+|---|---|---|
+| Alerts | 30 | 15 |
+| False-negative rate on true positives | **0%** | **50%** |
+| Verdict accuracy | 100% | **33%** |
+| False-positive rate | 0% | 20% |
+| Benign-true-positive accuracy | 100% | 0% |
+| Escalation precision / recall | 100% / 100% | 50% / 17% |
+| ATT&CK technique recall | 100% | 36% |
+| Invalid technique IDs emitted | 0 | 0 |
+| Median time to triage | 0.03 s | 0.03 s |
+| Cost per alert | $0.000000 | $0.000000 |
 
-**Now the caveats, which matter more than the table.**
+**The two columns measure different things, and the second one is the honest one.**
 
-100% accuracy on 20 alerts is not a generalisation claim and I am not making one. I wrote the
-corpus, then tuned the fusion thresholds against it. What this measures is internal consistency
-— the detectors, the mitigating-context rules and the label definitions agreeing with each
-other. It is a smoke test, not a benchmark, and one alert moving changes accuracy by 5 points.
-A held-out set is the obvious next thing this needs.
+The development set is the corpus I wrote first and then tuned the fusion thresholds against.
+100% there measures internal consistency — the detectors, the mitigating-context rules and the
+label definitions agreeing with each other. It is a smoke test, not a benchmark; one alert
+moving changes accuracy by 3 points.
 
-The corpus is synthetic. Real SOC datasets are either licence-encumbered for redistribution or
-full of somebody's real hostnames, and a golden set has to be labelled — for these, ground truth
-is known by construction. That buys honest labels and costs the ability to claim anything about
-real-world noise. `scripts/fetch_datasets.sh` pulls the public corpora for anyone who wants to
-normalise their own.
+The held-out set is fifteen alerts written *after* the thresholds were fixed, run exactly once,
+and reported whatever it said. It said **33%**. That number is committed at
+`eval/results/holdout-2026-09-05.json` and `just eval-holdout` deliberately has no baseline and
+no regression gate, because a gate on a held-out set is precisely the thing that turns it back
+into a training set.
+
+**What the 33% was made of**, because the headline hides the interesting part. Ten of fifteen
+were wrong, and they were wrong in three different ways:
+
+- **One real logic defect.** Three cases described techniques Bishop has no detector for —
+  Kerberoasting, cloud token replay, shadow-copy deletion. Every detector returned "nothing to
+  work with", the evidence table came back empty, and Bishop closed them as **false positives**.
+  It was reading *nobody checked* as *nothing to find*. Bishop already refused to accuse without
+  a detector, and refused to clear something as authorised without a mitigating detector — but
+  `false_positive`, the verdict that closes the ticket, needed no evidence at all. That
+  asymmetry is now fixed: closing an alert is a claim that someone looked, so it requires at
+  least one detector that could have accused to have actually reached a conclusion. Fixing it
+  moved the held-out score to 40%.
+- **Coverage gaps, working as documented.** The rest of the missed true positives are alert
+  types Bishop has no detector for. That is the limitation in "What this doesn't do", measured
+  rather than asserted.
+- **Cases where my label is arguable.** Two benign-true-positive cases (an authorised scanner,
+  a credential rotation) that Bishop called true positives. It has no way to know either was
+  sanctioned, because neither actor is in the environment policy file — which is arguably the
+  correct behaviour, and arguably a bad label on my part.
+
+I have not fixed the held-out failures beyond that one structural defect, and I am not going to.
+Debugging against a held-out case converts it into a development case; the honest move would be
+to move it into `fixtures/alerts/` and write a fresh one, not to keep the label and the credit.
+Anything I fix here would make the 33% look better and mean less.
+
+The corpus is synthetic — both of them. Real SOC datasets are either licence-encumbered for
+redistribution or full of somebody's real hostnames, and a golden set has to be labelled; for
+these, ground truth is known by construction. That buys honest labels and costs the ability to
+claim anything about real-world noise. `scripts/fetch_datasets.sh` pulls the public corpora for
+anyone who wants to normalise their own.
 
 Cost is $0.00 because the mock model makes no request. That is a real measurement of a run that
 cost nothing, not an estimate of what a live run would cost. Latency likewise measures Bishop's
 own code, not a model round trip.
-
-Technique recall is 81%, not 100%. Some techniques a labelled alert should surface have no
-detector behind them. [`docs/COVERAGE.md`](docs/COVERAGE.md) shows exactly which.
 
 The scorecard ships these caveats itself, in `notes[]` — they print with `just eval` and render
 on the console's scorecard page, so the numbers are hard to quote without them.
@@ -253,8 +291,12 @@ on the console's scorecard page, so the numbers are hard to quote without them.
 
 - It triages what the SIEM gives it. It inherits every gap in the detection layer above it and
   adds no coverage of its own.
-- The injection scanner is pattern- and heuristic-based. Twelve techniques is not all
+- The injection scanner is pattern- and heuristic-based. Thirteen techniques is not all
   techniques; the regression corpus demonstrates the classes I thought of, which is not a proof.
+- Bishop covers 31 ATT&CK techniques. ATT&CK has 823. On an alert describing anything outside
+  that 31 it now escalates rather than guessing — which is the right behaviour and still means
+  a human does the work. The held-out set measures exactly this, and it is why that column
+  reads 33%.
 - Semantic steering — a payload supplying plausible benign context with no imperative to detect
   — is the hardest class and only partially mitigated.
 - No live SIEM connector and no real containment integrations. Every executor is a mock.

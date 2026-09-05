@@ -262,14 +262,37 @@ what happened — and the second carries `replayed_after_resume: true`.
 
 ## Storage
 
-In memory. Incidents and audit chains live for the process, and a restart loses
-in-flight runs.
+SQLite by default, Postgres when `DATABASE_URL` says so — the same schema
+either way, because a store that only works on the deployment target is a store
+you cannot test. `src/bishop/store/database.py` holds three tables: `incidents`,
+`audit_entries`, `alerts_seen`.
 
-`PLAN.md` specifies Postgres with pgvector, and the seams are there —
-`AuditChain` takes a path and persists as JSON Lines, `DATABASE_URL` is in
-`.env.example`. What is not built is the persistence layer behind them. For a
-demo over a 20-alert corpus this is the right trade; for anything real it is the
-first thing to fix, and it is listed as a limitation rather than dressed up.
+An incident is one row with its JSON body rather than a normalised object graph.
+What is being stored is a document that Pydantic already assembled and
+validated; re-normalising it into tables would mean two schemas that can
+disagree. Queries that need structure use the indexed columns beside the blob.
+
+Two decisions in there are load-bearing:
+
+**The chain head is stored beside the incident, not only inside the chain.**
+Verifying a chain against itself cannot detect that its tail was removed — the
+remaining entries are a shorter valid chain. Deleting the record of what
+executed is the cheapest possible tamper, so the head recorded at write time is
+what makes truncation visible. `verify_stored_chain()` checks against it.
+
+**Pruning an incident leaves its audit chain.** Retention for a triage result
+and retention for a chain of custody are not the same decision, and defaulting
+them together is how the second one gets made by accident.
+
+The run id is a stored column rather than derived from the incident id. It was
+briefly guessed as `cli-{incident_id}`, which reported CHAIN BROKEN on a chain
+that was perfectly intact — the worst failure available to a verification path,
+because it teaches people to ignore it.
+
+Graph checkpointing follows the same switch: `BISHOP_CHECKPOINT_DB` selects
+LangGraph's `SqliteSaver`, and without it an in-memory saver with a msgpack
+allowlist. pgvector is not built — nothing in Bishop currently needs a vector
+search, and adding the extension to claim the box would be dishonest.
 
 ---
 

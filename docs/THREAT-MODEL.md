@@ -278,9 +278,9 @@ The boundary is the headline, but it is not the only control.
 Stating these plainly is the point of the document. A threat model that finds no residual risk
 has not been written honestly.
 
-- **74 of 132 payloads in our own corpus still evade the scanner.** Caught: 58/132, with 0/38
-  false positives on the benign samples. The 74 are recorded as strict-xfail tests, so the suite
-  fails the moment one starts passing and the ledger cannot silently go stale. Most are the
+- **12 of 132 payloads in our own corpus still evade the scanner.** Caught: 120/132, with 0/38
+  false positives on the benign samples. The 12 are recorded as strict-xfail tests, so the suite
+  fails the moment one starts passing and the ledger cannot silently go stale. They are the
   semantic class described below. This number is published rather than buried because a
   regression corpus is a demonstration of the classes we thought of, never a proof.
 

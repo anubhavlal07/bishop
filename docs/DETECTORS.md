@@ -327,8 +327,8 @@ log text constantly; "ignore the above instructions" does not.
 ## Thresholds, and where they came from
 
 Honestly: from reading the technique documentation and from tuning against the
-20-alert corpus. They are not derived from a labelled production dataset, because
-there isn't one here.
+30-alert development corpus. They are not derived from a labelled production
+dataset, because there isn't one here.
 
 The ones with an actual physical justification are worth separating out:
 
@@ -344,5 +344,13 @@ The ones with an actual physical justification are worth separating out:
 
 The rest are judgement calls, and the scorecard is the only evidence they are
 reasonable ones. Since the corpus was written before the thresholds were tuned
-against it, that evidence is weaker than the numbers make it look —
-see the README's evaluation caveats.
+against it, that evidence is weaker than the numbers make it look.
+
+The held-out set puts a number on how much weaker. `just eval-holdout` runs
+fifteen alerts written after these thresholds were fixed, and it scored 33%
+against the development set's 100%. Most of that gap is coverage — alert types
+no detector here reads — but one part of it was a genuine defect in how the
+thresholds were being applied, and it is the kind only an untuned set finds:
+when *every* detector returned "nothing to work with", the empty evidence table
+was being read as evidence of innocence rather than as an absence of evidence.
+See the README's evaluation section for the breakdown.
