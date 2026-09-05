@@ -288,6 +288,12 @@ has not been written honestly.
   whether the scanner recognises a payload — an evading payload still cannot forge a block
   delimiter. The scanner's job is escalation (§4.4), not containment.
 
+- **The assembled block is scanned, not only each field.** A payload cut in
+  half across two fields scores nothing on either — each half is innocent — and
+  the block renders them on adjacent lines where the model reads the sentence
+  they make. The field is the unit Bishop scores; the block is the unit the
+  model reads; the gap between them was the attack.
+
 - **A containment target is checked against the incident, not scanned.** A
   hostname reaching the response plan from an attacker-controlled field is not
   something the scanner can help with: `DC-01` is an ordinary name with nothing
