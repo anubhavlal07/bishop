@@ -86,6 +86,13 @@ dropped all five containment actions.
   they read structurally as excerpts rather than as Bishop's prose. This also closed a decoding
   oracle: `encoded_command` base64-decodes a payload into its own facts, so the attacker writes
   base64 and Bishop decodes it into the trusted region for them.
+
+  Sixteen keys are exempt via `BISHOP_VOCABULARY` (detector names, technique ids, enum labels,
+  computed field paths). The exemption is load-bearing: marking every leaf broke
+  `routine_software`'s `facts["explains"]` contract, which synthesis compares against the fired
+  detector set, and verdict accuracy fell 100% → 85% with no error raised. **Escaping is safe to
+  apply unconditionally; marking is not** — escaping removes structural meaning a value should
+  never have had, while marking changes values other code compares. See THREAT-MODEL §4.5.
 - **`Alert.raw` is walked and scanned** like every typed field.
 - **Fields past the render cap are scanned before being dropped**, so a payload cannot hide
   behind a hundred harmless ones.
@@ -98,10 +105,19 @@ of every recognition-based control.
 
 Decision 3 works by maintaining a **structural invariant**. "No delimiter inside a trusted block"
 holds whatever the payload says, in any language, in any encoding, including techniques nobody
-has thought of. It closed six live breaks; the thirteen-technique scanner closed none of them.
+has thought of. Five of the six live breaks were closed by `safe_block()`; the sixth by scanning
+before dropping.
 
 That is the transferable result, and it is worth more than the specific fix: **against untrusted
 input reaching an LLM, prefer invariants you can enforce over attacks you can enumerate.**
+
+**Prefer, not replace.** The scanner has since learned these forgeries — its closing-tag pattern
+had required `>` immediately after the tag name, so it missed `</untrusted-alert-data
+nonce="...">` and knew nothing of the trusted block names. Decision 3 makes a forgery
+*ineffective*; Decision 2 makes it *visible*. Alone, Decision 3 absorbs an attack silently and
+raises no indicator, and Decision 2 flags an attack it cannot stop. Keeping both is not
+belt-and-braces — it is containment and detection being genuinely different properties, as
+BLK-03 demonstrated in the other direction.
 
 ## Consequences
 
