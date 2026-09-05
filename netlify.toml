@@ -1,0 +1,16 @@
+# Netlify configuration for Bishop's analyst console.
+#
+# Set NEXT_PUBLIC_BISHOP_API in the Netlify UI to the deployed API's URL, e.g.
+# https://bishop-api.onrender.com. Without it the console falls back to
+# localhost and will honestly report that it cannot reach the backend.
+
+[build]
+  base = "console"
+  command = "npm run build"
+  publish = "console/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

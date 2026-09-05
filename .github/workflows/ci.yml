@@ -1,0 +1,60 @@
+name: CI
+
+# Everything here runs offline. No secrets, no model key, no network calls
+# beyond installing dependencies — which is the point: a build that needed a
+# credential to verify a security control would not be verifying much.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --extra dev
+
+      - name: Lint
+        run: |
+          uv run ruff check src tests scripts
+          uv run ruff format --check src tests scripts
+
+      - name: Test
+        run: uv run pytest -q
+
+      # A red eval fails the build. The gate compares against the committed
+      # baseline in eval/results/baseline.json and fails on a regression, not on
+      # an absolute threshold — the question is whether this change made things
+      # worse, not whether the number is impressive.
+      - name: Scorecard regression gate
+        run: uv run bishop eval --gate
+
+      - name: Coverage matrix is current
+        run: |
+          uv run bishop coverage
+          git diff --exit-code docs/COVERAGE.md
+
+  console:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: console
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build

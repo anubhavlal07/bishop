@@ -1,0 +1,30 @@
+# Render blueprint for Bishop's API.
+#
+# The console deploys separately to Netlify (see netlify.toml) because it is a
+# static Next.js build that only needs the API's URL.
+#
+# Bishop runs offline by default: no model key is required for the deployed API
+# to serve the corpus, the coverage matrix, the scorecard, and full triage runs
+# against the deterministic model. Set BISHOP_MODEL_PROVIDER and a key to make
+# it live.
+
+services:
+  - type: web
+    name: bishop-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn bishop.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      # Unset means the deterministic mock. Deliberate: a public demo should not
+      # be able to spend money, and Bishop refuses to start a live provider
+      # without a key rather than silently falling back.
+      - key: BISHOP_MODEL_PROVIDER
+        value: mock
+      - key: ANTHROPIC_API_KEY
+        sync: false
