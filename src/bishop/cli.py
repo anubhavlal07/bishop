@@ -337,6 +337,29 @@ def _ask_for_decision(request: dict[str, Any], *, approve: str | None) -> dict[s
     return {"decision": "rejected", "decided_by": who}
 
 
+def cmd_history(args: argparse.Namespace) -> int:
+    """Incidents that outlived the process that produced them."""
+    from bishop.store import init_db, list_incidents, verify_stored_chain
+
+    init_db()
+    rows = list_incidents(limit=args.limit)
+    print()
+    print(rule(f"{len(rows)} stored incident{'s' if len(rows) != 1 else ''}"))
+    print()
+    if not rows:
+        print(dim("  Nothing stored yet. `just run TP-01` writes one."))
+        print()
+        return 0
+    for row in rows:
+        style = VERDICT_STYLE.get(row["verdict"] or "", dim)
+        intact, detail = verify_stored_chain(row["incident_id"])
+        mark = green("chain ok") if intact else red("CHAIN BROKEN")
+        print(f"  {row['incident_id']:34} {style(row['verdict'] or '-'):>22}  {mark}")
+        print(dim(f"    {row['alert_count']} alert(s) · {row['created_at']} · {detail}"))
+    print()
+    return 0
+
+
 def cmd_incidents(args: argparse.Namespace) -> int:
     """Show how the corpus correlates into incidents."""
     from bishop.correlate import correlate
@@ -402,9 +425,21 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(dim(f"  ground truth: {item.why}"))
         print()
 
+    _persist(incident, runtime)
     print(dim(f"  audit chain: {len(runtime.chain)} entries, verified {runtime.chain.is_intact()}"))
     print()
     return 0
+
+
+def _persist(incident, runtime) -> None:
+    """Store the incident. A storage failure is reported, never fatal."""
+    try:
+        from bishop.store import init_db, save_incident
+
+        init_db()
+        save_incident(incident, chain=runtime.chain)
+    except Exception as exc:
+        print(dim(f"  (not stored: {type(exc).__name__}: {exc})"))
 
 
 def cmd_demo(args: argparse.Namespace) -> int:
@@ -609,6 +644,10 @@ def build_parser() -> argparse.ArgumentParser:
     inc = sub.add_parser("incidents", help="show how the corpus correlates into incidents")
     inc.add_argument("--all", action="store_true", help="include single-alert incidents")
     inc.set_defaults(func=cmd_incidents)
+
+    hist = sub.add_parser("history", help="stored incidents, with chain verification")
+    hist.add_argument("--limit", type=int, default=25)
+    hist.set_defaults(func=cmd_history)
 
     return parser
 

@@ -62,6 +62,8 @@ class Decision(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, Any]:
+    from bishop.store import health as store_health
+
     provider = get_provider()
     return {
         "status": "ok",
@@ -69,6 +71,33 @@ def health() -> dict[str, Any]:
         "provider": provider.name,
         "model": provider.model_id,
         "offline": is_offline(provider),
+        "store": store_health(),
+    }
+
+
+@app.get("/incidents")
+def stored_incidents(limit: int = 50) -> dict[str, Any]:
+    """Incidents that survived the process that produced them."""
+    from bishop.store import init_db, list_incidents
+
+    init_db()
+    rows = list_incidents(limit=limit)
+    return {"count": len(rows), "incidents": rows}
+
+
+@app.get("/incidents/{incident_id}")
+def stored_incident(incident_id: str) -> dict[str, Any]:
+    from bishop.store import init_db, load_incident, verify_stored_chain
+
+    init_db()
+    incident = load_incident(incident_id)
+    if incident is None:
+        raise HTTPException(404, f"no stored incident {incident_id}")
+    intact, detail = verify_stored_chain(incident_id)
+    return {
+        "incident": incident.model_dump(mode="json"),
+        "audit_intact": intact,
+        "audit_detail": detail,
     }
 
 

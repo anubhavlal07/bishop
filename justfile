@@ -92,9 +92,17 @@ api:
 console:
     cd console && npm run dev
 
-# Verify a saved audit chain.
+# Verify a saved audit chain file.
 verify path:
     uv run bishop verify {{path}}
+
+# Stored incidents, each verified against the head recorded with it.
+history:
+    uv run bishop history
+
+# How the corpus correlates into incidents.
+incidents:
+    uv run bishop incidents
 
 # ── live model (opt in, costs money) ────────────────────────────────────────
 

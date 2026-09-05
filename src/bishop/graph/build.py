@@ -27,6 +27,9 @@ the state has to live somewhere until a human answers, which may be hours.
 
 from __future__ import annotations
 
+import os
+import sqlite3
+from pathlib import Path
 from typing import Any, Literal, Optional
 
 from langchain_core.runnables import RunnableConfig
@@ -154,8 +157,34 @@ def build_serialiser() -> JsonPlusSerializer:
     return JsonPlusSerializer(allowed_msgpack_modules=CHECKPOINT_TYPES)
 
 
+def default_checkpointer() -> Any:
+    """A checkpointer that survives a restart when one is configured.
+
+    `interrupt()` suspends a run mid-graph and the state has to live somewhere
+    until a human answers, which may be hours. In memory that means a restart
+    silently drops every run waiting at the gate — the analyst comes back to a
+    console that has forgotten it asked them something.
+
+    `BISHOP_CHECKPOINT_DB` points at a SQLite file to make that durable. The
+    default stays in-memory because the test suite and `just demo` should not
+    leave state behind, and because a checkpoint store holds suspended runs
+    including their alert text.
+    """
+    path = os.environ.get("BISHOP_CHECKPOINT_DB", "").strip()
+    if not path:
+        return InMemorySaver(serde=build_serialiser())
+
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(path, check_same_thread=False)
+    saver = SqliteSaver(connection)
+    saver.setup()
+    return saver
+
+
 def build_graph(*, checkpointer: Any | None = None):
-    """Compile the graph. Pass a checkpointer or get an in-memory one."""
+    """Compile the graph. Pass a checkpointer or get the configured default."""
     builder = StateGraph(BishopState)
 
     builder.add_node("ingest", ingest)
@@ -183,7 +212,7 @@ def build_graph(*, checkpointer: Any | None = None):
     builder.add_edge("response_execute", "report")
     builder.add_edge("report", END)
 
-    return builder.compile(checkpointer=checkpointer or InMemorySaver(serde=build_serialiser()))
+    return builder.compile(checkpointer=checkpointer or default_checkpointer())
 
 
 #: The node that must be the only predecessor of the executor.

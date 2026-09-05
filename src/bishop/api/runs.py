@@ -121,6 +121,25 @@ class RunManager:
             target=self._drive, args=(run, Command(resume=decision)), daemon=True
         ).start()
 
+    @staticmethod
+    def _persist(run: Run) -> None:
+        """Write the finished incident and its chain.
+
+        Failure here must not fail the run: the triage happened, the analyst
+        can see it, and losing the durable copy is a smaller problem than
+        losing the answer. It is logged as a run error so it is not silent.
+        """
+        try:
+            from bishop.store import init_db, save_incident
+
+            incident = run.incident()
+            if incident is None:
+                return
+            init_db()
+            save_incident(incident, chain=run._runtime.chain if run._runtime else None)
+        except Exception as exc:
+            run.push({"kind": "persist_failed", "error": f"{type(exc).__name__}: {exc}"})
+
     def _drive(self, run: Run, payload: Any) -> None:
         try:
             run.status = "running"
@@ -135,6 +154,7 @@ class RunManager:
                 run.push({"kind": "awaiting_approval", "request": run.approval_request})
             else:
                 run.status = "done"
+                self._persist(run)
                 verdict = result.get("verdict")
                 run.push(
                     {
