@@ -293,6 +293,44 @@ where Bishop simply has no detector, and two cases where my own label is arguabl
 fixed the rest and will not: debugging against a held-out case converts it into a development
 case, and anything I fixed would make the number look better and mean less.
 
+### Measured against a live model
+
+The deterministic model is the default, so the live path was code-reviewed but
+unrun for a long time. It has now been exercised against **Gemini 3.8 Flash**
+over six alerts: **5 of 6 correct**, ~21 s and ~19k tokens per triage, 5 model
+calls each. The one miss is a label disagreement rather than a failure — the
+model called an admin PowerShell session `benign_true_positive` where the corpus
+says `false_positive`, and it grounded that on a mitigating detector.
+
+Running it live found four bugs the deterministic model could never surface, all
+now fixed and covered by tests:
+
+- **A valid key was rejected before any request.** The Gemini key pattern
+  matched only the historical `AIza…` form, not the `AQ.` keys AI Studio now
+  issues.
+- **Thinking tokens ate the output budget.** `maxOutputTokens` covers thinking
+  *and* output on Gemini 3.x, so a 16-token connectivity ping spent it all on
+  thoughts and returned prose with a 200 status — telling users with a working
+  key that it had been rejected.
+- **A nullable field broke every synthesis call.** JSON Schema writes an optional
+  string as `{"type": ["string", "null"]}`; Gemini's proto validator rejects a
+  list-typed field outright.
+- **The critic escalated everything.** It asked to escalate while writing "the
+  verdict easily survives adversarial critique" and leaving confidence at 0.98.
+  A competent critic can always name *some* alternative, so honouring an
+  unsupported flag escalates every true positive — and a tool that escalates
+  everything has perfect recall and is useless. The flag is now honoured only
+  when the critic's own confidence adjustment supports it, and the refusal is
+  written to the audit chain.
+
+A fifth, smaller one: `action_type` was a free string, so the model proposed
+`terminate_process` for what Bishop calls `kill_process`. The executor correctly
+refused it, which left a containment plan quietly missing the actions the model
+intended. The schema now enumerates the twelve real actions.
+
+Each is the same shape of defect: a model asserting something its own
+measurements do not support — the failure the grounding rules exist for.
+
 Both corpora are synthetic. Real SOC data is either licence-encumbered or full of somebody's
 real hostnames, and a golden set has to be labelled. That buys honest labels and costs any
 claim about real-world noise.
