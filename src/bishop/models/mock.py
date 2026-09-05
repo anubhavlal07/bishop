@@ -72,8 +72,19 @@ def _combine(scores: list[float]) -> float:
     return round(min(MAX_CONFIDENCE, 1.0 - remaining), 4)
 
 
+#: The guillemets `prompts._mark_quoted` puts around string leaves. They tell a
+#: model "this is an excerpt, not Bishop's prose". They are a rendering concern,
+#: so anything reading Bishop's own output back drops them — a real model would
+#: paraphrase rather than copy them into a report an analyst reads.
+_MARKS = str.maketrans({"«": "", "»": ""})
+
+
+def _unmark(text: str) -> str:
+    return str(text).translate(_MARKS)
+
+
 def _sentence(text: str) -> str:
-    text = text.strip()
+    text = _unmark(text).strip()
     if not text:
         return ""
     return text[0].upper() + text[1:] + ("" if text.endswith((".", "!", "?")) else ".")
@@ -523,7 +534,7 @@ class MockModel:
                 "triggered, but nothing Bishop can verify independently supports it."
             )
             if mitigations:
-                base += f" {mitigations[0].get('rationale')}"
+                base += f" {_unmark(mitigations[0].get('rationale', ''))}"
             return base
         parts = [
             f"{len(fired)} deterministic detector{'s' if len(fired) != 1 else ''} fired, "
@@ -531,7 +542,7 @@ class MockModel:
         ]
         if fired:
             parts.append(
-                f"The strongest is {fired[0].get('detector')}: {fired[0].get('rationale')}."
+                f"The strongest is {fired[0].get('detector')}: {_unmark(fired[0].get('rationale', ''))}."
             )
         if injections:
             fields = ", ".join(str(i.get("field")) for i in injections[:2])
@@ -542,7 +553,8 @@ class MockModel:
             )
         if mitigations:
             parts.append(
-                f"Against that, {mitigations[0].get('rationale')} That comes from environment "
+                f"Against that, {_unmark(mitigations[0].get('rationale', ''))} That comes from "
+                f"environment "
                 f"policy rather than from the alert, so it is not something an attacker could "
                 f"have written."
             )
