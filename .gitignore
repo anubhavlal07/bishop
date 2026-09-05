@@ -55,3 +55,8 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# The Netlify CLI/MCP writes a deploy bundle into the working directory.
+# One of these is ~300MB and it must never reach a commit.
+deploy-*.zip
+.netlify/

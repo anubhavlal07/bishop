@@ -35,6 +35,9 @@ It is built around four claims that are each **individually checkable**:
 4. **No autonomous containment, ever.** Every action goes through `interrupt()` and a mocked
    executor. There is no code path that isolates a host without a recorded human decision.
 
+**Live:** [bishop.anubhavlal.dev](https://bishop.anubhavlal.dev) · API at
+[api.bishop.anubhavlal.dev](https://api.bishop.anubhavlal.dev/health)
+
 > **Bring your own key.** The deployment stores no model credential. Pick Anthropic, OpenAI,
 > Gemini or Azure OpenAI in the console, paste your key, and it stays in your browser. Or pick
 > the **deterministic model** and run the whole thing with no key at all — the detectors, the
@@ -327,7 +330,29 @@ reads is not a control:
 ```bash
 uv run bishop keygen              # Bishop will not invent a key for you
 docker build -t bishop .          # non-root, no toolchain, frozen lockfile
+uv run bishop config              # would this configuration be allowed to serve?
 ```
+
+### The public demo is a declared mode, not a missing setting
+
+The deployment above runs with `BISHOP_PUBLIC_DEMO=true`, and that flag is an
+explicit choice with its own constraints rather than an absence of one. With it
+on, Bishop **refuses** a rate limit looser than 60/min, **refuses** to also
+demand an API key (a key baked into a public console's JavaScript protects
+nothing), and **never writes an alert a visitor supplied to the shared store**.
+
+That last one is the reason the mode exists. The store is shared and
+`/incidents` lists it, so persisting a submitted alert on an open deployment
+would publish one stranger's alert to every other visitor — and somebody
+pasting a real alert from their own SIEM into a demo box has not agreed to
+that. Corpus runs are still stored: those are synthetic and already in this
+repository.
+
+Demo mode also drops the Postgres requirement, for a stated reason rather than
+convenience: the requirement exists because an audit chain that does not
+survive a restart is not an audit chain, and in demo mode there is no such
+chain — submitted alerts are never written, and corpus runs can simply be run
+again.
 
 ---
 
