@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "reactflow/dist/style.css";
+
+/* A SOC console is read at 3am on a dim screen, so dark is the default rather
+   than an option. Light mode still works for anyone whose OS asks for it. */
+@theme {
+  --color-ink: #0b0e14;
+  --color-panel: #12161f;
+  --color-edge: #1e2530;
+  --color-muted: #7d8899;
+  --color-text: #d7dde7;
+
+  --color-tp: #f2555a;
+  --color-fp: #4ec9a5;
+  --color-btp: #58a6ff;
+  --color-escalate: #e3b341;
+  --color-injection: #d946ef;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: var(--color-ink);
+  --panel: var(--color-panel);
+  --edge: var(--color-edge);
+  --muted: var(--color-muted);
+  --text: var(--color-text);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --edge: #dfe3e9;
+    --muted: #5b6675;
+    --text: #131720;
+  }
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+code,
+pre,
+.mono {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* React Flow inherits the page background rather than painting its own. */
+.react-flow__attribution {
+  display: none;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(88 166 255 / 45%);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgb(88 166 255 / 0%);
+  }
+}
+
+.node-active {
+  animation: pulse-ring 1.4s ease-out infinite;
+}
