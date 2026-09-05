@@ -49,6 +49,42 @@ into a crash loop.
 
 ---
 
+### The database
+
+Bishop's tables live in a **Supabase** project it shares with another
+application, in their own `bishop` schema, reached by a role that can see
+nothing else in that database:
+
+```sql
+create schema bishop;
+create role bishop_app with login password '...';
+
+revoke all on schema public from bishop_app;
+grant usage, create on schema bishop to bishop_app;
+grant all privileges on all tables in schema bishop to bishop_app;
+alter default privileges in schema bishop grant all privileges on tables to bishop_app;
+alter role bishop_app set search_path = bishop;
+```
+
+Two details that are easy to get wrong:
+
+**Use the pooler host, not the direct one.** `db.<ref>.supabase.co` resolves to
+IPv6 only, which most container platforms cannot reach. The connection string
+must go through `aws-0-<region>.pooler.supabase.com`, where the username is
+`<role>.<project-ref>`.
+
+**Set `BISHOP_DB_SCHEMA`.** It is read at import and binds the schema onto
+SQLAlchemy's `MetaData`, so every table is addressed as `bishop.incidents`
+rather than `incidents`. Qualifying explicitly is safer than relying on the
+connection's `search_path`: a search_path that fails to apply writes into
+whichever schema comes first, and on a shared database that is somebody else's.
+
+`init_db` tries `CREATE SCHEMA IF NOT EXISTS` and **tolerates being denied**.
+A role scoped to one schema should not hold CREATE on the database, so
+"permission denied" there is the correct configuration rather than a fault.
+
+---
+
 ## 3. Anywhere else, with Docker
 
 ```bash

@@ -1,30 +1,27 @@
-# Render blueprint for Bishop.
+# Render blueprint for Bishop's API.
+#
+# The database is deliberately not declared here. Bishop shares a Supabase
+# project with another application and lives in its own `bishop` schema, so
+# there is no Render Postgres to provision — see docs/DEPLOYMENT.md.
 #
 # The console deploys separately to Netlify (netlify.toml) because it is a
 # static Next.js build that only needs the API's URL and a key.
 #
 # This blueprint deploys in **production mode**, which means Bishop enforces its
 # own configuration rules at startup and refuses to serve if they are not met —
-# see src/bishop/config.py. Two values must be supplied by hand in the Render
-# dashboard before the first deploy will come up:
+# see src/bishop/config.py. One value must be set by hand in the dashboard:
 #
-#   BISHOP_API_KEYS      generate with `uv run bishop keygen`
-#   BISHOP_CORS_ORIGINS  the console's origin, e.g. https://bishop.netlify.app
+#   DATABASE_URL   the Supabase pooler connection string for the bishop_app role
 #
-# They are marked `sync: false` so they are never committed to this file. A key
-# in version control is not a key.
+# It is marked `sync: false` so it is never committed here. A password in
+# version control is not a password.
 #
-# Both services run on Render's free tier. Two consequences worth knowing: a
-# free web service sleeps after 15 minutes of inactivity and takes ~50s to wake,
-# and a free Postgres expires 30 days after creation. Move both to a paid plan
-# before anyone depends on the deployment.
-
-databases:
-  - name: bishop-db
-    databaseName: bishop
-    plan: free
-    region: singapore
-    postgresMajorVersion: "16"
+# The service runs on Render's free tier, so it sleeps after 15 minutes of
+# inactivity and takes ~50s to wake. Move it to a paid plan before anyone
+# depends on it.
+#
+# Note the connection must go through Supabase's *pooler* host. The direct
+# host resolves to IPv6 only, which Render cannot reach.
 
 services:
   - type: web
@@ -60,6 +57,16 @@ services:
       # This is an explicit mode rather than an absent setting — with it on,
       # Bishop refuses a loose rate limit, refuses to also demand an API key,
       # and never writes an alert a visitor supplied to the shared store.
+      # Postgres lives in Supabase, not here, and Bishop's tables sit in their
+      # own `bishop` schema behind a role that can reach nothing else in that
+      # database. Both values are set in the dashboard: the connection string
+      # carries a password, and a password in version control is not a
+      # password.
+      - key: DATABASE_URL
+        sync: false
+      - key: BISHOP_DB_SCHEMA
+        value: bishop
+
       - key: BISHOP_PUBLIC_DEMO
         value: "true"
       - key: BISHOP_CORS_ORIGINS

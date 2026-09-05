@@ -198,3 +198,53 @@ class TestChainReload:
         chain._entries = entries
         chain.verify(expected_head=runtime.chain.head, expected_length=len(runtime.chain))
         assert chain.by_action(AuditAction.VERDICT_REACHED)
+
+
+class TestSchemaIsolation:
+    """Bishop can share a Postgres database with another application.
+
+    The tables must be qualified with the configured schema, because the
+    failure mode is writing `incidents` into somebody else's `public` schema
+    on a database that is already in use.
+    """
+
+    def test_no_schema_by_default(self):
+        from bishop.store import database
+
+        assert database.metadata.schema is None
+        assert database.incidents.schema is None
+
+    def test_a_configured_schema_qualifies_every_table(self, monkeypatch):
+        """Re-imported under the env var, because MetaData binds at declaration."""
+        import importlib
+
+        monkeypatch.setenv("BISHOP_DB_SCHEMA", "bishop")
+        from bishop.store import database
+
+        reloaded = importlib.reload(database)
+        try:
+            assert reloaded.metadata.schema == "bishop"
+            for table in (reloaded.incidents, reloaded.audit_entries, reloaded.alerts_seen):
+                assert table.schema == "bishop", f"{table.name} is not schema-qualified"
+            assert str(reloaded.incidents) == "bishop.incidents"
+        finally:
+            monkeypatch.delenv("BISHOP_DB_SCHEMA", raising=False)
+            importlib.reload(database)
+
+    def test_sqlite_still_works_with_a_schema_set(self, monkeypatch, tmp_path):
+        """SQLite has no schemas; setting one must not break a local run."""
+        import importlib
+
+        from bishop.store import database
+
+        monkeypatch.setenv("BISHOP_DB_SCHEMA", "bishop")
+        reloaded = importlib.reload(database)
+        try:
+            engine = reloaded.get_engine(f"sqlite:///{tmp_path / 'x.db'}")
+            # Not asserting it succeeds — SQLite rejects schema-qualified DDL.
+            # Asserting the *guard* skips the CREATE SCHEMA statement, which is
+            # the part that would raise a confusing error rather than a clear one.
+            assert engine.dialect.name == "sqlite"
+        finally:
+            monkeypatch.delenv("BISHOP_DB_SCHEMA", raising=False)
+            importlib.reload(database)

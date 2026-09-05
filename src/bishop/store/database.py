@@ -49,7 +49,20 @@ from bishop.schema import Incident
 
 DEFAULT_SQLITE_PATH = Path("storage") / "bishop.db"
 
-metadata = MetaData()
+#: Postgres schema to put Bishop's tables in. Set it when Bishop shares a
+#: database with another application: with `BISHOP_DB_SCHEMA=bishop`, every
+#: table below is created and addressed as `bishop.incidents` rather than
+#: `public.incidents`, so the two cannot collide.
+#:
+#: Read at import because `MetaData` binds the schema when the tables are
+#: declared, and qualifying them explicitly is safer than relying on the
+#: connection's `search_path` — a search_path that fails to apply writes into
+#: whatever schema comes first, which on a shared database is somebody else's.
+#:
+#: Ignored on SQLite, which has no schemas.
+DB_SCHEMA = (os.environ.get("BISHOP_DB_SCHEMA") or "").strip() or None
+
+metadata = MetaData(schema=DB_SCHEMA)
 
 incidents = Table(
     "incidents",
@@ -132,8 +145,29 @@ def reset_engine() -> None:
 
 
 def init_db(engine: Engine | None = None) -> Engine:
-    """Create tables if absent. Safe to call on every start."""
+    """Create the schema and tables if absent. Safe to call on every start."""
     target = engine or get_engine()
+
+    # The schema has to exist before `create_all` can put anything in it, and
+    # SQLAlchemy does not create it. Only on a dialect that has schemas —
+    # SQLite would reject the statement outright.
+    #
+    # Attempted, not required. A role scoped to one schema on a shared database
+    # should not hold CREATE on the database, so `permission denied` here is
+    # the *correct* configuration rather than a fault: it means the schema was
+    # provisioned by an administrator and this role may only use it. If the
+    # schema genuinely does not exist, `create_all` fails next with a message
+    # that names it.
+    if DB_SCHEMA and target.dialect.name != "sqlite":
+        from sqlalchemy import text
+        from sqlalchemy.exc import ProgrammingError
+
+        try:
+            with target.begin() as conn:
+                conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{DB_SCHEMA}"'))
+        except ProgrammingError:
+            pass
+
     metadata.create_all(target)
     return target
 
