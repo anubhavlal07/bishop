@@ -1,0 +1,54 @@
+# ─── Local authoring scaffolding — never published ───────────────────────────
+# Bishop's public repo ships the system and its docs, not the tooling used to
+# build it. Everything below stays on this machine.
+CLAUDE.md
+PLAN.md
+.claude/
+.cursor/
+.aider*
+AGENTS.md
+.github/copilot-instructions.md
+scratch/
+notes/
+
+# ─── Secrets ─────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─── Data: fetched by script, never committed ────────────────────────────────
+data/
+outbox/
+storage/
+eval/results/*.json
+!eval/results/baseline.json
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+
+# ─── Node / Next.js ──────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# ─── Local ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
