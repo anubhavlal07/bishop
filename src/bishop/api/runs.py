@@ -88,12 +88,14 @@ class RunManager:
         ]:
             self._runs.pop(run.run_id, None)
 
-    def start(self, alert: Alert, *, alert_id: str) -> Run:
+    def start(self, alert: Alert, *, alert_id: str, provider=None) -> Run:
         run_id = f"run-{uuid.uuid4().hex[:12]}"
         run = Run(run_id=run_id, alert_id=alert_id, incident_id=f"INC-{alert_id}")
 
         # Mirror every node emit onto the run's queue so SSE sees it live.
-        runtime = build_runtime(run_id=run_id, listener=run.push)
+        # `provider` is built per request from the caller's own credentials and
+        # is never held beyond this run — see models/credentials.py.
+        runtime = build_runtime(run_id=run_id, listener=run.push, provider=provider)
         run._runtime = runtime
         run._graph = build_graph()
         run._config = runtime_config(runtime)

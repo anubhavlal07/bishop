@@ -6,6 +6,7 @@
  * on screen, and the second one is the analyst's problem to know about.
  */
 
+import { credentialHeaders } from "./credentials";
 import type {
   AlertSummary,
   AuditEntry,
@@ -37,6 +38,12 @@ const API_KEY = process.env.NEXT_PUBLIC_BISHOP_API_KEY ?? "";
 function withAuth(init?: RequestInit): RequestInit {
   const headers = new Headers(init?.headers);
   if (API_KEY) headers.set("Authorization", `Bearer ${API_KEY}`);
+  // The viewer's own model key, read fresh on every request rather than
+  // captured at module load — otherwise changing it in Settings would not take
+  // effect until a reload.
+  for (const [name, value] of Object.entries(credentialHeaders())) {
+    headers.set(name, value);
+  }
   return { ...init, headers };
 }
 

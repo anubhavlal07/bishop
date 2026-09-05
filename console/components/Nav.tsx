@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { loadCredentials, type StoredCredentials } from "@/lib/credentials";
 import type { Health } from "@/lib/types";
 
 const LINKS = [
@@ -19,6 +20,18 @@ export function Nav() {
   const pathname = usePathname();
   const [health, setHealth] = useState<Health | null>(null);
   const [down, setDown] = useState(false);
+  const [credentials, setCredentials] = useState<StoredCredentials | null>(
+    null,
+  );
+
+  useEffect(() => {
+    // After mount only: localStorage does not exist during a server render, and
+    // reading it while rendering breaks hydration.
+    const read = () => setCredentials(loadCredentials());
+    read();
+    window.addEventListener("bishop:credentials", read);
+    return () => window.removeEventListener("bishop:credentials", read);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,15 +98,27 @@ export function Nav() {
                 </span>
               )}
               <span>·</span>
-              {health.offline ? (
-                <span title="Detectors, ATT&CK validation, injection scanning and the audit chain are the same code either way. The deterministic model replaces the model's judgement, not the detection.">
-                  deterministic model
-                </span>
-              ) : (
-                <span style={{ color: "var(--color-btp)" }}>
-                  {health.model}
-                </span>
-              )}
+              <button
+                onClick={() =>
+                  window.dispatchEvent(new Event("bishop:open-model-setup"))
+                }
+                className="underline decoration-dotted underline-offset-2"
+                title="Change the model, or clear your key"
+              >
+                {credentials && credentials.provider !== "mock" ? (
+                  <span style={{ color: "var(--color-btp)" }}>
+                    {credentials.modelId || credentials.provider}
+                  </span>
+                ) : health.offline ? (
+                  <span title="Detectors, ATT&CK validation, injection scanning and the audit chain are the same code either way. The deterministic model replaces judgement, not detection.">
+                    deterministic model
+                  </span>
+                ) : (
+                  <span style={{ color: "var(--color-btp)" }}>
+                    {health.model}
+                  </span>
+                )}
+              </button>
               {health.deployment && !health.deployment.auth_required && (
                 <>
                   <span>·</span>

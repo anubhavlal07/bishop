@@ -385,6 +385,62 @@ def ingest_preview(body: IngestPreview) -> dict[str, Any]:
     }
 
 
+def _credentials_from(request: Request):
+    """Build one user's model credentials from their request headers.
+
+    Headers rather than the body, for two reasons. A body is the thing most
+    likely to be logged by a proxy or echoed in an error, and putting the key
+    outside the JSON means `POST /runs` can keep taking a bare alert. The key
+    is used to construct a provider and is never stored, never logged and never
+    written to the audit chain — the chain records the provider and model id,
+    which is what makes a verdict reproducible.
+    """
+    from bishop.models.credentials import CredentialError, parse
+
+    provider = request.headers.get("x-model-provider")
+    if not provider:
+        return None  # fall back to whatever the server is configured with
+    try:
+        return parse(
+            provider,
+            request.headers.get("x-model-key"),
+            request.headers.get("x-model-id"),
+            request.headers.get("x-model-endpoint"),
+        )
+    except CredentialError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/providers")
+def providers() -> dict[str, Any]:
+    """What the console's setup modal renders. Carries no secrets."""
+    from bishop.models.credentials import provider_catalogue
+
+    return {
+        "providers": provider_catalogue(),
+        "note": (
+            "Bishop stores no model key. Yours stays in your browser and travels with "
+            "each request that needs it, so this deployment can never spend your money "
+            "without you, and a compromise of it leaks no key."
+        ),
+    }
+
+
+@app.post("/providers/verify")
+def verify_provider(request: Request) -> dict[str, Any]:
+    """One cheap call to confirm a key works, before the user relies on it.
+
+    Worth doing at setup rather than three minutes into a run: the failure is
+    identical either way, but here it is attached to the field just typed.
+    """
+    from bishop.models.byok import verify_credentials
+
+    credentials = _credentials_from(request)
+    if credentials is None:
+        raise HTTPException(422, "supply X-Model-Provider and X-Model-Key")
+    return verify_credentials(credentials)
+
+
 @app.get("/ingest/formats")
 def ingest_formats() -> dict[str, Any]:
     from bishop.ingest import supported_formats
@@ -393,7 +449,14 @@ def ingest_formats() -> dict[str, Any]:
 
 
 @app.post("/runs", status_code=202)
-def start_run(body: StartRun) -> dict[str, Any]:
+def start_run(body: StartRun, request: Request) -> dict[str, Any]:
+    credentials = _credentials_from(request)
+    provider = None
+    if credentials is not None and not credentials.is_mock:
+        from bishop.models.byok import build_provider
+
+        provider = build_provider(credentials)
+
     if body.alert is not None:
         from bishop.ingest import normalise
 
@@ -401,7 +464,7 @@ def start_run(body: StartRun) -> dict[str, Any]:
             alert, report = normalise(body.alert)
         except (TypeError, ValueError) as exc:
             raise HTTPException(422, str(exc)) from exc
-        run = runs.start(alert, alert_id=alert.alert_id)
+        run = runs.start(alert, alert_id=alert.alert_id, provider=provider)
         # The mapping travels with the run so the console can show what Bishop
         # read alongside what it concluded. A verdict without that is a verdict
         # you cannot audit.
@@ -417,7 +480,7 @@ def start_run(body: StartRun) -> dict[str, Any]:
 
     for item in load_corpus():
         if item.alert_id == body.alert_id:
-            run = runs.start(item.alert, alert_id=item.alert_id)
+            run = runs.start(item.alert, alert_id=item.alert_id, provider=provider)
             return {"run_id": run.run_id, "status": run.status}
     raise HTTPException(404, f"no alert {body.alert_id}")
 
