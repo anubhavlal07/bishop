@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ModelBanner } from "@/components/ModelBanner";
 import { Panel } from "@/components/primitives";
 import { api, ApiError } from "@/lib/api";
 import type { IngestPreview } from "@/lib/types";
@@ -35,7 +36,8 @@ const SAMPLES: { name: string; blurb: string; body: unknown }[] = [
       Image: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
       CommandLine:
         "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkA",
-      ParentImage: "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+      ParentImage:
+        "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
       ProcessId: 4242,
       RuleName: "Office application spawned PowerShell",
     },
@@ -51,7 +53,8 @@ const SAMPLES: { name: string; blurb: string; body: unknown }[] = [
       process: {
         name: "rundll32.exe",
         executable: "C:\\Windows\\System32\\rundll32.exe",
-        command_line: "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 908 out.dmp full",
+        command_line:
+          "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 908 out.dmp full",
       },
       rule: { name: "Credential access attempt", id: "R-114" },
     },
@@ -68,8 +71,9 @@ const SAMPLES: { name: string; blurb: string; body: unknown }[] = [
       device: { hostname: "WKSTN-410", ip: "10.0.0.41" },
       principal: { username: "k.owusu", domain: "CORP" },
       connections: Array.from({ length: 20 }, (_, i) => ({
-        timestamp: new Date(Date.UTC(2026, 8, 5, 9, 0, 0) + i * 300_000 + (i % 2 ? 9000 : -9000))
-          .toISOString(),
+        timestamp: new Date(
+          Date.UTC(2026, 8, 5, 9, 0, 0) + i * 300_000 + (i % 2 ? 9000 : -9000),
+        ).toISOString(),
         hostname: "cdn-telemetry.example",
         dest_ip: "203.0.113.44",
         dest_port: 443,
@@ -174,162 +178,184 @@ export default function TriagePage() {
   }, []);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-      <div className="space-y-4">
-        <Panel
-          title="Triage your own alert"
-          subtitle="Sysmon, ECS, or any JSON with recognisable field names"
-        >
-          <p className="muted mb-3 text-xs leading-relaxed">
-            Paste one alert as JSON, or drop a file. Bishop maps it onto its own schema
-            best-effort and tells you exactly what it read — a verdict is only worth as much as
-            the fields behind it, so check the mapping before you trust the answer.
-          </p>
+    <div className="space-y-4">
+      <ModelBanner />
 
-          <textarea
-            value={text}
-            onChange={(event) => {
-              setText(event.target.value);
-              setPreview(null);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              const file = event.dataTransfer.files?.[0];
-              if (file) void loadFile(file);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            spellCheck={false}
-            placeholder='{ "Computer": "WKSTN-01", "CommandLine": "powershell.exe -enc ..." }'
-            className="mono h-72 w-full resize-y rounded border p-3 text-xs leading-relaxed outline-none"
-            style={{
-              borderColor: "var(--edge)",
-              background: "var(--bg)",
-              color: "var(--text)",
-            }}
-          />
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+        <div className="space-y-4">
+          <Panel
+            title="Triage your own alert"
+            subtitle="Sysmon, ECS, or any JSON with recognisable field names"
+          >
+            <p className="muted mb-3 text-xs leading-relaxed">
+              Paste one alert as JSON, or drop a file. Bishop maps it onto its
+              own schema best-effort and tells you exactly what it read — a
+              verdict is only worth as much as the fields behind it, so check
+              the mapping before you trust the answer.
+            </p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => void runPreview()}
-              disabled={busy !== null}
-              className="rounded px-3 py-1.5 text-sm"
-              style={{ border: "1px solid var(--edge)", opacity: busy ? 0.5 : 1 }}
-            >
-              {busy === "preview" ? "Mapping…" : "Preview the mapping"}
-            </button>
-
-            <button
-              onClick={() => void runTriage()}
-              disabled={busy !== null}
-              className="rounded px-3 py-1.5 text-sm font-medium"
-              style={{
-                background: "var(--color-escalate)",
-                color: "#0b0d10",
-                opacity: busy ? 0.5 : 1,
-              }}
-            >
-              {busy === "run" ? "Starting…" : "Triage it"}
-            </button>
-
-            <button
-              onClick={() => fileInput.current?.click()}
-              className="muted rounded px-3 py-1.5 text-sm"
-              style={{ border: "1px solid var(--edge)" }}
-            >
-              Load a file
-            </button>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".json,.ndjson,.txt,application/json"
-              className="hidden"
+            <textarea
+              value={text}
               onChange={(event) => {
-                const file = event.target.files?.[0];
+                setText(event.target.value);
+                setPreview(null);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const file = event.dataTransfer.files?.[0];
                 if (file) void loadFile(file);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              spellCheck={false}
+              placeholder='{ "Computer": "WKSTN-01", "CommandLine": "powershell.exe -enc ..." }'
+              className="mono h-72 w-full resize-y rounded border p-3 text-xs leading-relaxed outline-none"
+              style={{
+                borderColor: "var(--edge)",
+                background: "var(--bg)",
+                color: "var(--text)",
               }}
             />
 
-            {text && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
-                onClick={() => {
-                  setText("");
-                  setPreview(null);
-                  setError(null);
+                onClick={() => void runPreview()}
+                disabled={busy !== null}
+                className="rounded px-3 py-1.5 text-sm"
+                style={{
+                  border: "1px solid var(--edge)",
+                  opacity: busy ? 0.5 : 1,
                 }}
-                className="muted ml-auto text-xs underline"
               >
-                clear
+                {busy === "preview" ? "Mapping…" : "Preview the mapping"}
               </button>
-            )}
-          </div>
 
-          {error && (
-            <p
-              className="mt-3 rounded border p-2 text-xs"
-              style={{ borderColor: "var(--color-tp)", color: "var(--color-tp)" }}
-            >
-              {error}
-            </p>
-          )}
-        </Panel>
+              <button
+                onClick={() => void runTriage()}
+                disabled={busy !== null}
+                className="rounded px-3 py-1.5 text-sm font-medium"
+                style={{
+                  background: "var(--color-escalate)",
+                  color: "#0b0d10",
+                  opacity: busy ? 0.5 : 1,
+                }}
+              >
+                {busy === "run" ? "Starting…" : "Triage it"}
+              </button>
 
-        <Panel title="Start from a sample" subtitle="Four shapes, including one that fails">
-          <ul className="space-y-2">
-            {SAMPLES.map((sample) => (
-              <li key={sample.name}>
+              <button
+                onClick={() => fileInput.current?.click()}
+                className="muted rounded px-3 py-1.5 text-sm"
+                style={{ border: "1px solid var(--edge)" }}
+              >
+                Load a file
+              </button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".json,.ndjson,.txt,application/json"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void loadFile(file);
+                }}
+              />
+
+              {text && (
                 <button
                   onClick={() => {
-                    setText(JSON.stringify(sample.body, null, 2));
+                    setText("");
                     setPreview(null);
                     setError(null);
                   }}
-                  className="w-full rounded border p-2 text-left transition-colors hover:bg-white/5"
-                  style={{ borderColor: "var(--edge)" }}
+                  className="muted ml-auto text-xs underline"
                 >
-                  <div className="text-sm">{sample.name}</div>
-                  <div className="muted text-xs">{sample.blurb}</div>
+                  clear
                 </button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
+              )}
+            </div>
 
-      <div className="space-y-4">
-        {preview ? (
-          <MappingPanel preview={preview} />
-        ) : (
-          <Panel title="What Bishop read" subtitle="preview an alert to see this">
-            <p className="muted text-xs leading-relaxed">
-              The mapping report lands here. It lists every field Bishop understood, every one it
-              ignored, anything it had to default — and which detectors have jurisdiction over
-              what is left.
-            </p>
-            <p className="muted mt-3 text-xs leading-relaxed">
-              That last list is the one to read. It is computed by running the detectors and
-              asking which had data in their remit, so if it is empty Bishop will escalate
-              whatever your alert says, because it has nothing it can measure. Better to know
-              that now than after a run.
-            </p>
+            {error && (
+              <p
+                className="mt-3 rounded border p-2 text-xs"
+                style={{
+                  borderColor: "var(--color-tp)",
+                  color: "var(--color-tp)",
+                }}
+              >
+                {error}
+              </p>
+            )}
           </Panel>
-        )}
 
-        {formats && (
-          <Panel title="Formats it recognises" subtitle="detection is advisory">
-            <dl className="space-y-2">
-              {Object.entries(formats).map(([name, detail]) => (
-                <div key={name}>
-                  <dt className="mono text-xs">{name}</dt>
-                  <dd className="muted text-xs">{detail}</dd>
-                </div>
+          <Panel
+            title="Start from a sample"
+            subtitle="Four shapes, including one that fails"
+          >
+            <ul className="space-y-2">
+              {SAMPLES.map((sample) => (
+                <li key={sample.name}>
+                  <button
+                    onClick={() => {
+                      setText(JSON.stringify(sample.body, null, 2));
+                      setPreview(null);
+                      setError(null);
+                    }}
+                    className="w-full rounded border p-2 text-left transition-colors hover:bg-white/5"
+                    style={{ borderColor: "var(--edge)" }}
+                  >
+                    <div className="text-sm">{sample.name}</div>
+                    <div className="muted text-xs">{sample.blurb}</div>
+                  </button>
+                </li>
               ))}
-            </dl>
-            <p className="muted mt-3 text-xs leading-relaxed">
-              Every payload is tried against every alias table regardless of what was detected,
-              so a hybrid or partial shape still maps as far as it can.
-            </p>
+            </ul>
           </Panel>
-        )}
+        </div>
+
+        <div className="space-y-4">
+          {preview ? (
+            <MappingPanel preview={preview} />
+          ) : (
+            <Panel
+              title="What Bishop read"
+              subtitle="preview an alert to see this"
+            >
+              <p className="muted text-xs leading-relaxed">
+                The mapping report lands here. It lists every field Bishop
+                understood, every one it ignored, anything it had to default —
+                and which detectors have jurisdiction over what is left.
+              </p>
+              <p className="muted mt-3 text-xs leading-relaxed">
+                That last list is the one to read. It is computed by running the
+                detectors and asking which had data in their remit, so if it is
+                empty Bishop will escalate whatever your alert says, because it
+                has nothing it can measure. Better to know that now than after a
+                run.
+              </p>
+            </Panel>
+          )}
+
+          {formats && (
+            <Panel
+              title="Formats it recognises"
+              subtitle="detection is advisory"
+            >
+              <dl className="space-y-2">
+                {Object.entries(formats).map(([name, detail]) => (
+                  <div key={name}>
+                    <dt className="mono text-xs">{name}</dt>
+                    <dd className="muted text-xs">{detail}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="muted mt-3 text-xs leading-relaxed">
+                Every payload is tried against every alias table regardless of
+                what was detected, so a hybrid or partial shape still maps as
+                far as it can.
+              </p>
+            </Panel>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -355,17 +381,22 @@ function MappingPanel({ preview }: { preview: IngestPreview }) {
     >
       <section className="mb-4">
         <h4 className="mb-1 text-xs font-medium">
-          {mapping.detectors_with_jurisdiction.length} detectors can examine this
+          {mapping.detectors_with_jurisdiction.length} detectors can examine
+          this
         </h4>
         {mapping.detectors_with_jurisdiction.length > 0 ? (
           <p className="mono muted text-xs leading-relaxed">
             {mapping.detectors_with_jurisdiction.join(", ")}
           </p>
         ) : (
-          <p className="text-xs leading-relaxed" style={{ color: "var(--color-tp)" }}>
-            None. Bishop will escalate this rather than reach a verdict — which is the correct
-            behaviour, but means the run will not tell you much. A command line, a set of
-            connections or a list of auth events gives it something to measure.
+          <p
+            className="text-xs leading-relaxed"
+            style={{ color: "var(--color-tp)" }}
+          >
+            None. Bishop will escalate this rather than reach a verdict — which
+            is the correct behaviour, but means the run will not tell you much.
+            A command line, a set of connections or a list of auth events gives
+            it something to measure.
           </p>
         )}
       </section>
@@ -385,7 +416,8 @@ function MappingPanel({ preview }: { preview: IngestPreview }) {
 
       <section className="mb-4">
         <h4 className="mb-1 text-xs font-medium">
-          Understood — {mapping.mapped.length} field{mapping.mapped.length === 1 ? "" : "s"}
+          Understood — {mapping.mapped.length} field
+          {mapping.mapped.length === 1 ? "" : "s"}
         </h4>
         <ul className="mono grid grid-cols-1 gap-0.5 text-xs sm:grid-cols-2">
           {mapping.mapped.map((entry) => (
@@ -415,19 +447,29 @@ function MappingPanel({ preview }: { preview: IngestPreview }) {
       {mapping.ignored.length > 0 && (
         <section>
           <h4 className="mb-1 text-xs font-medium">
-            Ignored — {mapping.ignored.length} field{mapping.ignored.length === 1 ? "" : "s"}
+            Ignored — {mapping.ignored.length} field
+            {mapping.ignored.length === 1 ? "" : "s"}
           </h4>
-          <p className="mono muted text-xs leading-relaxed">{mapping.ignored.join(", ")}</p>
+          <p className="mono muted text-xs leading-relaxed">
+            {mapping.ignored.join(", ")}
+          </p>
           <p className="muted mt-1 text-xs leading-relaxed">
-            Kept in <code>raw</code> and still scanned for injection, but nothing interprets
-            them — Bishop does not guess that an unrecognised field is a hostname.
+            Kept in <code>raw</code> and still scanned for injection, but
+            nothing interprets them — Bishop does not guess that an unrecognised
+            field is a hostname.
           </p>
         </section>
       )}
 
-      <p className="muted mt-4 border-t pt-3 text-xs" style={{ borderColor: "var(--edge)" }}>
-        Happy with this? <Link href="#" className="underline">Triage it</Link> using the button on
-        the left.
+      <p
+        className="muted mt-4 border-t pt-3 text-xs"
+        style={{ borderColor: "var(--edge)" }}
+      >
+        Happy with this?{" "}
+        <Link href="#" className="underline">
+          Triage it
+        </Link>{" "}
+        using the button on the left.
       </p>
     </Panel>
   );

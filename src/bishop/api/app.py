@@ -93,6 +93,48 @@ def health() -> dict[str, Any]:
         "model": provider.model_id,
         "offline": is_offline(provider),
         "store": store_health(),
+        # What it would take to run live, reported rather than implied. A
+        # console that says "mock model" without saying what is missing leaves
+        # the reader to guess between "no key", "no dependency" and "by design".
+        "live": _live_readiness(),
+    }
+
+
+def _live_readiness() -> dict[str, Any]:
+    import importlib.util
+    import os
+
+    from bishop.models import PROVIDER_ENV
+
+    package_present = importlib.util.find_spec("anthropic") is not None
+    key_present = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    selected = (os.environ.get(PROVIDER_ENV) or "mock").strip().lower()
+
+    missing: list[str] = []
+    if not package_present:
+        missing.append("uv sync --extra live")
+    if not key_present:
+        missing.append("set ANTHROPIC_API_KEY in .env")
+    if selected not in {"anthropic"}:
+        missing.append(f"set {PROVIDER_ENV}=anthropic")
+
+    return {
+        "selected": selected,
+        "package_installed": package_present,
+        "api_key_present": key_present,
+        "ready": not missing,
+        "missing": missing,
+        # Said plainly because "mock" invites the assumption that nothing is
+        # real. The detectors, ATT&CK validation, injection scanning,
+        # correlation and the audit chain run identically either way; the model
+        # only interprets and narrates what they produced.
+        "what_mock_still_does": (
+            "Detectors, ATT&CK validation, injection scanning, correlation and the "
+            "audit chain are the same code in both modes. What the mock replaces is "
+            "the model's judgement: the narrative is assembled from detector "
+            "rationales and the weighing is arithmetic, so it will not spot the thing "
+            "nobody wrote a detector for."
+        ),
     }
 
 

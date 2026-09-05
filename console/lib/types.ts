@@ -7,17 +7,10 @@
  */
 
 export type VerdictLabel =
-  | "true_positive"
-  | "false_positive"
-  | "benign_true_positive"
-  | "escalate";
+  "true_positive" | "false_positive" | "benign_true_positive" | "escalate";
 
 export type EvidenceKind =
-  | "detector"
-  | "observation"
-  | "intel"
-  | "injection"
-  | "mitigating";
+  "detector" | "observation" | "intel" | "injection" | "mitigating";
 
 export interface Health {
   status: string;
@@ -25,6 +18,23 @@ export interface Health {
   provider: string;
   model: string;
   offline: boolean;
+  store?: {
+    connected: boolean;
+    dialect?: string;
+    incidents?: number;
+    error?: string;
+  };
+  live?: LiveReadiness;
+}
+
+/** What it would take to run against a real model, rather than just that it isn't. */
+export interface LiveReadiness {
+  selected: string;
+  package_installed: boolean;
+  api_key_present: boolean;
+  ready: boolean;
+  missing: string[];
+  what_mock_still_does: string;
 }
 
 export interface AlertSummary {
@@ -185,11 +195,7 @@ export interface ApprovalRequest {
 }
 
 export type RunStatus =
-  | "queued"
-  | "running"
-  | "awaiting_approval"
-  | "done"
-  | "failed";
+  "queued" | "running" | "awaiting_approval" | "done" | "failed";
 
 export interface RunState {
   run_id: string;
