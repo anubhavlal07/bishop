@@ -1,29 +1,67 @@
-# Render blueprint for Bishop's API.
+# Render blueprint for Bishop.
 #
-# The console deploys separately to Netlify (see netlify.toml) because it is a
-# static Next.js build that only needs the API's URL.
+# The console deploys separately to Netlify (netlify.toml) because it is a
+# static Next.js build that only needs the API's URL and a key.
 #
-# Bishop runs offline by default: no model key is required for the deployed API
-# to serve the corpus, the coverage matrix, the scorecard, and full triage runs
-# against the deterministic model. Set BISHOP_MODEL_PROVIDER and a key to make
-# it live.
+# This blueprint deploys in **production mode**, which means Bishop enforces its
+# own configuration rules at startup and refuses to serve if they are not met —
+# see src/bishop/config.py. Two values must be supplied by hand in the Render
+# dashboard before the first deploy will come up:
+#
+#   BISHOP_API_KEYS      generate with `uv run bishop keygen`
+#   BISHOP_CORS_ORIGINS  the console's origin, e.g. https://bishop.netlify.app
+#
+# They are marked `sync: false` so they are never committed to this file. A key
+# in version control is not a key.
+
+databases:
+  - name: bishop-db
+    databaseName: bishop
+    plan: basic-256mb
+    region: frankfurt
+    postgresMajorVersion: "16"
 
 services:
   - type: web
     name: bishop-api
-    runtime: python
-    plan: free
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
     region: frankfurt
-    buildCommand: pip install uv && uv sync --frozen --no-dev
-    startCommand: uv run uvicorn bishop.api.app:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    # Readiness, not liveness: Render should stop routing to an instance that
+    # cannot reach the database, without restarting one that is merely waiting.
+    healthCheckPath: /health/ready
     autoDeploy: true
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.12"
-      # Unset means the deterministic mock. Deliberate: a public demo should not
-      # be able to spend money, and Bishop refuses to start a live provider
-      # without a key rather than silently falling back.
+      - key: BISHOP_ENVIRONMENT
+        value: production
+
+      # Postgres, wired from the managed database above. Production refuses to
+      # start on SQLite: an audit chain that does not survive a container
+      # restart is not an audit chain.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bishop-db
+          property: connectionString
+
+      - key: BISHOP_JSON_LOGS
+        value: "true"
+      - key: BISHOP_LOG_LEVEL
+        value: INFO
+      - key: BISHOP_RATE_LIMIT_PER_MINUTE
+        value: "120"
+
+      # Set in the dashboard, never here.
+      - key: BISHOP_API_KEYS
+        sync: false
+      - key: BISHOP_CORS_ORIGINS
+        sync: false
+
+      # The model. Unset provider means the deterministic one, which serves
+      # real detector findings and a real ATT&CK mapping but no model
+      # judgement. Set both of these to run live — Bishop refuses to start a
+      # live provider without a key rather than silently falling back, because
+      # a scorecard that quietly changed provider would be meaningless.
       - key: BISHOP_MODEL_PROVIDER
         value: mock
       - key: ANTHROPIC_API_KEY

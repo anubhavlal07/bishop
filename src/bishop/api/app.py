@@ -14,37 +14,113 @@ be able to isolate a host.
 from __future__ import annotations
 
 import json
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from bishop import __version__
 from bishop.api.runs import RunManager, corpus_index
+from bishop.api.security import (
+    AuthMiddleware,
+    RateLimiter,
+    RequestContextMiddleware,
+    SecurityHeadersMiddleware,
+)
+from bishop.config import get_settings
 from bishop.eval import load_corpus
+from bishop.logging_setup import configure_logging
 from bishop.models import get_provider, is_offline
+
+# Validated here, at import, so a misconfigured production deployment fails to
+# start rather than serving. See `config.py` for what is enforced.
+settings = get_settings()
+configure_logging(json_logs=settings.json_logs, level=settings.log_level)
+logger = logging.getLogger("bishop.api")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Announce the resolved configuration, and create tables if absent.
+
+    The unauthenticated warning is emitted on every start rather than once,
+    because the state it describes is dangerous and a single line at first
+    deploy scrolls away.
+    """
+    logger.info("bishop starting", extra=settings.redacted())
+    if not settings.auth_required:
+        logger.warning(
+            "the API is unauthenticated — set BISHOP_API_KEYS before exposing it",
+            extra={"environment": settings.environment},
+        )
+    try:
+        from bishop.store import init_db
+
+        init_db()
+    except Exception as exc:
+        logger.error("could not prepare the store", extra={"error": str(exc)})
+    yield
+
 
 app = FastAPI(
     title="Bishop",
     version=__version__,
     description="An autonomous SOC analyst. Investigates and proposes; never contains alone.",
+    # The interactive docs render the schema, which is fine, but they are an
+    # unauthenticated surface in production and there is nothing in them a
+    # deployed user needs.
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None,
+    lifespan=lifespan,
 )
 
-# The console is served from a different origin in development and from Netlify
-# in production. Nothing here is authenticated, which is fine for a read-mostly
-# demo over synthetic data and is stated as a limitation in the README and in
-# docs/ARCHITECTURE.md rather than hidden.
+# Ordering matters and reads backwards: the last middleware added is the
+# outermost. So a request passes headers -> context (request id, body cap) ->
+# auth -> rate limit, which means an unauthenticated request is rejected before
+# it can consume a rate-limit slot belonging to a real key, and every rejection
+# still carries a request id.
+app.add_middleware(RateLimiter, settings=settings)
+app.add_middleware(AuthMiddleware, settings=settings)
+app.add_middleware(RequestContextMiddleware, settings=settings)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# `allow_credentials` stays False: Bishop authenticates with a header, never a
+# cookie, so the browser never needs to send credentials cross-origin — and
+# with it False, a wildcard origin cannot be combined with credentials at all.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=list(settings.origins),
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-RateLimit-Remaining"],
 )
 
 runs = RunManager()
+
+
+@app.exception_handler(Exception)
+async def unhandled(request: Request, exc: Exception) -> JSONResponse:
+    """Never return a stack trace.
+
+    A traceback names file paths, package versions and sometimes the data that
+    caused the failure. The request id is the thing a user should quote, and it
+    is already in the logs beside the full exception.
+    """
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "an internal error occurred",
+            "request_id": request_id,
+        },
+        headers={"X-Request-ID": request_id} if request_id else None,
+    )
 
 
 class StartRun(BaseModel):
@@ -81,6 +157,30 @@ class Decision(BaseModel):
     note: str = ""
 
 
+@app.get("/health/live")
+def liveness() -> dict[str, str]:
+    """Is the process up. Nothing else.
+
+    Separate from readiness on purpose: a liveness probe that also checks the
+    database will restart a healthy container every time the database blips,
+    which turns a recoverable outage into a crash loop.
+    """
+    return {"status": "alive"}
+
+
+@app.get("/health/ready")
+def readiness() -> JSONResponse:
+    """Can this instance serve traffic — i.e. can it reach its store."""
+    from bishop.store import health as store_health
+
+    store = store_health()
+    ready = bool(store.get("connected"))
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={"status": "ready" if ready else "not ready", "store": store},
+    )
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     from bishop.store import health as store_health
@@ -93,6 +193,7 @@ def health() -> dict[str, Any]:
         "model": provider.model_id,
         "offline": is_offline(provider),
         "store": store_health(),
+        "deployment": settings.redacted(),
         # What it would take to run live, reported rather than implied. A
         # console that says "mock model" without saying what is missing leaves
         # the reader to guess between "no key", "no dependency" and "by design".

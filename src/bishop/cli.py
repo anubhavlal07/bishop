@@ -702,6 +702,66 @@ def _print_mapping(report, origin: str) -> None:
     print()
 
 
+def cmd_keygen(args: argparse.Namespace) -> int:
+    """Emit an API key. Printed once, never stored.
+
+    Bishop will not generate a key at startup and log it, because a secret that
+    appears in a deploy log is not a secret. So it is generated here, by a
+    person, and pasted into the deployment's own secret store.
+    """
+    from bishop.config import generate_key
+
+    keys = [generate_key() for _ in range(max(1, args.count))]
+    if args.quiet:
+        for key in keys:
+            print(key)
+        return 0
+
+    print()
+    print(f"  {bold('API KEY' if len(keys) == 1 else 'API KEYS')}")
+    print()
+    for key in keys:
+        print(f"    {key}")
+    print()
+    print(f"  {dim('Set them on the API, comma-separated:')}")
+    print(f"    BISHOP_API_KEYS={','.join(keys)}")
+    print()
+    print(dim("  This is the only time they are shown. Bishop stores a comparison"))
+    print(dim("  against them, never a copy you can read back."))
+    print()
+    return 0
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    """Show the resolved deployment configuration, and whether it would serve."""
+    from bishop.config import ConfigError, DeploymentSettings
+
+    try:
+        settings = DeploymentSettings()
+    except ConfigError as exc:
+        print()
+        print(f"  {red('THIS CONFIGURATION WILL NOT START')}")
+        print()
+        for line in str(exc).splitlines():
+            print(f"  {line}")
+        print()
+        return 1
+
+    print()
+    print(f"  {bold('DEPLOYMENT CONFIGURATION')}")
+    print()
+    for key, value in settings.redacted().items():
+        rendered = ", ".join(str(v) for v in value) if isinstance(value, list) else value
+        print(f"    {key:24} {rendered}")
+    print()
+    if not settings.is_production:
+        print(dim("  Development defaults. Set BISHOP_ENVIRONMENT=production to have"))
+        print(dim("  Bishop enforce authentication, a named CORS origin, a rate limit"))
+        print(dim("  and a real database — refusing to start rather than warning."))
+        print()
+    return 0
+
+
 def cmd_formats(args: argparse.Namespace) -> int:
     from bishop.ingest import supported_formats
 
@@ -835,6 +895,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     fm = sub.add_parser("formats", help="the alert shapes Bishop accepts")
     fm.set_defaults(func=cmd_formats)
+
+    kg = sub.add_parser("keygen", help="generate an API key for a deployment")
+    kg.add_argument("-n", "--count", type=int, default=1, help="how many to generate")
+    kg.add_argument("--quiet", action="store_true", help="print the keys and nothing else")
+    kg.set_defaults(func=cmd_keygen)
+
+    cfg = sub.add_parser("config", help="show the resolved deployment configuration")
+    cfg.set_defaults(func=cmd_config)
 
     cov = sub.add_parser("coverage", help="regenerate the coverage matrix")
     cov.add_argument("--output", default="docs/COVERAGE.md")
