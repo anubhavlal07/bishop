@@ -79,6 +79,11 @@ attack:
 datasets:
     bash scripts/fetch_datasets.sh
 
+# Populate the indicator cache from abuse.ch. Needs a free ABUSECH_AUTH_KEY.
+# Without it Bishop uses the committed synthetic cache, which says it is synthetic.
+intel:
+    uv run python scripts/fetch_intel.py
+
 # ── serving ─────────────────────────────────────────────────────────────────
 
 api:

@@ -1,8 +1,8 @@
 """Threat-intelligence detectors — reputation lookups against a cached corpus.
 
 Bishop never calls a feed during a run. Intelligence is fetched ahead of time by
-`scripts/fetch_intel.py` into `fixtures/intel/ioc_cache.json`, and the detector
-reads that file. Three reasons, in order:
+`scripts/fetch_intel.py` and the detector reads the resulting file. Three
+reasons, in order:
 
 1. A detector that makes a network call is not reproducible, so the eval
    scorecard stops meaning anything.
@@ -10,10 +10,11 @@ reads that file. Three reasons, in order:
    attacker their payload was received.
 3. `just demo` has to run on a machine with no credentials.
 
-The committed cache is small and synthetic, and says so in its own metadata.
-Real indicators come from abuse.ch, whose terms permit use but not
-redistribution — so the fetch script downloads them and `.gitignore` keeps them
-out of the repo.
+Two caches, and which one is loaded matters to how a hit should be read. A
+fetched cache under `data/` wins when present; otherwise the committed one
+under `fixtures/` is used, which is synthetic and says so in its own metadata
+and in every rationale the detector produces from it. abuse.ch's terms permit
+use but not redistribution, which is why the real one is gitignored.
 """
 
 from __future__ import annotations
@@ -28,8 +29,19 @@ from bishop.detectors.base import clear, miss, register
 from bishop.schema.alert import Alert
 from bishop.schema.evidence import DetectorResult
 
-#: Repo-relative, resolved from this file so it works from any working directory.
-DEFAULT_CACHE_PATH = Path(__file__).resolve().parents[3] / "fixtures" / "intel" / "ioc_cache.json"
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+#: A real cache fetched by `just intel`. Gitignored, so it is absent on a fresh
+#: clone and present after someone runs the fetch script.
+FETCHED_CACHE_PATH = _REPO_ROOT / "data" / "intel" / "ioc_cache.json"
+
+#: The committed synthetic cache. Always present, and honest about being made up.
+SYNTHETIC_CACHE_PATH = _REPO_ROOT / "fixtures" / "intel" / "ioc_cache.json"
+
+
+def default_cache_path() -> Path:
+    """Prefer a fetched cache over the synthetic one, when it exists."""
+    return FETCHED_CACHE_PATH if FETCHED_CACHE_PATH.exists() else SYNTHETIC_CACHE_PATH
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,7 +80,7 @@ def load_cache(path: Path | None = None) -> IntelCache:
     Missing file is not an error: Bishop runs without intelligence and the
     detector says so, rather than failing the investigation.
     """
-    resolved = path or DEFAULT_CACHE_PATH
+    resolved = path or default_cache_path()
     if not resolved.exists():
         return IntelCache(snapshot_taken="", synthetic=True)
     payload = json.loads(resolved.read_text(encoding="utf-8"))
