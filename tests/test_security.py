@@ -305,3 +305,23 @@ class TestPublicDemoMode:
         assert reported["public_demo"] is True
         assert reported["persists_submitted_alerts"] is False
         assert reported["auth_required"] is False
+
+    def test_demo_mode_does_not_require_postgres(self):
+        """Reasoned, not convenient: in demo mode there is no chain to lose.
+
+        Submitted alerts are never written, and corpus runs are reproducible
+        from a committed synthetic set.
+        """
+        settings = DeploymentSettings(**self.base(database_url=""))
+        assert settings.is_production
+        assert not settings.durable_store_required
+
+    def test_a_keyed_production_still_requires_postgres(self):
+        with pytest.raises(ConfigError, match="DATABASE_URL"):
+            DeploymentSettings(
+                environment="production",
+                api_keys=KEY,
+                cors_origins="https://console.example",
+                rate_limit_per_minute=60,
+                database_url="",
+            )

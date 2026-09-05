@@ -151,16 +151,17 @@ class DeploymentSettings(BaseSettings):
             )
 
         url = self.database_url or os.environ.get("DATABASE_URL", "")
-        if not url:
-            problems.append(
-                "No DATABASE_URL. Production defaults to SQLite under storage/, which "
-                "does not survive a container restart on most platforms — and an audit "
-                "chain that does not survive is not an audit chain."
-            )
-        elif url.startswith("sqlite"):
-            problems.append(
-                "DATABASE_URL is SQLite. Use Postgres in production, for the same reason."
-            )
+        if not self.public_demo:
+            if not url:
+                problems.append(
+                    "No DATABASE_URL. Production defaults to SQLite under storage/, which "
+                    "does not survive a container restart on most platforms — and an audit "
+                    "chain that does not survive is not an audit chain."
+                )
+            elif url.startswith("sqlite"):
+                problems.append(
+                    "DATABASE_URL is SQLite. Use Postgres in production, for the same reason."
+                )
 
         if self.public_demo:
             if self.rate_limit_per_minute > 60:
@@ -183,6 +184,23 @@ class DeploymentSettings(BaseSettings):
                 + "\n\nSet BISHOP_ENVIRONMENT=development to run with laptop defaults."
             )
         return self
+
+    @property
+    def durable_store_required(self) -> bool:
+        """Whether production must be pointed at Postgres.
+
+        True everywhere except a public demo, and the exception is reasoned
+        rather than convenient. The requirement exists because an audit chain
+        that does not survive a restart is not an audit chain. In demo mode
+        there is no such chain to lose: alerts a visitor supplies are never
+        written at all, and the only things stored are runs over the synthetic
+        corpus committed to this repository, which can be reproduced by running
+        them again.
+
+        A DATABASE_URL is still used when one is set. This only stops Bishop
+        refusing to start without one.
+        """
+        return not self.public_demo
 
     @property
     def persist_submitted_alerts(self) -> bool:
