@@ -179,7 +179,7 @@ them carry injection payloads.
 | Escalation precision / recall | 100% / 100% |
 | Injection attempts caught | 2 / 2 |
 | …and escalated as an IOC | 2 / 2 |
-| ATT&CK technique recall | 76% |
+| ATT&CK technique recall | 81% |
 | Invalid technique IDs emitted | 0 |
 | Median time to triage | 0.01 s |
 | Cost per alert | $0.000000 |
@@ -202,7 +202,7 @@ Cost is $0.00 because the mock model makes no request. That is a real measuremen
 cost nothing, not an estimate of what a live run would cost. Latency likewise measures Bishop's
 own code, not a model round trip.
 
-Technique recall is 76%, not 100%. Some techniques a labelled alert should surface have no
+Technique recall is 81%, not 100%. Some techniques a labelled alert should surface have no
 detector behind them. [`docs/COVERAGE.md`](docs/COVERAGE.md) shows exactly which.
 
 The scorecard ships these caveats itself, in `notes[]` — they print with `just eval` and render

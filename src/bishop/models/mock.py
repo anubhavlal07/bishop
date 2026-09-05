@@ -527,7 +527,7 @@ class MockModel:
             return base
         parts = [
             f"{len(fired)} deterministic detector{'s' if len(fired) != 1 else ''} fired, "
-            f"combining to {combined:.2f} confidence."
+            f"combining to {combined:.2f} suspicion."
         ]
         if fired:
             parts.append(

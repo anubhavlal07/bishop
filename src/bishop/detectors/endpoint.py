@@ -350,7 +350,10 @@ def credential_dumping(alert: Alert) -> DetectorResult:
     combined = min(0.95, float(strongest["weight"]) + 0.05 * (len(findings) - 1))  # type: ignore[arg-type]
 
     hints = ["T1003"]
-    joined = " ".join(str(f["match"]) for f in findings)
+    # The `note` matters as well as the `match`: a raw LSASS handle's match is
+    # an access mask, and searching only matches would map it to T1003 without
+    # the sub-technique that says which credential store was read.
+    joined = " ".join(f"{f['match']} {f['note']}" for f in findings).lower()
     if "lsass" in joined or "comsvcs" in joined or "minidump" in joined:
         hints.append("T1003.001")
     if "sam" in joined:
