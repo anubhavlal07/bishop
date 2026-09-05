@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="712" height="619" viewBox="0 0 712 619" role="img" aria-label="the human gate — nothing runs without a decision">
+<rect width="712" height="619" rx="10" fill="#0b0d10" stroke="#262b33"/>
+<path d="M0 10a10 10 0 0 1 10-10h692a10 10 0 0 1 10 10v24H0z" fill="#15181d"/>
+<line x1="0" y1="34" x2="712" y2="34" stroke="#262b33"/>
+<circle cx="20" cy="17" r="5.5" fill="#f2555a"/>
+<circle cx="37" cy="17" r="5.5" fill="#e3b341"/>
+<circle cx="54" cy="17" r="5.5" fill="#3fb950"/>
+<text x="356.0" y="21" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5" fill="#7d8590" text-anchor="middle">the human gate — nothing runs without a decision</text>
+<g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12.5">
+<text x="22.0" y="58" fill="#3fb950" xml:space="preserve">$ uv run bishop run TP-01-credential-dumping</text>
+<text x="22.0" y="115" fill="#7d8590" opacity="0.62" xml:space="preserve">── HUMAN APPROVAL REQUIRED ───────────────────────────────────────────────────</text>
+<text x="22.0" y="153" fill="#c9d1d9" xml:space="preserve">  Contain the account and the host together. Credential theft that is</text>
+<text x="22.0" y="172" fill="#c9d1d9" xml:space="preserve">  answered by isolating the host alone leaves the adversary holding a</text>
+<text x="22.0" y="191" fill="#c9d1d9" xml:space="preserve">  working token, and answering it by resetting the password alone leaves</text>
+<text x="22.0" y="210" fill="#c9d1d9" xml:space="preserve">  them on the endpoint.</text>
+<text x="22.0" y="248" fill="#c9d1d9" xml:space="preserve">  collect_forensics → WKSTN-042</text>
+<text x="22.0" y="267" fill="#7d8590" opacity="0.62" xml:space="preserve">      Read-only collection from &quot;WKSTN-042&quot;. The host stays up and the user is</text>
+<text x="22.0" y="286" fill="#7d8590" opacity="0.62" xml:space="preserve">      not interrupted.</text>
+<text x="22.0" y="324" fill="#f2555a" xml:space="preserve">  isolate_host → WKSTN-042 IRREVERSIBLE</text>
+<text x="22.0" y="343" fill="#7d8590" opacity="0.62" xml:space="preserve">      &quot;WKSTN-042&quot; is a workstation. Its user loses network access and will</text>
+<text x="22.0" y="362" fill="#7d8590" opacity="0.62" xml:space="preserve">      notice immediately; nothing else is affected.</text>
+<text x="22.0" y="400" fill="#c9d1d9" xml:space="preserve">  revoke_sessions → j.okafor</text>
+<text x="22.0" y="419" fill="#7d8590" opacity="0.62" xml:space="preserve">      &quot;j.okafor&quot; is signed out everywhere and must authenticate again. Low</text>
+<text x="22.0" y="438" fill="#7d8590" opacity="0.62" xml:space="preserve">      impact.</text>
+<text x="22.0" y="476" fill="#f2555a" xml:space="preserve">  force_password_reset → j.okafor IRREVERSIBLE</text>
+<text x="22.0" y="495" fill="#7d8590" opacity="0.62" xml:space="preserve">      &quot;j.okafor&quot; loses access. They will be locked out until a helpdesk reset.</text>
+<text x="22.0" y="533" fill="#c9d1d9" xml:space="preserve">  open_ticket → INC-TP-01-credential-dumping</text>
+<text x="22.0" y="552" fill="#7d8590" opacity="0.62" xml:space="preserve">      No direct operational impact.</text>
+<text x="22.0" y="590" fill="#c9d1d9" xml:space="preserve">  [a]pprove all · [r]eject all · [s]ubset (reversible only) · anything else rejects</text>
+</g></svg>

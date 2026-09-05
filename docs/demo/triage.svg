@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="881" height="448" viewBox="0 0 881 448" role="img" aria-label="just triage my-alert.json — what Bishop read first">
+<rect width="881" height="448" rx="10" fill="#0b0d10" stroke="#262b33"/>
+<path d="M0 10a10 10 0 0 1 10-10h861a10 10 0 0 1 10 10v24H0z" fill="#15181d"/>
+<line x1="0" y1="34" x2="881" y2="34" stroke="#262b33"/>
+<circle cx="20" cy="17" r="5.5" fill="#f2555a"/>
+<circle cx="37" cy="17" r="5.5" fill="#e3b341"/>
+<circle cx="54" cy="17" r="5.5" fill="#3fb950"/>
+<text x="440.5" y="21" font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="11.5" fill="#7d8590" text-anchor="middle">just triage my-alert.json — what Bishop read first</text>
+<g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace" font-size="12.5">
+<text x="22.0" y="58" fill="#3fb950" xml:space="preserve">$ uv run bishop triage C:/Users/Work/AppData/Local/Temp/claude/D--Code-Personal-GIT-Bishop/ce1607b9-17c9-48fa-a175-0848d4e088f5/scratchpad/my-alert.json</text>
+<text x="22.0" y="115" fill="#39c5cf" xml:space="preserve">  WHAT BISHOP READ  C:\Users\Work\AppData\Local\Temp\claude\D--Code-Personal-GIT-Bishop\ce1607b9-17c9-48fa-a175-0848d4e088f5\scratchpad\my-alert.json</text>
+<text x="22.0" y="134" fill="#c9d1d9" xml:space="preserve">    format detected             sysmon</text>
+<text x="22.0" y="153" fill="#c9d1d9" xml:space="preserve">    fields understood           9</text>
+<text x="22.0" y="172" fill="#c9d1d9" xml:space="preserve">    fields ignored              3</text>
+<text x="22.0" y="191" fill="#7d8590" opacity="0.62" xml:space="preserve">      EventID, Hashes, IntegrityLevel</text>
+<text x="22.0" y="210" fill="#7d8590" opacity="0.62" xml:space="preserve">      (kept in raw and injection-scanned, but not interpreted)</text>
+<text x="22.0" y="248" fill="#e3b341" xml:space="preserve">    defaulted</text>
+<text x="22.0" y="267" fill="#7d8590" opacity="0.62" xml:space="preserve">      alert_id = user-44c27caf39e1</text>
+<text x="22.0" y="286" fill="#c9d1d9" xml:space="preserve">        the payload carried no recognisable id</text>
+<text x="22.0" y="305" fill="#7d8590" opacity="0.62" xml:space="preserve">      source = sysmon</text>
+<text x="22.0" y="324" fill="#c9d1d9" xml:space="preserve">        inferred from the payload shape (sysmon)</text>
+<text x="22.0" y="343" fill="#7d8590" opacity="0.62" xml:space="preserve">      severity = medium</text>
+<text x="22.0" y="362" fill="#c9d1d9" xml:space="preserve">        no recognisable severity. Bishop assesses its own anyway.</text>
+<text x="22.0" y="400" fill="#3fb950" xml:space="preserve">    10 detectors can examine this</text>
+<text x="22.0" y="419" fill="#7d8590" opacity="0.62" xml:space="preserve">      abused_hosting_contact, account_manipulation, credential_dumping, data_staging, encoded_command, lolbin_abuse, masquerading, persistence, suspicious_execution_path, suspicious_parent_child</text>
+</g></svg>
