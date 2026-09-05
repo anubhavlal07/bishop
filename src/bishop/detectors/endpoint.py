@@ -995,3 +995,126 @@ def abused_hosting_contact(alert: Alert) -> DetectorResult:
         ),
         technique_hints=hints,
     )
+
+
+#: Commands that destroy the ability to roll a machine back, grouped by the
+#: mechanism they attack. An operator doing maintenance touches one of these;
+#: ransomware preparation sweeps several in a row.
+_RECOVERY_DESTRUCTION = (
+    ("shadow copies", re.compile(r"vssadmin(?:\.exe)?\s+delete\s+shadows", re.I)),
+    ("shadow copies", re.compile(r"wmic\s+shadowcopy\s+delete", re.I)),
+    ("shadow copies", re.compile(r"Get-WmiObject\s+Win32_Shadowcopy.{0,40}\bDelete\b", re.I)),
+    (
+        "backup catalogue",
+        re.compile(r"wbadmin(?:\.exe)?\s+delete\s+(?:catalog|systemstatebackup)", re.I),
+    ),
+    ("boot recovery", re.compile(r"bcdedit(?:\.exe)?.{0,60}recoveryenabled\s+no", re.I)),
+    (
+        "boot recovery",
+        re.compile(r"bcdedit(?:\.exe)?.{0,60}bootstatuspolicy\s+ignoreallfailures", re.I),
+    ),
+    ("event log", re.compile(r"wevtutil(?:\.exe)?\s+cl\s+\S", re.I)),
+    ("restore points", re.compile(r"Disable-ComputerRestore", re.I)),
+)
+
+_UNATTENDED = re.compile(r"/quiet|-quiet|/q\b", re.I)
+
+
+@register(
+    surface="endpoint",
+    summary=(
+        "Commands that destroy a machine's ability to recover - shadow copies, "
+        "the backup catalogue, boot recovery. Scored on how many independent "
+        "recovery mechanisms are attacked, not on any single command."
+    ),
+    techniques=["T1490", "T1070.001"],
+    references=[
+        "https://attack.mitre.org/techniques/T1490/",
+        "https://attack.mitre.org/techniques/T1070/001/",
+    ],
+)
+def recovery_destruction(alert: Alert) -> DetectorResult:
+    """Deleting the ways back to a working machine.
+
+    Written because the held-out set caught Bishop closing a shadow-copy
+    deletion as a false positive: no detector had jurisdiction, the evidence
+    table came back empty, and ransomware preparation read as nothing to see.
+
+    **Why the count matters more than the command.** `vssadmin delete shadows`
+    has a narrow legitimate use - an administrator reclaiming disk on a server
+    genuinely runs it. What has no benign reading is doing that *and* deleting
+    the backup catalogue *and* disabling boot recovery in one command line:
+    those are three different recovery mechanisms, and an operator freeing
+    space attacks one. So a single mechanism scores as suspicion and several
+    score as intent.
+
+    **`/quiet` is weighted for what it is for.** It exists to suppress the
+    confirmation prompt. An administrator at a console does not need it;
+    something running with nobody present does.
+    """
+    findings: list[dict[str, object]] = []
+    carriers = [(where, _cmd_of(process)) for where, process in _all_processes(alert)]
+    carriers += [
+        (f"scheduled_tasks[{index}].action", str(task.action or ""))
+        for index, task in enumerate(alert.scheduled_tasks)
+    ]
+
+    for where, command in carriers:
+        if not command:
+            continue
+        for mechanism, pattern in _RECOVERY_DESTRUCTION:
+            if match := pattern.search(command):
+                findings.append(
+                    {
+                        "where": where,
+                        "mechanism": mechanism,
+                        "match": match.group(0)[:120],
+                        "unattended": bool(_UNATTENDED.search(command)),
+                    }
+                )
+
+    if not findings:
+        if not any(command for _, command in carriers):
+            return miss(
+                "recovery_destruction",
+                "the alert carries no command lines or task actions to examine",
+            )
+        return clear(
+            "recovery_destruction",
+            "no commands that delete shadow copies, backups or boot recovery",
+            carriers_examined=len(carriers),
+        )
+
+    mechanisms = sorted({str(f["mechanism"]) for f in findings})
+    unattended = any(f["unattended"] for f in findings)
+
+    # One mechanism is suspicious and has a maintenance reading. Two or more is
+    # a deliberate sweep of every way back, which maintenance never is.
+    score = 0.55 if len(mechanisms) == 1 else 0.9
+    if unattended:
+        score = min(0.95, score + 0.05)
+
+    hints = ["T1490"]
+    if any(f["mechanism"] == "event log" for f in findings):
+        hints.append("T1070.001")
+
+    listed = ", ".join(mechanisms)
+    plural = "s" if len(mechanisms) > 1 else ""
+    reading = (
+        ". Attacking several at once has no maintenance reading - freeing disk space touches one."
+        if len(mechanisms) > 1
+        else ". A single mechanism has a narrow administrative use, so this is suspicion "
+        "rather than a conclusion."
+    )
+    return DetectorResult(
+        detector="recovery_destruction",
+        fired=True,
+        score=round(score, 3),
+        facts={"findings": findings, "mechanisms": mechanisms, "unattended": unattended},
+        rationale=(
+            f"{len(mechanisms)} recovery mechanism{plural} destroyed ({listed})"
+            + (", with the confirmation prompt suppressed" if unattended else "")
+            + reading
+        ),
+        technique_hints=hints,
+    )

@@ -63,7 +63,7 @@ for twenty seconds and then everything at once.
   `ingest → triage_supervisor →` `Send` fan-out to `identity / endpoint / network / threatintel
   / context` investigators `→ synthesis → adversarial_critic → response_planner → response_gate
   (HITL) → response_execute → report`. The supervisor dispatches only surfaces that have data.
-- **19 deterministic detectors** — impossible travel, MFA fatigue, password spray, credential
+- **20 deterministic detectors** — impossible travel, MFA fatigue, password spray, credential
   dumping, LOLBin abuse, encoded commands, masquerading, persistence, beaconing, DNS
   tunnelling, outbound volume, data staging, IOC reputation, and two *mitigating* detectors
   that can argue **against** malice. No model, no network, no clock read, no randomness —
@@ -269,7 +269,7 @@ Two numbers, and the second is the honest one.
 
 | | Development set | Held-out set |
 |---|---|---|
-| Alerts | 30 | 15 |
+| Alerts | 31 | 15 |
 | False-negative rate on true positives | **0%** | **50%** |
 | Verdict accuracy | 100% | **33%** |
 | False-positive rate | 0% | 20% |
@@ -430,7 +430,7 @@ tool for the job.
 - **No per-user accounts or roles.** Every valid API key has identical authority, including
   approving containment. The chain records `decided_by` as whatever the client sent — it
   *attributes* a decision without *authenticating* who made it.
-- **Bishop covers 31 ATT&CK techniques of 823.** Outside those it escalates rather than
+- **Bishop covers 33 ATT&CK techniques of 823.** Outside those it escalates rather than
   guessing. That is correct behaviour and still means a human does the work.
 - **It triages what the SIEM gives it.** It inherits every gap in the detection layer above it
   and adds no coverage of its own.

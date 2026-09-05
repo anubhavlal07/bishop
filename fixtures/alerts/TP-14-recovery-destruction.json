@@ -1,0 +1,37 @@
+{
+  "alert_id": "TP-14-recovery-destruction",
+  "source": "edr",
+  "rule_name": "Volume shadow copies and backup catalogue deleted",
+  "detected_at": "2026-03-14T02:40:00+00:00",
+  "severity": "critical",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-FILE-09",
+    "ip": "10.20.10.9",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "s.varga",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "explorer.exe",
+    "path": "C:\\Windows\\explorer.exe"
+  },
+  "process": {
+    "name": "cmd.exe",
+    "path": "C:\\Windows\\System32\\cmd.exe",
+    "command_line": "cmd.exe /c vssadmin delete shadows /all /quiet & wbadmin delete catalog -quiet & bcdedit /set {default} recoveryenabled No & wevtutil cl Security"
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1490",
+      "T1070.001"
+    ],
+    "should_escalate": false,
+    "why": "Three separate recovery mechanisms destroyed in one command line, with the confirmation prompt suppressed, then the Security log cleared. Freeing disk space touches one of these; a sweep of all of them is ransomware clearing the way before it encrypts.",
+    "synthetic": true
+  }
+}

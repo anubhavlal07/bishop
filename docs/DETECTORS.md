@@ -327,7 +327,7 @@ log text constantly; "ignore the above instructions" does not.
 ## Thresholds, and where they came from
 
 Honestly: from reading the technique documentation and from tuning against the
-30-alert development corpus. They are not derived from a labelled production
+31-alert development corpus. They are not derived from a labelled production
 dataset, because there isn't one here.
 
 The ones with an actual physical justification are worth separating out:

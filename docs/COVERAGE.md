@@ -4,7 +4,7 @@
 
 Technique coverage against **MITRE ATT&CK v17.1**.
 
-31 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
+33 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
 
 `covered` means a deterministic detector maps to the technique *and* a labelled
 fixture exercises it. `untested` means the detector exists but no fixture in the
@@ -46,6 +46,7 @@ point of the table.
 | [T1036.002](https://attack.mitre.org/techniques/T1036/002) Right-to-Left Override | `masquerading` | `TP-11-masquerading` | covered |
 | [T1036.005](https://attack.mitre.org/techniques/T1036/005) Match Legitimate Resource Name or Location | `masquerading` | `TP-11-masquerading` | covered |
 | [T1036.007](https://attack.mitre.org/techniques/T1036/007) Double File Extension | `masquerading` | `TP-11-masquerading` | covered |
+| [T1070.001](https://attack.mitre.org/techniques/T1070/001) Clear Windows Event Logs | `recovery_destruction` | `TP-14-recovery-destruction` | covered |
 | [T1078](https://attack.mitre.org/techniques/T1078) Valid Accounts | `impossible_travel` | `TP-07-mfa-fatigue`, `TP-08-impossible-travel`, `TP-09-password-spray` | covered |
 | [T1140](https://attack.mitre.org/techniques/T1140) Deobfuscate/Decode Files or Information | `encoded_command` | `TP-12-run-key-persistence` | covered |
 | [T1218](https://attack.mitre.org/techniques/T1218) System Binary Proxy Execution | `lolbin_abuse` | `BTP-03-authorised-lolbin` | covered |
@@ -68,6 +69,12 @@ point of the table.
 | [T1041](https://attack.mitre.org/techniques/T1041) Exfiltration Over C2 Channel | `outbound_volume` | `TP-13-c2-exfil-volume` | covered |
 | [T1048.003](https://attack.mitre.org/techniques/T1048/003) Exfiltration Over Unencrypted Non-C2 Protocol | `dns_exfiltration` | `TP-03-dns-exfiltration` | covered |
 | [T1567](https://attack.mitre.org/techniques/T1567) Exfiltration Over Web Service | `abused_hosting_contact` | `TP-06-data-staging-exfil` | covered |
+
+## Impact
+
+| Technique | Detectors | Fixtures | Status |
+|---|---|---|---|
+| [T1490](https://attack.mitre.org/techniques/T1490) Inhibit System Recovery | `recovery_destruction` | `TP-14-recovery-destruction` | covered |
 
 ## Initial Access
 

@@ -994,6 +994,42 @@ def build() -> list[dict[str, Any]]:
 
     alerts.append(
         alert(
+            "TP-14-recovery-destruction",
+            rule_name="Volume shadow copies and backup catalogue deleted",
+            source="edr",
+            severity="critical",
+            category="endpoint",
+            label="true_positive",
+            techniques=["T1490", "T1070.001"],
+            why=(
+                "Three separate recovery mechanisms destroyed in one command line, with "
+                "the confirmation prompt suppressed, then the Security log cleared. "
+                "Freeing disk space touches one of these; a sweep of all of them is "
+                "ransomware clearing the way before it encrypts."
+            ),
+            detected_at=at(hours=2, minutes=40),
+            device={
+                "hostname": "SRV-FILE-09",
+                "ip": "10.20.10.9",
+                "is_server": True,
+                "criticality": "high",
+            },
+            principal={"username": "s.varga", "domain": "CORP"},
+            parent_process={"name": "explorer.exe", "path": r"C:\Windows\explorer.exe"},
+            process={
+                "name": "cmd.exe",
+                "path": r"C:\Windows\System32\cmd.exe",
+                "command_line": (
+                    "cmd.exe /c vssadmin delete shadows /all /quiet & wbadmin delete "
+                    "catalog -quiet & bcdedit /set {default} recoveryenabled No & "
+                    "wevtutil cl Security"
+                ),
+            },
+        )
+    )
+
+    alerts.append(
+        alert(
             "CHAIN-01-initial-access",
             rule_name="Office application spawned a script interpreter",
             source="sysmon",
