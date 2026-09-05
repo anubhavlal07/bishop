@@ -124,6 +124,35 @@ reports no count leaves nothing to measure, and that is a `miss()`, not a
 
 ---
 
+### `token_replay` — T1550.001, T1528
+
+A cloud session credential presented by something that is not the user's
+browser. Written after the held-out set caught Bishop closing a refresh-token
+replay as a false positive at 0.95 confidence.
+
+**Impossible travel deliberately misses this.** Both logins were from Dublin,
+ten minutes apart, so distance and speed have nothing to say. Geography is not
+the signal when a token is replayed from the victim's own city, or from a
+hosting provider that geolocates to it.
+
+**The signal is the client.** A browser session does not become
+`python-requests/2.31.0`. When one account succeeds twice inside a session's
+lifetime and the second success comes from a scripted client where the first
+came from a browser, the credential is being presented by something other than
+the thing that obtained it. A changed source IP means it is not the same browser
+on a new tab; a dropped MFA factor means no fresh authentication happened, which
+is what makes this reuse rather than a second login.
+
+**What defeats it, stated plainly.** A user agent is attacker-controlled, and
+tooling that sends a browser string evades this completely. That bounds what it
+catches and cannot be fixed by reading the same field harder — only by an ASN
+or token-binding field the alert schema does not carry. The inverse abuse is not
+available: manufacturing a finding would mean controlling the victim's own
+browser string. It caps at 0.85 for the same reason — one lexical read of one
+attacker-influenced field should not carry a verdict alone.
+
+---
+
 ## endpoint
 
 The recurring shape here is *context beats identity*. `rundll32.exe` is not
@@ -368,7 +397,7 @@ log text constantly; "ignore the above instructions" does not.
 ## Thresholds, and where they came from
 
 Honestly: from reading the technique documentation and from tuning against the
-32-alert development corpus. They are not derived from a labelled production
+33-alert development corpus. They are not derived from a labelled production
 dataset, because there isn't one here.
 
 The ones with an actual physical justification are worth separating out:

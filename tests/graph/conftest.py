@@ -70,21 +70,30 @@ def quiet_alert() -> Alert:
 def uncovered_alert() -> Alert:
     """An alert about something Bishop has no detector for at all.
 
-    A cloud token replay: no process tree, no connections, no auth events,
-    nothing any detector reads. Every detector returns `miss`, so `examined` is
-    empty — which is the state the third grounding rule exists for, and the
-    state the held-out set found Bishop closing as benign.
+    An operational-technology alert: no process tree, no connections, no auth
+    events, nothing any detector reads. Every detector returns `miss`, so
+    `examined` is empty — which is the state the third grounding rule exists
+    for, and the state the held-out set found Bishop closing as benign.
 
-    This was a Kerberoasting alert until `kerberoasting` was written, at which
-    point a detector had jurisdiction and the fixture stopped demonstrating
-    anything. That is the test working: it asserts an alert nothing can examine
-    is escalated, so it has to keep naming something nothing can examine.
+    This has been repointed twice, at Kerberoasting and then at cloud token
+    replay, because each time a detector was written the fixture stopped
+    demonstrating anything. That is the test working: it asserts an alert
+    nothing can examine gets escalated, so it has to keep naming something
+    nothing can examine. Bishop is an enterprise-IT analyst and a controller
+    download is squarely outside its surfaces, which makes it a durable choice
+    — and exactly the kind of alert that must reach a human rather than be
+    closed.
     """
     return make_alert(
         alert_id="A-UNCOVERED",
-        source="cloud-audit",
-        rule_name="Access token used from a new autonomous system",
-        raw={"token_type": "refresh", "asn": "AS14061", "prior_asn": "AS3215"},
+        source="ot-monitor",
+        rule_name="PLC ladder logic downloaded outside a maintenance window",
+        raw={
+            "controller": "PLC-LINE-4",
+            "protocol": "s7comm",
+            "function": "program_download",
+            "maintenance_window": False,
+        },
     )
 
 

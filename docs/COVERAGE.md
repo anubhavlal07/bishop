@@ -4,7 +4,7 @@
 
 Technique coverage against **MITRE ATT&CK v17.1**.
 
-34 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
+36 techniques covered by a detector and exercised by a fixture, 0 with a detector but no fixture, against ATT&CK v17.1.
 
 `covered` means a deterministic detector maps to the technique *and* a labelled
 fixture exercises it. `untested` means the detector exists but no fixture in the
@@ -36,6 +36,7 @@ point of the table.
 | [T1003.002](https://attack.mitre.org/techniques/T1003/002) Security Account Manager | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
 | [T1003.003](https://attack.mitre.org/techniques/T1003/003) NTDS | `credential_dumping` | `TP-10-hive-and-ntds` | covered |
 | [T1110.003](https://attack.mitre.org/techniques/T1110/003) Password Spraying | `password_spray` | `TP-09-password-spray` | covered |
+| [T1528](https://attack.mitre.org/techniques/T1528) Steal Application Access Token | `token_replay` | `TP-16-token-replay` | covered |
 | [T1558.003](https://attack.mitre.org/techniques/T1558/003) Kerberoasting | `kerberoasting` | `TP-15-kerberoasting` | covered |
 | [T1621](https://attack.mitre.org/techniques/T1621) Multi-Factor Authentication Request Generation | `mfa_fatigue` | `TP-07-mfa-fatigue` | covered |
 
@@ -52,6 +53,7 @@ point of the table.
 | [T1140](https://attack.mitre.org/techniques/T1140) Deobfuscate/Decode Files or Information | `encoded_command` | `TP-12-run-key-persistence` | covered |
 | [T1218](https://attack.mitre.org/techniques/T1218) System Binary Proxy Execution | `lolbin_abuse` | `BTP-03-authorised-lolbin` | covered |
 | [T1218.011](https://attack.mitre.org/techniques/T1218/011) Rundll32 | — | `INJ-01-cmdline-verdict-steer`, `TP-01-credential-dumping` | none |
+| [T1550.001](https://attack.mitre.org/techniques/T1550/001) Application Access Token | `token_replay` | `TP-16-token-replay` | covered |
 
 ## Execution
 
@@ -89,6 +91,7 @@ point of the table.
 | Technique | Detectors | Fixtures | Status |
 |---|---|---|---|
 | [T1021.002](https://attack.mitre.org/techniques/T1021/002) SMB/Windows Admin Shares | — | `CHAIN-02-lateral-movement` | none |
+| [T1550.001](https://attack.mitre.org/techniques/T1550/001) Application Access Token | `token_replay` | `TP-16-token-replay` | covered |
 
 ## Persistence
 

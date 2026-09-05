@@ -63,10 +63,10 @@ for twenty seconds and then everything at once.
   `ingest → triage_supervisor →` `Send` fan-out to `identity / endpoint / network / threatintel
   / context` investigators `→ synthesis → adversarial_critic → response_planner → response_gate
   (HITL) → response_execute → report`. The supervisor dispatches only surfaces that have data.
-- **21 deterministic detectors** — impossible travel, MFA fatigue, password spray, credential
-  dumping, Kerberoasting, LOLBin abuse, encoded commands, masquerading, persistence,
-  recovery destruction, beaconing, DNS tunnelling, outbound volume, data staging, IOC
-  reputation, and two *mitigating* detectors that can argue **against** malice. No model, no
+- **22 deterministic detectors** — impossible travel, MFA fatigue, password spray, credential
+  dumping, Kerberoasting, cloud token replay, LOLBin abuse, encoded commands, masquerading,
+  persistence, recovery destruction, beaconing, DNS tunnelling, outbound volume, data staging,
+  IOC reputation, and two *mitigating* detectors that can argue **against** malice. No model, no
   network, no clock read, no randomness — enforced by AST checks and double-run tests.
 - **Indirect prompt-injection defence** — 13 techniques scored across a
   **132-payload red-team corpus**, currently **127 caught with 0 false positives** on 38 benign
@@ -269,7 +269,7 @@ Two numbers, and the second is the honest one.
 
 | | Development set | Held-out set |
 |---|---|---|
-| Alerts | 32 | 15 |
+| Alerts | 33 | 15 |
 | False-negative rate on true positives | **0%** | **50%** |
 | Verdict accuracy | 100% | **33%** |
 | False-positive rate | 0% | 20% |
@@ -291,12 +291,12 @@ training set. The result is committed at `eval/results/holdout-2026-09-05.json`.
 defect (the third grounding arm, now fixed — it moved the score to 40%), a set of coverage gaps
 where Bishop simply had no detector, and two cases where my own label is arguable.
 
-**Three of those cases are now spent, deliberately.** The logic defect and two of the coverage
-gaps — Kerberoasting (T1558.003) and recovery destruction (T1490) — were real holes worth
-closing, so I closed them. Writing a detector against a held-out case converts it into a
-development case, and those three can never be counted again. I left the label disagreements
-alone: adjusting a label until it agrees with the output is exactly how a held-out set stops
-meaning anything.
+**Four of those cases are now spent, deliberately.** The logic defect and three of the coverage
+gaps — Kerberoasting (T1558.003), recovery destruction (T1490) and cloud token replay
+(T1550.001) — were real holes worth closing, so I closed them. Writing a detector against a
+held-out case converts it into a development case, and those four can never be counted again. I
+left the label disagreements alone: adjusting a label until it agrees with the output is exactly
+how a held-out set stops meaning anything.
 
 So **33% stands as the one clean measurement**, taken once, before any of that. A better number
 would need a *new* held-out set, written after these thresholds froze — not a re-run of this
@@ -439,7 +439,7 @@ tool for the job.
 - **No per-user accounts or roles.** Every valid API key has identical authority, including
   approving containment. The chain records `decided_by` as whatever the client sent — it
   *attributes* a decision without *authenticating* who made it.
-- **Bishop covers 34 ATT&CK techniques of 823.** Outside those it escalates rather than
+- **Bishop covers 36 ATT&CK techniques of 823.** Outside those it escalates rather than
   guessing. That is correct behaviour and still means a human does the work.
 - **It triages what the SIEM gives it.** It inherits every gap in the detection layer above it
   and adds no coverage of its own.

@@ -710,3 +710,193 @@ def kerberoasting(alert: Alert) -> DetectorResult:
         rationale=f"{requested} Kerberos service tickets{rate}{reason}",
         technique_hints=["T1558.003"],
     )
+
+
+#: User-agent fragments that identify a scripted or library HTTP client. A
+#: person's browser never becomes one of these; tooling replaying a stolen
+#: token usually is one, because the attacker is driving a script rather than
+#: a browser.
+_SCRIPTED_CLIENTS = (
+    "python-requests",
+    "python-urllib",
+    "httpx",
+    "aiohttp",
+    "curl/",
+    "wget/",
+    "go-http-client",
+    "okhttp",
+    "axios",
+    "node-fetch",
+    "libwww-perl",
+    "java/",
+    "apache-httpclient",
+    "restsharp",
+    "postmanruntime",
+    "insomnia",
+    "powershell",
+    "guzzlehttp",
+    "msgraph-sdk",
+    "azurecli",
+    "boto3",
+    "aws-cli",
+)
+
+#: Fragments that identify an interactive browser. Every mainstream browser
+#: sends `Mozilla/5.0` for historical reasons, so a family marker is what
+#: separates a real browser from something merely borrowing the prefix.
+_BROWSER_CLIENTS = (
+    "chrome/",
+    "safari/",
+    "firefox/",
+    "edg/",
+    "edge/",
+    "gecko",
+    "webkit",
+    "opr/",
+    "trident",
+)
+
+#: A client-class change is only evidence when it happens inside one session's
+#: lifetime. Over days it is a person getting a new laptop.
+TOKEN_REPLAY_WINDOW_SECONDS = 3600.0
+
+#: Inside this, the two clients overlap rather than succeed each other.
+TOKEN_REPLAY_TIGHT_SECONDS = 900.0
+
+
+def _client_class(user_agent: object) -> str:
+    """Sort a user agent into browser, scripted, or unknown.
+
+    Scripted is tested first on purpose. PowerShell and several SDK clients
+    send the `Mozilla/5.0` prefix with their own name appended, so a
+    browser-first test would call them browsers.
+    """
+    text = str(user_agent or "").strip().lower()
+    if not text:
+        return "unknown"
+    if any(marker in text for marker in _SCRIPTED_CLIENTS):
+        return "scripted"
+    if text.startswith("mozilla/") or any(marker in text for marker in _BROWSER_CLIENTS):
+        return "browser"
+    return "unknown"
+
+
+@register(
+    surface="identity",
+    summary=(
+        "A cloud session credential presented by a materially different client "
+        "than the one that obtained it — a browser session continuing as a script."
+    ),
+    techniques=["T1550.001", "T1528"],
+    references=[
+        "https://attack.mitre.org/techniques/T1550/001/",
+        "https://attack.mitre.org/techniques/T1528/",
+    ],
+)
+def token_replay(alert: Alert) -> DetectorResult:
+    """A session credential used by something that is not the user's browser.
+
+    Written because the held-out set caught Bishop closing a refresh-token
+    replay as a false positive at 0.95 confidence — the worst outcome
+    available. No detector had jurisdiction over a cloud alert, so the empty
+    evidence table read as nothing to see.
+
+    **Impossible travel deliberately misses this.** Both logins were from
+    Dublin, ten minutes apart, so distance and speed have nothing to say.
+    Geography is not the signal when a token is replayed from the victim's own
+    city, or from a hosting provider that geolocates to it.
+
+    **The signal is the client, not the place.** A browser session does not
+    become `python-requests/2.31.0`. When one account succeeds twice inside a
+    session's lifetime and the second success comes from a scripted client
+    where the first came from a browser, the credential is being presented by
+    something other than the thing that obtained it.
+
+    Two facts raise it. A changed source IP means the second client is not the
+    first one on a new tab. A dropped MFA factor means no fresh
+    authentication happened — re-authenticating would have produced a new
+    factor, and its absence is what makes this reuse rather than a second
+    login.
+
+    **What defeats it.** A user agent is attacker-controlled, and tooling that
+    sends a browser string evades this completely. That is a bound on what it
+    catches rather than a bug: it cannot be tightened by reading the same field
+    harder, only by an ASN or token-binding field the alert schema does not
+    carry. The inverse abuse is not available — manufacturing a finding
+    would mean controlling the victim's own browser string. It caps at 0.85 for
+    the same reason: one lexical read of one attacker-influenced field should
+    not carry a verdict alone.
+    """
+    events = ordered_by_time(alert.auth_events, key=lambda event: event.timestamp)
+    successes = [event for event in events if event.outcome in SUCCESS_OUTCOMES]
+    identified = [event for event in successes if _client_class(event.user_agent) != "unknown"]
+    if len(identified) < 2:
+        return miss(
+            "token_replay",
+            "fewer than two successful logins carry a recognisable client, "
+            "so there is no session to compare against",
+        )
+
+    by_account: dict[str, list[AuthEvent]] = defaultdict(list)
+    for event in identified:
+        by_account[str(event.username).lower()].append(event)
+
+    handovers: list[tuple[str, AuthEvent, AuthEvent, float]] = []
+    for account, account_events in by_account.items():
+        for earlier, later in pairwise(account_events):
+            if _client_class(earlier.user_agent) != "browser":
+                continue
+            if _client_class(later.user_agent) != "scripted":
+                continue
+            gap = seconds_between(earlier.timestamp, later.timestamp)
+            if gap <= TOKEN_REPLAY_WINDOW_SECONDS:
+                handovers.append((account, earlier, later, gap))
+
+    if not handovers:
+        return clear(
+            "token_replay",
+            "no account handed a session from a browser to a scripted client",
+            accounts_examined=sorted(by_account),
+            logins_with_a_recognisable_client=len(identified),
+        )
+
+    account, earlier, later, gap = min(handovers, key=lambda handover: handover[3])
+
+    ip_changed = bool(
+        earlier.source_ip and later.source_ip and earlier.source_ip != later.source_ip
+    )
+    factor_dropped = bool(earlier.mfa_method) and not later.mfa_method
+
+    score = 0.6
+    if ip_changed:
+        score += 0.15
+    if gap <= TOKEN_REPLAY_TIGHT_SECONDS:
+        score += 0.1
+    if factor_dropped:
+        score += 0.1
+
+    facts = {
+        "account": account,
+        "seconds_between": round(gap),
+        "client_before": str(earlier.user_agent)[:200],
+        "client_after": str(later.user_agent)[:200],
+        "source_ip_before": earlier.source_ip,
+        "source_ip_after": later.source_ip,
+        "source_ip_changed": ip_changed,
+        "mfa_factor_dropped": factor_dropped,
+        "handovers_found": len(handovers),
+    }
+
+    movement = "from a different address" if ip_changed else "from the same address"
+    factor = ", with no new MFA factor to show a fresh login" if factor_dropped else ""
+    return DetectorResult(
+        detector="token_replay",
+        fired=True,
+        score=round(min(0.85, score), 3),
+        facts=facts,
+        rationale=(
+            f"{account} signed in from a browser; {round(gap)} s later, {movement}, "
+            f"the same session continued from a scripted client{factor}"
+        ),
+        technique_hints=["T1550.001", "T1528"],
+    )

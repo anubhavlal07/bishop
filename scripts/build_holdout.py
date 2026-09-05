@@ -23,11 +23,30 @@ This set exists to be the other number. The rules it is kept under:
    label and the credit.
 
 **What is deliberately hard about it.** Several of these describe techniques
-Bishop has no detector for — Kerberoasting, shadow-copy deletion, cloud token
+Bishop had no detector for — Kerberoasting, shadow-copy deletion, cloud token
 theft. Bishop should escalate or decline on those rather than confidently
 guessing, and if it returns a confident verdict with nothing measured, that is
 the finding. Others are false positives built to look exactly like the true
 positives in the dev set, and true positives built to look boring.
+
+**The ledger of spent cases.** Rule 3 above has been invoked four times, and
+this is the record of it. The single run of this set scored 33.3% on
+2026-09-05; that number is final and is not re-measured. Since then:
+
+- **HO-01 Kerberoasting** — `kerberoasting` written. Spent.
+- **HO-02 shadow-copy deletion** — `recovery_destruction` written. Spent.
+- **HO-03 cloud token theft** — `token_replay` written. Spent, and note its
+  label is now stale as well as spent: it reads `escalate` *because* nothing
+  could examine the alert, and something can now.
+- **The third grounding arm**, which the set exposed as a real logic defect
+  rather than a coverage gap. Fixed in synthesis. Spent.
+
+The two cases where the label itself is arguable were deliberately left alone.
+Adjusting a label until it agrees with the output is how a held-out set stops
+meaning anything, and it is a more tempting mistake than writing a detector.
+
+Consequence: **this set can no longer produce a number.** A new one has to be
+written against the thresholds as they now stand, in a new file, run once.
 
 Usage:  uv run python scripts/build_holdout.py
 """
