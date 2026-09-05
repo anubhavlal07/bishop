@@ -41,6 +41,42 @@ jobs:
           uv run bishop coverage
           git diff --exit-code docs/COVERAGE.md
 
+  # The image, not just the code. `/scorecard` returned 404 in production for as
+  # long as the API had been deployed, because the Dockerfile never copied the
+  # file the endpoint reads — a defect that cannot exist in a checkout, so no
+  # test running from one could see it. This job runs the container the way the
+  # platform does and asks it the questions the console asks.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: docker build -t bishop-api:ci .
+
+      - name: Start
+        run: |
+          docker run -d --name bishop-ci -p 8000:8000 -e BISHOP_ENVIRONMENT=development bishop-api:ci
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health/live >/dev/null && exit 0
+            sleep 1
+          done
+          docker logs bishop-ci
+          exit 1
+
+      - name: The endpoints the console calls answer
+        run: |
+          set -e
+          for path in /health/ready /detectors /coverage /alerts /scorecard; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8000$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || { docker logs bishop-ci; exit 1; }
+          done
+
+      - name: Stop
+        if: always()
+        run: docker rm -f bishop-ci || true
+
   console:
     runs-on: ubuntu-latest
     defaults:

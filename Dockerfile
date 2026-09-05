@@ -47,6 +47,15 @@ COPY --from=build --chown=bishop:bishop /app/.venv /app/.venv
 COPY --from=build --chown=bishop:bishop /app/fixtures /app/fixtures
 COPY --chown=bishop:bishop src/ /app/src/
 
+# The committed scorecard baseline, and only that one file: the dated run files
+# beside it are gitignored, so copying the directory would put different content
+# in a local image than in a build from a clean checkout. `/scorecard` reports
+# the number `just eval` produced rather than running the corpus on a web
+# request, so the file has to be in the image — without it the endpoint 404s
+# and the console's scorecard page is blank in production, which is how this was
+# found.
+COPY --chown=bishop:bishop eval/results/baseline.json /app/eval/results/baseline.json
+
 RUN mkdir -p /app/storage && chown bishop:bishop /app/storage
 
 ENV PATH="/app/.venv/bin:$PATH" \

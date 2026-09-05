@@ -1,0 +1,33 @@
+# The build context is uploaded on every deploy. Without this it carries the
+# virtualenv, node_modules and the whole git history — hundreds of megabytes to
+# push a change to one Python file.
+
+.git
+.github
+.gitattributes
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+console
+graphify-out
+docs
+scripts
+tests
+data
+
+.env
+.env.*
+!.env.example
+
+*.md
+!README.md
+
+.claude
+PLAN.md
+CLAUDE.md
