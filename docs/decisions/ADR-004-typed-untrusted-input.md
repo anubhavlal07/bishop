@@ -131,9 +131,12 @@ site that does not route through it is not protected. That is narrower and far m
 than "every site that might stringify", but it is not zero. `UntrustedStr` must still be applied
 correctly at normalisation, and the ingest layer is not protected by the mechanism it enables.
 
-**Measured.** 58 of 132 corpus payloads caught, 0 false positives on 38 benign samples. The 74
-that evade are strict-xfail, so the suite fails when one is fixed. Most are semantic steering —
+**Measured.** 120 of 132 corpus payloads caught, 0 false positives on 38 benign samples. The 12
+that evade are strict-xfail, so the suite fails when one is fixed. They are semantic steering —
 plausible context with no imperative — for which the mitigation is symmetric detector grounding
 and the human gate, not the scanner.
+
+This ADR first recorded 58/132. That was accurate when it was written and went stale when the
+scanner improved; the number above is what `tests/injection/test_corpus_recall.py` reports now.
 
 **Unresolved.** Semantic steering remains the open class. See THREAT-MODEL §7.

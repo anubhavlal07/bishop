@@ -313,7 +313,7 @@ has not been written honestly.
 The realistic worst case is unchanged by red-teaming, and red-teaming is why we can say that
 with any confidence: a targeted attacker uses **semantic steering** — no imperative, no
 delimiter play, no encoding, just plausible operational context — to push a true positive below
-the escalation threshold. Most of the 74 evading payloads are this class. There is nothing for a
+the escalation threshold. All 12 evading payloads are this class. There is nothing for a
 pattern scanner to match, because there is no attack pattern; there is only a lie that reads
 like an ordinary fact.
 
