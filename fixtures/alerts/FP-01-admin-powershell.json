@@ -1,0 +1,37 @@
+{
+  "alert_id": "FP-01-admin-powershell",
+  "source": "sysmon",
+  "rule_name": "PowerShell launched with execution policy bypass",
+  "detected_at": "2026-03-14T09:02:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-004",
+    "ip": "10.20.30.4",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "SYSTEM",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "parent_process": {
+    "name": "ccmexec.exe",
+    "path": "C:\\Windows\\CCM\\CcmExec.exe",
+    "signed": true
+  },
+  "process": {
+    "name": "powershell.exe",
+    "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "command_line": "powershell.exe -ExecutionPolicy Bypass -File C:\\Program Files\\Contoso\\Deploy\\install-agent.ps1",
+    "signed": true,
+    "signer": "Microsoft Windows"
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "A signed deployment script run by the SCCM agent from Program Files. The bypass switch is how the agent has always invoked it.",
+    "synthetic": true
+  }
+}

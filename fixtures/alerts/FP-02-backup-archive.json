@@ -1,0 +1,36 @@
+{
+  "alert_id": "FP-02-backup-archive",
+  "source": "edr",
+  "rule_name": "Archive utility invoked against a network share",
+  "detected_at": "2026-03-14T01:30:00+00:00",
+  "severity": "low",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-BACKUP-01",
+    "ip": "10.20.10.30",
+    "os": "Windows Server 2022",
+    "is_server": true
+  },
+  "principal": {
+    "username": "svc_veeam",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "parent_process": {
+    "name": "taskeng.exe",
+    "path": "C:\\Windows\\System32\\taskeng.exe"
+  },
+  "process": {
+    "name": "7z.exe",
+    "path": "C:\\Program Files\\7-Zip\\7z.exe",
+    "command_line": "7z.exe a D:\\Backups\\nightly-2026-03-14.7z \\\\fileserver\\shares\\*",
+    "signed": true
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "The nightly backup job, running as the backup service account, writing to the backup volume. Same command every night for two years.",
+    "synthetic": true
+  }
+}

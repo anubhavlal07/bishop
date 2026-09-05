@@ -1,0 +1,103 @@
+{
+  "_readme": [
+    "The organisation's own context: what is signed, who is allowed to do what,",
+    "which ranges are lab, which destinations are sanctioned.",
+    "",
+    "This is TRUSTED input. Unlike everything in an alert, it is not written by",
+    "whoever triggered the alert — it comes from asset inventory, the identity",
+    "provider and change management. That is precisely why it can be used to",
+    "decide that something was authorised, and why an attacker cannot add",
+    "themselves to it by naming a process cleverly.",
+    "",
+    "In a real deployment this file is generated from the CMDB, the IdP's service",
+    "account list, and the change calendar. Here it is hand-written to match the",
+    "synthetic corpus, and every claim in it is fictional.",
+    "",
+    "AUTHORISATION IS SCOPED. `max_privilege` is the point of the design: knowing",
+    "an account is not the same as that account being allowed to do the specific",
+    "thing observed. svc_helpdesk is a known automation account and is still not",
+    "permitted to touch Domain Admins — an unscoped allowlist would have excused",
+    "exactly that, which is the confused-deputy failure this file is shaped to",
+    "avoid. The first scorecard run with an unscoped list produced a missed true",
+    "positive on TP-05.",
+    "",
+    "Without this file Bishop still runs — it simply cannot distinguish",
+    "'authorised' from 'malicious', so an approved red-team exercise reads as a",
+    "genuine intrusion. That is the correct failure direction."
+  ],
+
+  "trusted_publishers": [
+    "Microsoft Windows",
+    "Microsoft Corporation",
+    "Contoso Ltd",
+    "Datadog Inc"
+  ],
+
+  "trusted_install_paths": [
+    "c:\\program files\\",
+    "c:\\program files (x86)\\",
+    "c:\\windows\\system32\\",
+    "c:\\windows\\syswow64\\",
+    "c:\\windows\\ccm\\",
+    "d:\\backups\\",
+    "/usr/bin/",
+    "/usr/local/bin/"
+  ],
+
+  "automation_accounts": {
+    "svc_intune": {
+      "note": "Endpoint management. Provisions workstations and sets local group membership during onboarding.",
+      "max_privilege": "local"
+    },
+    "svc_veeam": {
+      "note": "Backup service. Archives file shares to the backup volume nightly.",
+      "max_privilege": "none"
+    },
+    "svc_build": {
+      "note": "Build agent. Fetches toolchains from the internal artefact server.",
+      "max_privilege": "none"
+    },
+    "svc_helpdesk": {
+      "note": "Helpdesk automation. Resets passwords and unlocks accounts. NOT permitted to change domain group membership.",
+      "max_privilege": "local"
+    },
+    "system": {
+      "note": "Local system, used by management agents.",
+      "max_privilege": "local"
+    }
+  },
+
+  "privileged_admins": {
+    "p.almeida-adm": {
+      "note": "Platform team. Authorised for scheduled maintenance on application servers.",
+      "max_privilege": "local"
+    }
+  },
+
+  "authorised_test_ranges": [
+    {
+      "prefix": "10.99.",
+      "hostname_prefix": "WKSTN-RT-",
+      "note": "Red team range. Offensive tooling here is expected and covered by a standing rules-of-engagement document.",
+      "authorised_by": "Head of Security"
+    }
+  ],
+
+  "scanner_sources": {
+    "10.20.5.99": "Authenticated vulnerability scanner. Weekly credentialed sweep; failed logins against test accounts are expected and the rule should exclude this source."
+  },
+
+  "sanctioned_destinations": {
+    "intake.monitoring.example": "Monitoring vendor intake endpoint. Agents check in on a fixed interval by design.",
+    "artifacts.corp.internal": "Internal artefact server.",
+    "192.0.2.50": "Monitoring vendor intake, by address."
+  },
+
+  "change_windows": [
+    {
+      "name": "PatchWindow-Mar2026",
+      "note": "Approved monthly patching window for application servers.",
+      "approved_by": "Change Advisory Board"
+    }
+  ]
+}

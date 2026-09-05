@@ -1,0 +1,41 @@
+{
+  "alert_id": "BTP-02-it-automation-priv",
+  "source": "windows-security",
+  "rule_name": "Account added to local Administrators",
+  "detected_at": "2026-03-14T13:00:00+00:00",
+  "severity": "high",
+  "category": "identity",
+  "device": {
+    "hostname": "WKSTN-NEW-12",
+    "ip": "10.20.30.212"
+  },
+  "principal": {
+    "username": "svc_intune",
+    "domain": "CORP",
+    "is_service_account": true,
+    "is_privileged": true
+  },
+  "process": {
+    "name": "net.exe",
+    "path": "C:\\Windows\\System32\\net.exe",
+    "command_line": "net localgroup administrators CORP\\l.dubois /add"
+  },
+  "raw": {
+    "group_changes": [
+      {
+        "group": "Administrators",
+        "member": "l.dubois",
+        "action": "add"
+      }
+    ]
+  },
+  "labels": {
+    "verdict": "benign_true_positive",
+    "techniques": [
+      "T1098"
+    ],
+    "should_escalate": false,
+    "why": "The change happened and the detection is right. It is the standard onboarding runbook, executed by the IT automation account against a newly built workstation, with a change record.",
+    "synthetic": true
+  }
+}

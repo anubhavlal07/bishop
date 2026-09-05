@@ -1,0 +1,41 @@
+{
+  "alert_id": "BTP-04-approved-remote-admin",
+  "source": "edr",
+  "rule_name": "Remote scheduled task creation",
+  "detected_at": "2026-03-14T22:05:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-APP-09",
+    "ip": "10.20.10.49",
+    "is_server": true,
+    "criticality": "medium"
+  },
+  "principal": {
+    "username": "p.almeida-adm",
+    "domain": "CORP",
+    "is_privileged": true
+  },
+  "process": {
+    "name": "schtasks.exe",
+    "path": "C:\\Windows\\System32\\schtasks.exe",
+    "command_line": "schtasks /create /s SRV-APP-09 /tn PatchWindow-Mar2026 /sc once /st 23:00 /tr C:\\Program Files\\Contoso\\Patch\\apply.ps1"
+  },
+  "scheduled_tasks": [
+    {
+      "name": "PatchWindow-Mar2026",
+      "action": "C:\\Program Files\\Contoso\\Patch\\apply.ps1",
+      "trigger": "once 23:00",
+      "run_as": "SYSTEM"
+    }
+  ],
+  "labels": {
+    "verdict": "benign_true_positive",
+    "techniques": [
+      "T1053.005"
+    ],
+    "should_escalate": false,
+    "why": "A scheduled task really was created remotely. It is the patching window runbook, run by the platform team's admin account against a maintenance group, with an approved change ticket.",
+    "synthetic": true
+  }
+}

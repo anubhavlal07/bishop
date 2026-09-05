@@ -1,0 +1,514 @@
+{
+  "alert_id": "TP-02-c2-beacon",
+  "source": "proxy",
+  "rule_name": "Periodic outbound connections to uncategorised host",
+  "detected_at": "2026-03-14T03:00:00+00:00",
+  "severity": "medium",
+  "category": "network",
+  "device": {
+    "hostname": "WKSTN-017",
+    "ip": "10.20.30.17",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "s.mensah",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "onedriveupdater.exe",
+    "path": "C:\\Users\\s.mensah\\AppData\\Local\\Temp\\onedriveupdater.exe",
+    "signed": false
+  },
+  "connections": [
+    {
+      "timestamp": "2026-03-14T02:59:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:05:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:09:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:15:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:19:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:25:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:29:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:35:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:39:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:45:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:49:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:55:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T03:59:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:05:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:09:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:15:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:19:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:25:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:29:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:35:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:39:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:45:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:49:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:55:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T04:59:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:05:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:09:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:15:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:19:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:25:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:29:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:35:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:39:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:45:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:49:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:55:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T05:59:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:05:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:09:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:15:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:19:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:25:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:29:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:35:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:39:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:45:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:49:48+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    {
+      "timestamp": "2026-03-14T06:55:12+00:00",
+      "dest_ip": "203.0.113.77",
+      "hostname": "cdn-metrics.example",
+      "dest_port": 443,
+      "protocol": "tcp",
+      "bytes_out": 1428,
+      "bytes_in": 340,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.001",
+      "T1102"
+    ],
+    "should_escalate": false,
+    "why": "48 connections at 300 s ± 8% with near-identical request sizes, to a host listed as malicious in the indicator cache. That is a check-in, not browsing.",
+    "synthetic": true
+  }
+}

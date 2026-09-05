@@ -1,0 +1,61 @@
+{
+  "alert_id": "FP-07-cdn-dns",
+  "source": "dns",
+  "rule_name": "High-entropy DNS queries observed",
+  "detected_at": "2026-03-14T10:00:00+00:00",
+  "severity": "low",
+  "category": "network",
+  "device": {
+    "hostname": "WKSTN-022",
+    "ip": "10.20.30.22"
+  },
+  "dns_events": [
+    {
+      "timestamp": "2026-03-14T10:00:00+00:00",
+      "query": "d1a2b3c4.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:02+00:00",
+      "query": "e5f6g7h8.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:04+00:00",
+      "query": "i9j0k1l2.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:06+00:00",
+      "query": "m3n4o5p6.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:08+00:00",
+      "query": "q7r8s9t0.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:10+00:00",
+      "query": "u1v2w3x4.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:12+00:00",
+      "query": "y5z6a7b8.cloudfront.example",
+      "query_type": "A"
+    },
+    {
+      "timestamp": "2026-03-14T10:00:14+00:00",
+      "query": "c9d0e1f2.cloudfront.example",
+      "query_type": "A"
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "Content-delivery hostnames. High entropy, but only eight of them and well short of the label lengths a tunnel needs.",
+    "synthetic": true
+  }
+}

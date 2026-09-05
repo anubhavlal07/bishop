@@ -1,0 +1,47 @@
+{
+  "alert_id": "TP-05-privilege-escalation",
+  "source": "windows-security",
+  "rule_name": "Account added to Domain Admins",
+  "detected_at": "2026-03-14T03:12:00+00:00",
+  "severity": "critical",
+  "category": "identity",
+  "device": {
+    "hostname": "DC-01",
+    "ip": "10.20.1.10",
+    "os": "Windows Server 2022",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "svc_helpdesk",
+    "domain": "CORP",
+    "is_privileged": true
+  },
+  "process": {
+    "name": "net.exe",
+    "path": "C:\\Windows\\System32\\net.exe",
+    "command_line": "net group \"Domain Admins\" svc_update /add /domain"
+  },
+  "raw": {
+    "group_changes": [
+      {
+        "group": "Domain Admins",
+        "member": "svc_update",
+        "action": "add"
+      }
+    ],
+    "accounts_created": [
+      "svc_update"
+    ]
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1098",
+      "T1136"
+    ],
+    "should_escalate": false,
+    "why": "A newly created account added to Domain Admins at 03:12, by a workstation account, recorded in the directory's own change events.",
+    "synthetic": true
+  }
+}

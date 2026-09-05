@@ -1,0 +1,41 @@
+{
+  "alert_id": "FP-08-installer-run-key",
+  "source": "sysmon",
+  "rule_name": "Registry Run key created",
+  "detected_at": "2026-03-14T11:05:00+00:00",
+  "severity": "low",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-088",
+    "ip": "10.20.30.88"
+  },
+  "principal": {
+    "username": "t.nakamura",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "msiexec.exe",
+    "path": "C:\\Windows\\System32\\msiexec.exe",
+    "signed": true
+  },
+  "process": {
+    "name": "contoso-setup.exe",
+    "path": "C:\\Program Files\\Contoso\\contoso-setup.exe",
+    "signed": true,
+    "signer": "Contoso Ltd"
+  },
+  "registry_changes": [
+    {
+      "key": "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "value_name": "ContosoUpdater",
+      "value_data": "C:\\Program Files\\Contoso\\updater.exe /silent"
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "A signed installer from Program Files registering its own updater. This is what installing software looks like.",
+    "synthetic": true
+  }
+}

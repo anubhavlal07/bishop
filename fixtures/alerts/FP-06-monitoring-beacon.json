@@ -1,0 +1,267 @@
+{
+  "alert_id": "FP-06-monitoring-beacon",
+  "source": "proxy",
+  "rule_name": "Periodic outbound connections to uncategorised host",
+  "detected_at": "2026-03-14T07:00:00+00:00",
+  "severity": "low",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-APP-04",
+    "ip": "10.20.10.44",
+    "is_server": true
+  },
+  "process": {
+    "name": "datadog-agent.exe",
+    "path": "C:\\Program Files\\Datadog\\datadog-agent.exe",
+    "signed": true
+  },
+  "connections": [
+    {
+      "timestamp": "2026-03-14T07:00:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:01:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:02:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:03:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:04:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:05:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:06:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:07:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:08:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:09:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:10:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:11:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:12:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:13:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:14:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:15:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:16:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:17:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:18:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:19:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:20:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:21:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:22:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:23:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:24:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:25:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:26:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:27:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:28:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    },
+    {
+      "timestamp": "2026-03-14T07:29:00+00:00",
+      "hostname": "intake.monitoring.example",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "bytes_out": 890,
+      "bytes_in": 210
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "The monitoring agent's 60-second heartbeat to the vendor's own endpoint. Metronomic by design, and the destination is a sanctioned service.",
+    "synthetic": true
+  }
+}

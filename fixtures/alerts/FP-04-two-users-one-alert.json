@@ -1,0 +1,41 @@
+{
+  "alert_id": "FP-04-two-users-one-alert",
+  "source": "okta",
+  "rule_name": "Impossible travel detected in tenant",
+  "detected_at": "2026-03-14T09:00:00+00:00",
+  "severity": "medium",
+  "category": "identity",
+  "auth_events": [
+    {
+      "timestamp": "2026-03-14T09:00:00+00:00",
+      "username": "r.iyer",
+      "outcome": "success",
+      "source_ip": "81.2.69.190",
+      "geo": {
+        "city": "London",
+        "country": "GB",
+        "latitude": 51.5074,
+        "longitude": -0.1278
+      }
+    },
+    {
+      "timestamp": "2026-03-14T09:06:00+00:00",
+      "username": "w.tan",
+      "outcome": "success",
+      "source_ip": "103.6.151.20",
+      "geo": {
+        "city": "Singapore",
+        "country": "SG",
+        "latitude": 1.3521,
+        "longitude": 103.8198
+      }
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "Two *different* people signed in from London and Singapore. The rule correlated on tenant rather than on account. Nobody travelled.",
+    "synthetic": true
+  }
+}

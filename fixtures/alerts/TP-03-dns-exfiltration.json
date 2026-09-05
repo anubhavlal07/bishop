@@ -1,0 +1,342 @@
+{
+  "alert_id": "TP-03-dns-exfiltration",
+  "source": "dns",
+  "rule_name": "High volume of unique subdomains for a single parent domain",
+  "detected_at": "2026-03-14T04:00:00+00:00",
+  "severity": "high",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-FILE-02",
+    "ip": "10.20.10.12",
+    "os": "Windows Server 2022",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "svc_backup",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "dns_events": [
+    {
+      "timestamp": "2026-03-14T04:00:00+00:00",
+      "query": "wxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:03+00:00",
+      "query": "tqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3y.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:06+00:00",
+      "query": "qjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yr.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:09+00:00",
+      "query": "nctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:12+00:00",
+      "query": "k3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sd.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:15+00:00",
+      "query": "hu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:18+00:00",
+      "query": "enctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mv.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:21+00:00",
+      "query": "bghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjo.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:24+00:00",
+      "query": "67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libgh.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:27+00:00",
+      "query": "3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sda.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:30+00:00",
+      "query": "yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:33+00:00",
+      "query": "vk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5s.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:36+00:00",
+      "query": "sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2l.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:39+00:00",
+      "query": "p4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxe.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:42+00:00",
+      "query": "mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:45+00:00",
+      "query": "jop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrw.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:48+00:00",
+      "query": "ghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:51+00:00",
+      "query": "daz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2li.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:54+00:00",
+      "query": "az67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2lib.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:00:57+00:00",
+      "query": "5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:00+00:00",
+      "query": "2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenct.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:03+00:00",
+      "query": "xenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67m.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:06+00:00",
+      "query": "u5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:09+00:00",
+      "query": "rwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz6.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:12+00:00",
+      "query": "op4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwx.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:15+00:00",
+      "query": "libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctq.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:18+00:00",
+      "query": "ibghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqj.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:21+00:00",
+      "query": "f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenc.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:24+00:00",
+      "query": "ctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:27+00:00",
+      "query": "7mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:30+00:00",
+      "query": "4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxen.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:33+00:00",
+      "query": "z67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libg.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:36+00:00",
+      "query": "wxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:39+00:00",
+      "query": "tqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3y.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:42+00:00",
+      "query": "qjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yr.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:45+00:00",
+      "query": "nctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:48+00:00",
+      "query": "k3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sd.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:51+00:00",
+      "query": "hu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:54+00:00",
+      "query": "enctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mv.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:01:57+00:00",
+      "query": "bghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjo.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:00+00:00",
+      "query": "67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libgh.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:03+00:00",
+      "query": "3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sda.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:06+00:00",
+      "query": "yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:09+00:00",
+      "query": "vk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5s.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:12+00:00",
+      "query": "sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2l.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:15+00:00",
+      "query": "p4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxe.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:18+00:00",
+      "query": "mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:21+00:00",
+      "query": "jop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrw.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:24+00:00",
+      "query": "ghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:27+00:00",
+      "query": "daz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2li.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:30+00:00",
+      "query": "az67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2lib.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:33+00:00",
+      "query": "5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:36+00:00",
+      "query": "2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenct.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:39+00:00",
+      "query": "xenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67m.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:42+00:00",
+      "query": "u5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:45+00:00",
+      "query": "rwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz6.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:48+00:00",
+      "query": "op4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwx.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:51+00:00",
+      "query": "libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctq.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:54+00:00",
+      "query": "ibghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqj.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:02:57+00:00",
+      "query": "f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenc.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:03:00+00:00",
+      "query": "ctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu5sdaz67mvk3.tun.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-03-14T04:03:03+00:00",
+      "query": "7mvk3yrwxenctqjop4f2libghu5sdaz67mvk3yrwxenctqjop4f2libghu.tun.example",
+      "query_type": "TXT"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.004",
+      "T1048.003"
+    ],
+    "should_escalate": false,
+    "why": "62 unique 58-character subdomains under one parent at 4.1 bits per character. Those are base32 chunks, not hostnames.",
+    "synthetic": true
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "_readme": [
+    "SYNTHETIC indicator cache. Every entry below is invented and uses addresses",
+    "reserved for documentation (RFC 5737 / RFC 3849) and example.* domains. None",
+    "of it is real threat intelligence and none of it should be used to block",
+    "anything.",
+    "",
+    "Bishop reads reputation from a cache rather than calling a feed at triage",
+    "time, for three reasons set out in src/bishop/detectors/intel.py: a detector",
+    "that makes a network call is not reproducible, resolving attacker",
+    "infrastructure during triage tells the attacker their payload landed, and the",
+    "offline demo has to run with no credentials.",
+    "",
+    "To populate this with real indicators from abuse.ch, run `just intel`. Their",
+    "terms permit use but not redistribution, so the fetched cache is gitignored",
+    "and this synthetic one is what ships."
+  ],
+  "snapshot_taken": "2026-03-14T00:00:00Z",
+  "synthetic": true,
+  "source": "hand-written for the Bishop golden corpus",
+  "indicators": [
+    {
+      "indicator": "203.0.113.77",
+      "kind": "ip",
+      "verdict": "malicious",
+      "source": "synthetic-feed",
+      "first_seen": "2026-02-02",
+      "last_seen": "2026-03-12",
+      "malware_family": "Generic C2",
+      "confidence": 0.85,
+      "note": "Documentation-range address standing in for a C2 node in TP-02."
+    },
+    {
+      "indicator": "cdn-metrics.example",
+      "kind": "domain",
+      "verdict": "malicious",
+      "source": "synthetic-feed",
+      "first_seen": "2026-02-02",
+      "last_seen": "2026-03-12",
+      "malware_family": "Generic C2",
+      "confidence": 0.8,
+      "note": "Fronting domain for the same synthetic campaign as 203.0.113.77."
+    },
+    {
+      "indicator": "tun.example",
+      "kind": "domain",
+      "verdict": "malicious",
+      "source": "synthetic-feed",
+      "first_seen": "2026-01-19",
+      "last_seen": "2026-03-13",
+      "malware_family": "DNS tunnel",
+      "confidence": 0.75,
+      "note": "Parent domain of the TP-03 tunnelling fixture."
+    },
+    {
+      "indicator": "198.51.100.44",
+      "kind": "ip",
+      "verdict": "suspicious",
+      "source": "synthetic-feed",
+      "first_seen": "2026-03-01",
+      "last_seen": "2026-03-14",
+      "malware_family": "",
+      "confidence": 0.5,
+      "note": "File-sharing egress used in TP-06. Suspicious, not malicious — plenty of legitimate traffic goes to services like this."
+    },
+    {
+      "indicator": "192.0.2.50",
+      "kind": "ip",
+      "verdict": "benign",
+      "source": "synthetic-feed",
+      "first_seen": "2025-06-01",
+      "last_seen": "2026-03-14",
+      "malware_family": "",
+      "confidence": 0.9,
+      "note": "The monitoring vendor's intake endpoint in FP-06. Present so the detector can demonstrate a benign verdict rather than only a miss."
+    },
+    {
+      "indicator": "intake.monitoring.example",
+      "kind": "domain",
+      "verdict": "benign",
+      "source": "synthetic-feed",
+      "first_seen": "2025-06-01",
+      "last_seen": "2026-03-14",
+      "malware_family": "",
+      "confidence": 0.9,
+      "note": "Sanctioned monitoring service, paired with 192.0.2.50."
+    }
+  ]
+}

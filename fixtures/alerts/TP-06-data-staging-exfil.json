@@ -1,0 +1,121 @@
+{
+  "alert_id": "TP-06-data-staging-exfil",
+  "source": "edr",
+  "rule_name": "Large encrypted archive uploaded to file-sharing service",
+  "detected_at": "2026-03-14T01:08:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-059",
+    "ip": "10.20.30.59",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "d.ferreira",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "7z.exe",
+    "path": "C:\\Users\\Public\\7z.exe",
+    "command_line": "7z.exe a -p\"Tr0ub4dor\" -mhe=on C:\\Users\\Public\\q4.7z \\\\fileserver\\finance\\*",
+    "signed": false
+  },
+  "file": {
+    "name": "q4.7z",
+    "path": "C:\\Users\\Public\\q4.7z",
+    "size_bytes": 356452000
+  },
+  "connections": [
+    {
+      "timestamp": "2026-03-14T01:20:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:21:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:22:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:23:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:24:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:25:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:26:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:27:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:28:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    },
+    {
+      "timestamp": "2026-03-14T01:29:00+00:00",
+      "hostname": "transfer.sh",
+      "dest_ip": "198.51.100.44",
+      "dest_port": 443,
+      "bytes_out": 34000000,
+      "bytes_in": 190000
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1560.001",
+      "T1074.001",
+      "T1567"
+    ],
+    "should_escalate": false,
+    "why": "A password-protected archive of the finance share written to C:\\Users\\Public, then 340 MB uploaded to transfer.sh against 2 MB down.",
+    "synthetic": true
+  }
+}

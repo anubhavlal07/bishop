@@ -1,0 +1,33 @@
+{
+  "alert_id": "BTP-03-authorised-lolbin",
+  "source": "sysmon",
+  "rule_name": "certutil used to download a file",
+  "detected_at": "2026-03-14T15:20:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-BUILD-02",
+    "ip": "10.20.10.62",
+    "is_server": true
+  },
+  "principal": {
+    "username": "svc_build",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "process": {
+    "name": "certutil.exe",
+    "path": "C:\\Windows\\System32\\certutil.exe",
+    "command_line": "certutil.exe -urlcache -split -f http://artifacts.corp.internal/toolchain/sdk.zip C:\\build\\sdk.zip",
+    "signed": true
+  },
+  "labels": {
+    "verdict": "benign_true_positive",
+    "techniques": [
+      "T1218"
+    ],
+    "should_escalate": false,
+    "why": "certutil really was used as a downloader — the detection is correct. It is the platform team's documented workaround for a proxy that blocks curl, fetching from the internal artefact server.",
+    "synthetic": true
+  }
+}

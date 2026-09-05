@@ -1,0 +1,49 @@
+{
+  "alert_id": "FP-03-vpn-geo-shift",
+  "source": "okta",
+  "rule_name": "Impossible travel detected for user",
+  "detected_at": "2026-03-14T08:15:00+00:00",
+  "severity": "medium",
+  "category": "identity",
+  "principal": {
+    "username": "m.oyelaran",
+    "domain": "CORP"
+  },
+  "auth_events": [
+    {
+      "timestamp": "2026-03-14T08:11:00+00:00",
+      "username": "m.oyelaran",
+      "outcome": "success",
+      "source_ip": "81.2.69.144",
+      "geo": {
+        "city": "London",
+        "country": "GB",
+        "latitude": 51.5074,
+        "longitude": -0.1278
+      },
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "application": "Okta Dashboard"
+    },
+    {
+      "timestamp": "2026-03-14T08:15:00+00:00",
+      "username": "m.oyelaran",
+      "outcome": "success",
+      "source_ip": "185.60.112.9",
+      "geo": {
+        "city": "Frankfurt",
+        "country": "DE",
+        "latitude": 50.1109,
+        "longitude": 8.6821
+      },
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "application": "Okta Dashboard"
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "Two logins four minutes apart from London and Frankfurt. No travel explains that at any speed — the user's VPN reconnected to another egress.",
+    "synthetic": true
+  }
+}
