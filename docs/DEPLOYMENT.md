@@ -168,17 +168,57 @@ uv run bishop verify storage/chain.jsonl --expect-head <the incident's audit_hea
 
 ---
 
+### Accounts and roles
+
+Off by default, so a laptop run needs no user table. Turn them on with
+`BISHOP_REQUIRE_ACCOUNTS=true`, then create the first account:
+
+```bash
+uv run bishop useradd you@example.com --role admin   # password is prompted
+uv run bishop users                                   # list
+uv run bishop users --set-role them@example.com approver
+```
+
+Four roles, least to most: `viewer`, `analyst`, `approver`, `admin`.
+**`approver` exists because approving containment is the one irreversible thing
+Bishop can be asked to do**, and separating it from `analyst` is the separation
+of duties the audit chain was always implying but never enforced. Rejecting an
+action needs no role — refusing is always safe, and requiring a permission to
+say "no" would pin a run open when the only person present cannot grant it.
+
+Three details that are load-bearing:
+
+**Passwords use `hashlib.scrypt` from the standard library.** No new dependency:
+adding `argon2-cffi` to a security tool buys a marginally better KDF at the cost
+of another package in the supply chain of the thing doing the securing. Cost
+parameters are stored *with* each hash, so raising them later does not
+invalidate existing passwords — `needs_rehash()` upgrades one on next login.
+
+**Sessions are server-side, not JWTs.** The cookie holds a random token; the
+database holds only its SHA-256, so a database read yields no usable session.
+A stateless token cannot be revoked, and "sign this person out now" is something
+a security tool has to be able to do. Changing a role deletes that account's
+sessions, so a demotion takes effect immediately rather than in twelve hours.
+
+**A failed login says one thing.** Unknown address and wrong password return the
+same message, and an unknown address still runs a hash so the timing matches —
+otherwise a password guess becomes account enumeration.
+
+---
+
 ## 7. What is still missing, stated plainly
 
 These are real gaps, not stylistic ones. If any of them matters to your
 deployment, it needs building before Bishop is the right tool for it.
 
-- **No per-user accounts, and no roles.** Every valid API key has identical
-  authority, including approving containment. The audit chain records
-  `decided_by` as whatever string the client supplied, so it attributes a
-  decision but does not authenticate the person who made it. For a single
-  trusted team this is workable; for anything with separation of duties it is
-  not.
+- **Accounts are in-house, not federated.** There is no SSO, SAML or SCIM: an
+  operator creates accounts with `bishop useradd`, and Bishop stores the
+  password hashes itself. That is a real trade — an IdP would centralise
+  revocation and MFA — taken so the deployment needs no external account.
+  With `BISHOP_REQUIRE_ACCOUNTS=true`, approving containment requires the
+  `approver` role and `decided_by` in the audit chain comes from the session
+  rather than from the client.
+- **No MFA and no password reset flow.** An admin sets a new password.
 - **Rate limiting is per-instance, in memory.** With two instances the
   effective limit is double, and a restart clears the window. It is a guard
   against a runaway loop and a cost blowout, not a defence against a determined

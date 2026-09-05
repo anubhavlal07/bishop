@@ -720,6 +720,62 @@ def cmd_keygen(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_useradd(args: argparse.Namespace) -> int:
+    """Create an account. The password is prompted, never an argument.
+
+    A password passed as `--password` lands in shell history, in `ps` output
+    while the command runs, and in any shell-audit log the host keeps. Prompting
+    is the whole reason this is a command rather than a documented SQL insert.
+    """
+    import getpass
+
+    from bishop.auth import AuthError, PasswordError, Role, create_account
+    from bishop.store import init_db
+
+    init_db()
+    try:
+        password = getpass.getpass("password: ")
+        if password != getpass.getpass("repeat:   "):
+            print(red("  the two passwords do not match"))
+            return 1
+        account = create_account(
+            args.email, password, Role(args.role), display_name=args.name or ""
+        )
+    except (AuthError, PasswordError) as exc:
+        print(red(f"  {exc}"))
+        return 1
+
+    print()
+    print(f"  {green('account created')}  {account.email}  ({account.role})")
+    if account.role is Role.APPROVER or account.role is Role.ADMIN:
+        print(dim("  This account may approve containment."))
+    print()
+    return 0
+
+
+def cmd_users(args: argparse.Namespace) -> int:
+    """List accounts, or change one's role."""
+    from bishop.auth import Role, list_accounts, set_role
+    from bishop.store import init_db
+
+    init_db()
+    if args.set_role:
+        set_role(args.set_role[0], Role(args.set_role[1]))
+        print(f"  {green('role changed')} — existing sessions for that account were revoked")
+        return 0
+
+    rows = list_accounts()
+    if not rows:
+        print(dim("  no accounts yet. Create one with `bishop useradd <email>`."))
+        return 0
+    print()
+    for row in rows:
+        flag = red(" disabled") if row["disabled"] else ""
+        print(f"  {row['email']:38} {row['role']:10}{flag}")
+    print()
+    return 0
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     """Show the resolved deployment configuration, and whether it would serve."""
     from bishop.config import ConfigError, DeploymentSettings
@@ -888,6 +944,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     cfg = sub.add_parser("config", help="show the resolved deployment configuration")
     cfg.set_defaults(func=cmd_config)
+
+    ua = sub.add_parser("useradd", help="create an account (password is prompted)")
+    ua.add_argument("email")
+    ua.add_argument(
+        "--role",
+        default="viewer",
+        choices=["viewer", "analyst", "approver", "admin"],
+        help="approver and admin may approve containment",
+    )
+    ua.add_argument("--name", help="display name")
+    ua.set_defaults(func=cmd_useradd)
+
+    us = sub.add_parser("users", help="list accounts, or change a role")
+    us.add_argument(
+        "--set-role", nargs=2, metavar=("EMAIL", "ROLE"), help="change an account's role"
+    )
+    us.set_defaults(func=cmd_users)
 
     cov = sub.add_parser("coverage", help="regenerate the coverage matrix")
     cov.add_argument("--output", default="docs/COVERAGE.md")

@@ -19,7 +19,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -32,6 +32,7 @@ from bishop.api.security import (
     RequestContextMiddleware,
     SecurityHeadersMiddleware,
 )
+from bishop.auth.accounts import SESSION_LIFETIME
 from bishop.config import get_settings
 from bishop.eval import load_corpus
 from bishop.logging_setup import configure_logging
@@ -89,6 +90,11 @@ app.add_middleware(
 )
 
 runs = RunManager()
+
+#: The session cookie. HTTP-only and SameSite=Lax are set where it is issued:
+#: HTTP-only keeps it out of reach of any script on the console's origin, which
+#: is where an XSS bug would otherwise become a session theft.
+SESSION_COOKIE = "bishop_session"
 
 
 @app.exception_handler(Exception)
@@ -364,6 +370,19 @@ def ingest_preview(body: IngestPreview) -> dict[str, Any]:
     }
 
 
+def _account_for(request: Request):
+    """The signed-in account, or None. Never raises — callers decide."""
+    if not settings.require_accounts:
+        return None
+    try:
+        from bishop.auth import current_account
+
+        return current_account(request.cookies.get(SESSION_COOKIE))
+    except Exception:
+        logger.exception("could not resolve the session")
+        return None
+
+
 def _credentials_from(request: Request):
     """Build one user's model credentials from their request headers.
 
@@ -388,6 +407,66 @@ def _credentials_from(request: Request):
         )
     except CredentialError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+class Credentials(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/auth/login")
+def login(body: Credentials, response: Response) -> dict[str, Any]:
+    """Exchange an email and password for a session cookie."""
+    if not settings.require_accounts:
+        raise HTTPException(404, "this deployment does not use accounts")
+    from bishop.auth import AuthError, authenticate, start_session
+
+    try:
+        account = authenticate(body.email, body.password)
+    except AuthError as exc:
+        # One message for every failure, so a guess cannot distinguish an
+        # unknown address from a wrong password.
+        raise HTTPException(401, str(exc)) from exc
+
+    token = start_session(account)
+    response.set_cookie(
+        SESSION_COOKIE,
+        token,
+        httponly=True,
+        samesite="lax",
+        secure=settings.is_production,
+        max_age=int(SESSION_LIFETIME.total_seconds()),
+        path="/",
+    )
+    return {"account": account.describe()}
+
+
+@app.post("/auth/logout")
+def logout(request: Request, response: Response) -> dict[str, str]:
+    """Revoke the current session. Safe to call when not signed in."""
+    from bishop.auth import end_session
+
+    end_session(request.cookies.get(SESSION_COOKIE))
+    response.delete_cookie(SESSION_COOKIE, path="/")
+    return {"status": "signed out"}
+
+
+@app.get("/auth/me")
+def whoami(request: Request) -> dict[str, Any]:
+    """Who the caller is, and what they may do."""
+    from bishop.auth import Role
+
+    account = _account_for(request)
+    if account is None:
+        return {
+            "authenticated": False,
+            "accounts_required": settings.require_accounts,
+        }
+    return {
+        "authenticated": True,
+        "account": account.describe(),
+        "may_approve_containment": account.role.can(Role.APPROVER),
+    }
 
 
 @app.get("/providers")
@@ -504,10 +583,46 @@ async def run_events(run_id: str) -> StreamingResponse:
 
 
 @app.post("/runs/{run_id}/decision")
-def submit_decision(run_id: str, body: Decision) -> dict[str, Any]:
+def submit_decision(run_id: str, body: Decision, request: Request) -> dict[str, Any]:
+    """Record a human decision on a suspended run.
+
+    Two rules here, and they are the reason the auth module exists.
+
+    **Approving containment requires the approver role.** It is the one
+    irreversible thing Bishop can be asked to do, so it is separated from
+    reading and from triaging. A rejection needs no role: refusing an action is
+    always safe, and requiring a role to say "no" would leave a run pinned open
+    because the only person present lacked a permission.
+
+    **`decided_by` comes from the session, never from the client.** It used to
+    be whatever string the caller sent, which meant the audit chain attributed
+    a decision without authenticating it — the chain of custody looked complete
+    and proved nothing. When a deployment has accounts, the authenticated
+    address overwrites whatever was submitted.
+    """
     run = _run_or_404(run_id)
+    payload = body.model_dump()
+
+    account = _account_for(request)
+    if account is not None:
+        payload["decided_by"] = account.email
+    elif settings.require_accounts:
+        raise HTTPException(401, "sign in to record a decision")
+
+    approving = str(payload.get("decision")) in {"approved", "modified"} and payload.get(
+        "approved_action_ids"
+    )
+    if approving and settings.require_accounts:
+        from bishop.auth import Role
+
+        if account is None or not account.role.can(Role.APPROVER):
+            raise HTTPException(
+                403,
+                "approving containment requires the approver role. A rejection does not.",
+            )
+
     try:
-        runs.resume(run, body.model_dump())
+        runs.resume(run, payload)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
     return {"run_id": run.run_id, "status": run.status}

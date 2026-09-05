@@ -79,6 +79,12 @@ class DeploymentSettings(BaseSettings):
 
     public_demo: bool = False
 
+    #: Turn on in-house accounts: sign-in, roles, and an approver check on the
+    #: containment gate. Off by default so a laptop run needs no user table.
+    #: When on, `decided_by` in the audit chain comes from the session rather
+    #: than from whatever the client sent.
+    require_accounts: bool = False
+
     json_logs: bool = False
     log_level: str = "INFO"
 
@@ -229,6 +235,7 @@ class DeploymentSettings(BaseSettings):
             "database": _describe_database(self.database_url or os.environ.get("DATABASE_URL", "")),
             "json_logs": self.json_logs,
             "public_demo": self.public_demo,
+            "require_accounts": self.require_accounts,
             "persists_submitted_alerts": self.persist_submitted_alerts,
         }
 
