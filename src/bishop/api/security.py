@@ -36,6 +36,7 @@ import time
 import uuid
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
+from weakref import WeakSet
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -115,6 +116,25 @@ def _fingerprint(key: str) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
 
 
+#: Every live limiter, weakly held so an app that goes out of scope is not
+#: kept alive by this.
+_LIMITERS: WeakSet[RateLimiter] = WeakSet()
+
+
+def reset_rate_limits() -> None:
+    """Forget every counter. For tests, which share one app and one budget.
+
+    The limiter counts per identity per wall-clock minute, and a whole test
+    suite hitting the shared app arrives as one identity. That makes the budget
+    a resource shared across modules: adding tests to one file failed unrelated
+    assertions in another with a 429, and only in CI, where the suite runs fast
+    enough to land inside a single minute. Order-dependent and machine-
+    dependent, which is the worst shape a test failure can have.
+    """
+    for limiter in _LIMITERS:
+        limiter._hits.clear()
+
+
 class RateLimiter(BaseHTTPMiddleware):
     """Fixed-window per-key limiting, in process memory.
 
@@ -128,6 +148,7 @@ class RateLimiter(BaseHTTPMiddleware):
         super().__init__(app)
         self._limit = settings.rate_limit_per_minute
         self._hits: dict[tuple[str, int], int] = defaultdict(int)
+        _LIMITERS.add(self)
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
