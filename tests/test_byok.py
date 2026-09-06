@@ -305,3 +305,82 @@ class TestSubmittedAlertsStayPrivateInDemoMode:
             assert mine, "a corpus run should still be stored"
         finally:
             reset_settings()
+
+
+class TestTheHarnessCanReachEveryProvider:
+    """`get_provider` is how the eval harness gets a model.
+
+    It used to build only `anthropic`, while the console reached all four
+    through BYOK. So `just eval-live` could score one of the four providers the
+    README advertises and the other three could not be measured at all — the
+    live path for Gemini, OpenAI and Azure had no way to produce a number.
+
+    Resolution is offline: building a provider constructs an HTTP client and
+    sends nothing, so these make no network calls.
+    """
+
+    @pytest.mark.parametrize(
+        ("provider", "variable", "key"),
+        [
+            ("openai", "OPENAI_API_KEY", "sk-" + "x" * 40),
+            ("gemini", "GEMINI_API_KEY", "AQ." + "x" * 30),
+            ("azure-openai", "AZURE_OPENAI_API_KEY", "x" * 32),
+        ],
+    )
+    def test_a_provider_is_built_from_its_environment_key(
+        self, provider, variable, key, monkeypatch
+    ):
+        from bishop.models import get_provider
+
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", provider)
+        monkeypatch.setenv(variable, key)
+        monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com")
+
+        assert get_provider().name == provider
+
+    def test_a_badly_shaped_key_raises_the_documented_type(self, monkeypatch):
+        """`parse` raises a `ValueError` because it is written for a request
+        handler. `get_provider` promises a `ModelError`, and a caller catching
+        the documented type would have missed this entirely."""
+        from bishop.models import ModelError, get_provider
+
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", "gemini")
+        monkeypatch.setenv("GEMINI_API_KEY", "sk-this-is-not-a-gemini-key")
+
+        with pytest.raises(ModelError, match="unusable"):
+            get_provider()
+
+    def test_the_default_is_still_the_mock(self, monkeypatch):
+        from bishop.models import get_provider, is_offline
+
+        monkeypatch.delenv("BISHOP_MODEL_PROVIDER", raising=False)
+        assert is_offline(get_provider())
+
+    def test_selecting_a_provider_without_its_key_fails_loudly(self, monkeypatch):
+        """Never a silent fall back to the mock: that produces numbers nobody
+        can reproduce, attributed to a model that was never called."""
+        from bishop.models import ModelError, get_provider
+
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", "gemini")
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+        with pytest.raises(ModelError, match="GEMINI_API_KEY is not set"):
+            get_provider()
+
+    def test_an_unknown_provider_lists_the_real_ones(self, monkeypatch):
+        from bishop.models import ModelError, get_provider
+
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", "llama-on-a-toaster")
+        with pytest.raises(ModelError) as caught:
+            get_provider()
+        for name in ("mock", "anthropic", "gemini", "openai", "azure-openai"):
+            assert name in str(caught.value)
+
+    def test_the_model_id_can_be_overridden(self, monkeypatch):
+        from bishop.models import get_provider
+
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", "gemini")
+        monkeypatch.setenv("GEMINI_API_KEY", "AQ." + "x" * 30)
+        monkeypatch.setenv("BISHOP_MODEL_ID", "gemini-flash-latest")
+
+        assert get_provider().model_id == "gemini-flash-latest"

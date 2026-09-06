@@ -189,6 +189,18 @@ def run_scorecard(
     corpus_name: str = "golden",
 ) -> Scorecard:
     from bishop.attck import load_catalogue
+    from bishop.models import get_provider
+
+    # Resolve here rather than leaving it to `build_runtime`, so the card names
+    # the model that actually answered.
+    #
+    # It used to pass `provider=None` straight through, and `build_runtime`
+    # resolved the environment's provider itself — so a live run against Gemini
+    # produced a scorecard headed `provider mock (mock)`, with a note claiming
+    # the cost was "genuinely $0.00". 178 model calls at 21 s each, filed under
+    # the deterministic provider. A number attributed to the wrong model is
+    # worse than no number.
+    provider = provider or get_provider()
 
     corpus = load_corpus(corpus_dir)
     outcomes = [_run_one(item, provider=provider, index=i) for i, item in enumerate(corpus)]

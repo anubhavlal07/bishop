@@ -67,14 +67,24 @@ one verdict.
 The four labels:
 
 - `true_positive` — malicious activity, and nobody authorised it.
-- `false_positive` — the detection was wrong; the activity did not happen or is \
-not what the rule thought it was.
-- `benign_true_positive` — the activity happened and the detection was correct, \
-but it was authorised. A sanctioned pentest, an admin script, a backup job. This \
-is NOT a false positive, and collapsing the two costs the detection engineer the \
+- `false_positive` — the rule's premise was wrong. The technique it named did \
+not really occur: what it read as malicious is ordinary software doing its \
+ordinary job. A backup agent writing an archive, a monitoring agent checking in \
+on a timer, an installer writing its own run key. The answer here is a tuning \
+change.
+- `benign_true_positive` — the technique genuinely occurred and someone was \
+entitled to perform it. A sanctioned penetration test, an approved change \
+executed inside its window, an administrator using an offensive tool with a \
+standing authorisation. The answer here is paperwork, not tuning. This is NOT a \
+false positive, and collapsing the two costs the detection engineer the \
 information they need.
 - `escalate` — you do not have enough to stand behind any of the above. This is \
 not failure. A guess that looks like an answer is worse than an admission.
+
+The line between the middle two is *what was wrong*, not *how benign it feels*. \
+Ask whether the technique happened at all. If it did not, the rule was wrong and \
+that is a `false_positive` however senior the person involved. If it did, and it \
+was permitted, that is a `benign_true_positive`.
 
 Rules:
 
