@@ -1,0 +1,30 @@
+{
+  "alert_id": "HO2-06-container-escape",
+  "source": "k8s-audit",
+  "rule_name": "Container mounted the host filesystem",
+  "detected_at": "2026-09-06T06:02:00+00:00",
+  "severity": "critical",
+  "category": "cloud",
+  "principal": {
+    "username": "system:serviceaccount:default:builder"
+  },
+  "raw": {
+    "verb": "create",
+    "resource": "pods",
+    "privileged": true,
+    "host_path_mounts": [
+      "/"
+    ],
+    "namespace": "default"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1611"
+    ],
+    "should_escalate": true,
+    "why": "A privileged pod with the host root mounted read-write is a container escape. Bishop knows nothing about Kubernetes and the alert carries no process, host or account it can read, so escalation is the only honest outcome.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

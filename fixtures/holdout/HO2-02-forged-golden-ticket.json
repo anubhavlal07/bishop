@@ -1,0 +1,34 @@
+{
+  "alert_id": "HO2-02-forged-golden-ticket",
+  "source": "windows-security",
+  "rule_name": "Kerberos TGT with anomalous lifetime presented",
+  "detected_at": "2026-09-06T02:03:00+00:00",
+  "severity": "critical",
+  "category": "identity",
+  "device": {
+    "hostname": "DC-11",
+    "ip": "10.40.1.11",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "backupsvc",
+    "domain": "CORP"
+  },
+  "raw": {
+    "event_id": 4769,
+    "ticket_lifetime_hours": 87600,
+    "account_exists_in_directory": false,
+    "encryption": "0x12"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1558.001"
+    ],
+    "should_escalate": true,
+    "why": "A ticket with a ten-year lifetime for an account the directory has never issued a TGT to. That is a forged ticket, and nothing in Bishop reads ticket lifetimes. Escalate.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

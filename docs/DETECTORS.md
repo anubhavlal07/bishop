@@ -435,11 +435,20 @@ The rest are judgement calls, and the scorecard is the only evidence they are
 reasonable ones. Since the corpus was written before the thresholds were tuned
 against it, that evidence is weaker than the numbers make it look.
 
-The held-out set puts a number on how much weaker. `just eval-holdout` runs
-fifteen alerts written after these thresholds were fixed, and it scored 33%
-against the development set's 100%. Most of that gap is coverage — alert types
-no detector here reads — but one part of it was a genuine defect in how the
-thresholds were being applied, and it is the kind only an untuned set finds:
-when *every* detector returned "nothing to work with", the empty evidence table
-was being read as evidence of innocence rather than as an absence of evidence.
-See the README's evaluation section for the breakdown.
+The held-out sets put a number on how much weaker. The first ran fifteen alerts
+written after these thresholds were fixed and scored 33% against the development
+set's 100%. Most of that gap was coverage — alert types no detector here read —
+but one part was a genuine defect in how the thresholds were applied, and it is
+the kind only an untuned set finds: when *every* detector returned "nothing to
+work with", the empty evidence table was being read as evidence of innocence
+rather than as an absence of evidence.
+
+The second set, twenty alerts written after those fixes, scores 95% on verdicts
+and 58% on technique recall. Its one miss is worth reading here rather than in
+the README, because it is a threshold in this table doing its job: the case
+claims high-entropy DNS labels and the generator emitted 3.1 bits per character,
+below the 3.2 floor above. `dns_exfiltration` examined the queries and declined,
+which is the correct answer to the data it was given and the wrong answer to the
+data the case meant to describe. The fixture is the defect; the band is not.
+
+See the README's evaluation section for the rest.

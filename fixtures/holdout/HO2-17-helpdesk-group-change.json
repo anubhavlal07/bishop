@@ -1,0 +1,38 @@
+{
+  "alert_id": "HO2-17-helpdesk-group-change",
+  "source": "windows-security",
+  "rule_name": "Privileged group membership changed",
+  "detected_at": "2026-09-06T17:45:00+00:00",
+  "severity": "high",
+  "category": "identity",
+  "device": {
+    "hostname": "DC-11",
+    "ip": "10.40.1.11",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "svc_helpdesk",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "raw": {
+    "group_changes": [
+      {
+        "group": "Domain Admins",
+        "member_added": "tmp_admin9",
+        "changed_by": "svc_helpdesk"
+      }
+    ]
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1098"
+    ],
+    "should_escalate": false,
+    "why": "svc_helpdesk added an account to Domain Admins. The policy names the account as automation and caps it at local privilege \u2014 it is explicitly NOT permitted to change domain group membership. Knowing an account is not the same as that account being allowed to do this, and treating it as authorised is the confused-deputy failure the scoped policy exists to prevent.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

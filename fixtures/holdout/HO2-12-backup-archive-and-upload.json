@@ -1,0 +1,36 @@
+{
+  "alert_id": "HO2-12-backup-archive-and-upload",
+  "source": "edr",
+  "rule_name": "Large archive created then transferred off-host",
+  "detected_at": "2026-09-06T12:05:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-FILE-21",
+    "ip": "10.40.10.21",
+    "is_server": true,
+    "criticality": "medium"
+  },
+  "principal": {
+    "username": "svc_veeam",
+    "domain": "CORP",
+    "is_service_account": true
+  },
+  "process": {
+    "name": "veeam.backup.agent.exe",
+    "path": "C:\\Program Files\\Veeam\\Backup\\veeam.backup.agent.exe",
+    "command_line": "veeam.backup.agent.exe --job nightly-shares --compress --out E:\\backup\\shares-20260906.vbk"
+  },
+  "file": {
+    "path": "E:\\backup\\shares-20260906.vbk",
+    "size_bytes": 88000000000
+  },
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "The nightly backup: svc_veeam archives a file share and writes it to the backup volume. The shape is identical to staging and exfiltration, and the environment policy names the account and says so. Firing here is the classic staging false positive.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

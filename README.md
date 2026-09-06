@@ -82,9 +82,9 @@ for twenty seconds and then everything at once.
   verifying a chain against itself cannot see that its end was removed.
 - **Multi-alert correlation** — connected components over shared host or account within an
   hour. Three low-severity alerts become one intrusion.
-- **Honest evaluation** — a tuned development set *and* a **held-out set run once**, reported
-  side by side. The held-out number is 33%, and it is in this README because that is the number
-  that means something.
+- **Honest evaluation** — a tuned development set *and* **held-out sets run once**, reported
+  side by side. The first scored 33% and was spent closing what it found; the second scores
+  95% on verdicts and **58% on technique recall**, which is the number that still stings.
 
 ---
 
@@ -280,42 +280,66 @@ just check-production      # would this config be allowed to serve?
 
 ## Evaluation
 
-Two numbers, and the second is the honest one.
+Three numbers. The first flatters, the last two do not, and one of them is spent.
 
-| | Development set | Held-out set |
-|---|---|---|
-| Alerts | 33 | 15 |
-| False-negative rate on true positives | **0%** | **50%** |
-| Verdict accuracy | 100% | **33%** |
-| False-positive rate | 0% | 20% |
-| Escalation precision / recall | 100% / 100% | 50% / 17% |
-| ATT&CK technique recall | 100% | 36% |
-| Invalid technique IDs emitted | 0 | 0 |
-| Median time to triage | 0.03 s | 0.03 s |
+| | Development set | Held-out #1 (spent) | Held-out #2 |
+|---|---|---|---|
+| Alerts | 33 | 15 | 20 |
+| False-negative rate on true positives | **0%** | **50%** | **12.5%** |
+| Verdict accuracy | 100% | **33%** | **95%** |
+| False-positive rate | 0% | 20% | 0% |
+| Escalation precision / recall | 100% / 100% | 50% / 17% | 100% / 100% |
+| ATT&CK technique recall | 100% | 36% | **58%** |
+| Invalid technique IDs emitted | 0 | 0 | 0 |
+| Median time to triage | 0.03 s | 0.03 s | 0.04 s |
 
 The development set was written first and the thresholds were tuned against it, so 100% there
 measures **internal consistency** — detectors, mitigating rules and label definitions agreeing
 with each other. It is a smoke test, not a benchmark.
 
-The held-out set is fifteen alerts written **after** the thresholds were frozen, run **once**,
-and reported whatever it said. `just eval-holdout` deliberately has **no baseline and no
-regression gate**, because a gate on a held-out set is precisely what turns it back into a
-training set. The result is committed at `eval/results/holdout-2026-09-05.json`.
+A held-out set is written **after** the thresholds are frozen, run **once**, and reported
+whatever it says. `just eval-holdout` deliberately has **no baseline and no regression gate**,
+because a gate on a held-out set is precisely what turns it back into a training set. Both
+results are committed under `eval/results/`, and both sets are in the repo.
 
 **What the 33% was made of.** Ten of fifteen wrong, in three different ways: one real logic
-defect (the third grounding arm, now fixed — it moved the score to 40%), a set of coverage gaps
-where Bishop simply had no detector, and two cases where my own label is arguable.
+defect (the third grounding arm), a set of coverage gaps where Bishop simply had no detector,
+and two cases where my own label is arguable.
 
-**Four of those cases are now spent, deliberately.** The logic defect and three of the coverage
-gaps — Kerberoasting (T1558.003), recovery destruction (T1490) and cloud token replay
-(T1550.001) — were real holes worth closing, so I closed them. Writing a detector against a
-held-out case converts it into a development case, and those four can never be counted again. I
-left the label disagreements alone: adjusting a label until it agrees with the output is exactly
-how a held-out set stops meaning anything.
+**Then it was spent, deliberately.** The logic defect and three of the coverage gaps —
+Kerberoasting (T1558.003), recovery destruction (T1490) and cloud token replay (T1550.001) —
+were real holes worth closing, so I closed them. Writing a detector against a held-out case
+converts it into a development case, so those four can never be counted again and the set can no
+longer produce a number. I left the label disagreements alone: adjusting a label until it agrees
+with the output is exactly how a held-out set stops meaning anything. The fixtures are archived
+in `fixtures/holdout-spent-2026-09-05/` rather than deleted, because a cited number whose inputs
+are gone is a number nobody can check.
 
-So **33% stands as the one clean measurement**, taken once, before any of that. A better number
-would need a *new* held-out set, written after these thresholds froze — not a re-run of this
-one. `scripts/build_holdout.py` documents the protocol.
+**The 95% is the second set: twenty new alerts, written once, run once.** Six describe
+techniques Bishop has no detector for — AS-REP roasting, forged Kerberos tickets, WMI event
+subscriptions, BITS transfers, container escape — and it escalated all six rather than guessing.
+Five are false positives built to look exactly like the true positives, including the wide-and-
+shallow scanner sweep that mirrors the password spray; none of them fired.
+
+**Read that number sceptically, and here is why I do.** Twenty cases means one alert is five
+points. Six of them test abstention on an uncovered technique, which is Bishop's most
+predictable behaviour and the easiest thing for me to write toward. Three of the five false
+positives lean on the trusted environment policy, which is a deterministic signal rather than a
+judgement. And a set written by the person who knows the architecture is a weaker test than one
+written by somebody who does not — that limitation does not go away by being disclosed.
+
+The unflattering number in the same run is **technique recall at 58%**: Bishop reached the right
+verdict far more often than it named the right ATT&CK techniques, and `docs/COVERAGE.md` shows
+exactly where the gap is.
+
+**The single miss is a defect in my fixture, not in Bishop, and it still counts against it.**
+HO2-08 claims forty-eight high-entropy DNS labels; the generator I wrote emitted sixteen leading
+zeros and a repeated twelve-character block, so the labels measure 3.1 bits per character where
+a real tunnel is near 5. `dns_exfiltration` examined them and reported *"subdomain entropy and
+length stayed within the range of ordinary hostnames"*, which is correct. Regenerating the case
+and re-running would improve the score to 100% and destroy what the set is for, so the 95%
+stands as scored — it understates rather than flatters, which is the right direction for an
+error to point.
 
 ### Measured against a live model
 

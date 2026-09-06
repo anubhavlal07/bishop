@@ -1,0 +1,34 @@
+{
+  "alert_id": "HO2-01-asrep-roasting",
+  "source": "windows-security",
+  "rule_name": "Kerberos pre-authentication disabled accounts enumerated",
+  "detected_at": "2026-09-06T01:12:00+00:00",
+  "severity": "high",
+  "category": "identity",
+  "device": {
+    "hostname": "DC-11",
+    "ip": "10.40.1.11",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "r.delgado",
+    "domain": "CORP"
+  },
+  "raw": {
+    "event_id": 4768,
+    "preauth_disabled_accounts_queried": 11,
+    "window_seconds": 52,
+    "encryption": "0x17"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1558.004"
+    ],
+    "should_escalate": true,
+    "why": "AS-REP roasting: eleven accounts with pre-authentication disabled were queried in under a minute and encrypted blobs returned for each. Bishop has no detector for this and the account is not the requester's own, so the honest answer is to hand it to a human.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

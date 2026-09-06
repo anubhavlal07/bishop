@@ -1,0 +1,32 @@
+{
+  "alert_id": "HO2-16-red-team-lolbin",
+  "source": "edr",
+  "rule_name": "Signed binary used to download and execute",
+  "detected_at": "2026-09-06T16:22:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-RT-04",
+    "ip": "10.99.4.4",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "s.pereira",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "rundll32.exe",
+    "path": "C:\\Windows\\System32\\rundll32.exe",
+    "command_line": "rundll32.exe javascript:\\\"\\\\..\\\\mshtml,RunHTMLApplication \\\";document.write();new%20ActiveXObject(\\\"WScript.Shell\\\").Run(\\\"calc\\\")"
+  },
+  "labels": {
+    "verdict": "benign_true_positive",
+    "techniques": [
+      "T1218.011"
+    ],
+    "should_escalate": false,
+    "why": "Genuine offensive tooling, on the red-team range the environment policy names, covered by a standing rules-of-engagement document. The technique is real \u2014 this is a benign true positive, not a false one, and collapsing the two would throw away the distinction.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

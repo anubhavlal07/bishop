@@ -1,0 +1,33 @@
+{
+  "alert_id": "HO2-03-wmi-event-subscription",
+  "source": "edr",
+  "rule_name": "Permanent WMI event consumer created",
+  "detected_at": "2026-09-06T03:40:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-408",
+    "ip": "10.40.30.8",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "n.farrell",
+    "domain": "CORP"
+  },
+  "raw": {
+    "wmi_namespace": "root\\subscription",
+    "consumer_class": "CommandLineEventConsumer",
+    "filter_query": "SELECT * FROM __InstanceCreationEvent WITHIN 60",
+    "consumer_command": "powershell -w hidden -c IEX(...)"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [
+      "T1546.003"
+    ],
+    "should_escalate": true,
+    "why": "A permanent WMI event consumer bound to a filter that fires on every logon is fileless persistence. Bishop's persistence detector reads run keys, services and scheduled tasks, not WMI subscriptions, so the mechanism is invisible to it.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

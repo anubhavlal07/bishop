@@ -1,0 +1,40 @@
+{
+  "alert_id": "HO2-11-run-key-persistence",
+  "source": "sysmon",
+  "rule_name": "Registry run key written from a temporary directory",
+  "detected_at": "2026-09-06T11:14:00+00:00",
+  "severity": "high",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-470",
+    "ip": "10.40.30.70",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "j.baptiste",
+    "domain": "CORP"
+  },
+  "process": {
+    "name": "setup_v2.exe",
+    "path": "C:\\Users\\j.baptiste\\AppData\\Local\\Temp\\setup_v2.exe",
+    "command_line": "C:\\Users\\j.baptiste\\AppData\\Local\\Temp\\setup_v2.exe /S"
+  },
+  "registry_changes": [
+    {
+      "key": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "value_name": "OfficeSync",
+      "value_data": "C:\\Users\\j.baptiste\\AppData\\Local\\Temp\\ofsync.exe"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1547.001",
+      "T1204.002"
+    ],
+    "should_escalate": false,
+    "why": "A run key pointing at an executable in %TEMP%, written by a process that itself runs from %TEMP%. Installed software does not live there.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

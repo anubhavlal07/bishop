@@ -1,0 +1,40 @@
+{
+  "alert_id": "HO2-09-lsass-comsvcs",
+  "source": "edr",
+  "rule_name": "Process accessed LSASS memory",
+  "detected_at": "2026-09-06T09:08:00+00:00",
+  "severity": "critical",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-462",
+    "ip": "10.40.30.62",
+    "os": "Windows 11"
+  },
+  "principal": {
+    "username": "m.haddad",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "outlook.exe",
+    "path": "C:\\Program Files\\Microsoft Office\\root\\Office16\\outlook.exe"
+  },
+  "process": {
+    "name": "rundll32.exe",
+    "path": "C:\\Windows\\System32\\rundll32.exe",
+    "command_line": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 704 C:\\Users\\Public\\ls.bin full"
+  },
+  "raw": {
+    "TargetImage": "C:\\Windows\\system32\\lsass.exe",
+    "GrantedAccess": "0x1410"
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1003.001"
+    ],
+    "should_escalate": false,
+    "why": "A signed LOLBin dumping LSASS to a world-writable path. Bishop's credential-dumping detector reads the target image and granted access, so this should be an unambiguous catch.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

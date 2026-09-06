@@ -1,0 +1,575 @@
+{
+  "alert_id": "HO2-10-beacon-and-exfil",
+  "source": "firewall",
+  "rule_name": "Regular outbound connections with growing payloads",
+  "detected_at": "2026-09-06T10:40:00+00:00",
+  "severity": "high",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-APP-07",
+    "ip": "10.40.10.7",
+    "is_server": true
+  },
+  "connections": [
+    {
+      "timestamp": "2026-09-06T09:40:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:41:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:42:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:43:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:44:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:45:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:46:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:47:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:48:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:49:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:50:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:51:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:52:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:53:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:54:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:55:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:56:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:57:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:58:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T09:59:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:00:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:01:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:02:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:03:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:04:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:05:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:06:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:07:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:08:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:09:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:10:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:11:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:12:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:13:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:14:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:15:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:16:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:17:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:18:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:19:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:20:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:21:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:22:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:23:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:24:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:25:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:26:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:27:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:28:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:29:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:30:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:31:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:32:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:33:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:34:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:35:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:36:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:37:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:38:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:39:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 1400,
+      "bytes_in": 900
+    },
+    {
+      "timestamp": "2026-09-06T10:40:00+00:00",
+      "source_ip": "10.40.10.7",
+      "dest_ip": "203.0.113.201",
+      "dest_port": 443,
+      "hostname": "sync.telemetry-b7.example",
+      "bytes_out": 240000000,
+      "bytes_in": 3000
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.001",
+      "T1041"
+    ],
+    "should_escalate": false,
+    "why": "Sixty-second check-ins to one destination for an hour, then a single transfer of 240 MB outbound against 3 KB in. Beaconing followed by exfiltration, and Bishop has detectors for both halves.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

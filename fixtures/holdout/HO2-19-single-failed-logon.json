@@ -1,0 +1,46 @@
+{
+  "alert_id": "HO2-19-single-failed-logon",
+  "source": "okta",
+  "rule_name": "Authentication failure",
+  "detected_at": "2026-09-06T19:10:00+00:00",
+  "severity": "low",
+  "category": "identity",
+  "principal": {
+    "username": "k.andersson",
+    "domain": "CORP"
+  },
+  "auth_events": [
+    {
+      "timestamp": "2026-09-06T19:08:00+00:00",
+      "username": "k.andersson",
+      "outcome": "failure",
+      "source_ip": "198.51.100.31",
+      "geo": {
+        "city": "Perth",
+        "country": "AU",
+        "latitude": -31.9523,
+        "longitude": 115.8613
+      }
+    },
+    {
+      "timestamp": "2026-09-06T19:10:00+00:00",
+      "username": "k.andersson",
+      "outcome": "success",
+      "source_ip": "198.51.100.31",
+      "geo": {
+        "city": "Perth",
+        "country": "AU",
+        "latitude": -31.9523,
+        "longitude": 115.8613
+      }
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "One failed password, then a success two minutes later from the same address. A person mistyping their password. There is nothing here, and the correct behaviour is to say so rather than to reach.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

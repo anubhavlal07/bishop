@@ -1,0 +1,563 @@
+{
+  "alert_id": "HO2-14-monitoring-agent-beacon",
+  "source": "firewall",
+  "rule_name": "Periodic outbound connections on a fixed interval",
+  "detected_at": "2026-09-06T14:30:00+00:00",
+  "severity": "medium",
+  "category": "network",
+  "device": {
+    "hostname": "SRV-APP-09",
+    "ip": "10.40.10.9",
+    "is_server": true
+  },
+  "connections": [
+    {
+      "timestamp": "2026-09-06T14:00:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:00:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:01:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:01:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:02:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:02:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:03:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:03:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:04:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:04:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:05:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:05:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:06:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:06:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:07:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:07:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:08:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:08:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:09:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:09:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:10:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:10:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:11:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:11:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:12:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:12:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:13:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:13:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:14:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:14:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:15:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:15:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:16:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:16:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:17:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:17:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:18:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:18:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:19:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:19:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:20:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:20:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:21:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:21:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:22:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:22:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:23:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:23:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:24:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:24:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:25:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:25:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:26:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:26:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:27:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:27:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:28:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:28:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:29:00+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    },
+    {
+      "timestamp": "2026-09-06T14:29:30+00:00",
+      "source_ip": "10.40.10.9",
+      "dest_ip": "192.0.2.50",
+      "dest_port": 443,
+      "hostname": "intake.monitoring.example",
+      "bytes_out": 820,
+      "bytes_in": 240
+    }
+  ],
+  "labels": {
+    "verdict": "false_positive",
+    "techniques": [],
+    "should_escalate": false,
+    "why": "A monitoring agent checking in every 30 seconds to the vendor intake endpoint the environment policy sanctions by name. Metronomic timing is what the beaconing detector looks for, and it is also what a monitoring agent does by design.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

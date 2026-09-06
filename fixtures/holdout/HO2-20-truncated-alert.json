@@ -1,0 +1,20 @@
+{
+  "alert_id": "HO2-20-truncated-alert",
+  "source": "edr",
+  "rule_name": "Endpoint alert",
+  "detected_at": "2026-09-06T20:00:00+00:00",
+  "severity": "medium",
+  "category": "endpoint",
+  "device": {
+    "hostname": "WKSTN-491",
+    "ip": "10.40.30.91"
+  },
+  "labels": {
+    "verdict": "escalate",
+    "techniques": [],
+    "should_escalate": true,
+    "why": "A sensor that dropped its payload: a rule name, a host, and nothing else. No detector has anything to read, so `examined` is empty. Closing this as a false positive claims a check nobody ran \u2014 it is the state the third grounding rule exists for.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

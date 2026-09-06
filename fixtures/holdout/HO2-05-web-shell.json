@@ -1,0 +1,38 @@
+{
+  "alert_id": "HO2-05-web-shell",
+  "source": "edr",
+  "rule_name": "Web server process spawned a command interpreter",
+  "detected_at": "2026-09-06T05:27:00+00:00",
+  "severity": "critical",
+  "category": "endpoint",
+  "device": {
+    "hostname": "SRV-WEB-03",
+    "ip": "10.40.10.3",
+    "is_server": true,
+    "criticality": "high"
+  },
+  "principal": {
+    "username": "iis_apppool",
+    "domain": "CORP"
+  },
+  "parent_process": {
+    "name": "w3wp.exe",
+    "path": "C:\\Windows\\System32\\inetsrv\\w3wp.exe"
+  },
+  "process": {
+    "name": "powershell.exe",
+    "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "command_line": "powershell.exe -nop -w hidden -c whoami /priv"
+  },
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1505.003",
+      "T1059.001"
+    ],
+    "should_escalate": false,
+    "why": "w3wp.exe spawning PowerShell is a web shell. Bishop has no web-shell detector, but the parent-child relationship is one its suspicious parent-child rule reads, so this is a fair test of whether the general signal carries a specific technique it does not know.",
+    "synthetic": true,
+    "holdout": true
+  }
+}

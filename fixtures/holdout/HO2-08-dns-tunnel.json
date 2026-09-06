@@ -1,0 +1,269 @@
+{
+  "alert_id": "HO2-08-dns-tunnel",
+  "source": "dns",
+  "rule_name": "High-entropy subdomain queries to one parent",
+  "detected_at": "2026-09-06T08:15:00+00:00",
+  "severity": "high",
+  "category": "network",
+  "device": {
+    "hostname": "WKSTN-455",
+    "ip": "10.40.30.55"
+  },
+  "principal": {
+    "username": "c.eriksson",
+    "domain": "CORP"
+  },
+  "dns_events": [
+    {
+      "timestamp": "2026-09-06T08:11:00+00:00",
+      "query": "0000000000000000ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:05+00:00",
+      "query": "0000000000000001ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:10+00:00",
+      "query": "0000000000000002ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:15+00:00",
+      "query": "0000000000000003ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:20+00:00",
+      "query": "0000000000000004ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:25+00:00",
+      "query": "0000000000000005ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:30+00:00",
+      "query": "0000000000000006ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:35+00:00",
+      "query": "0000000000000007ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:40+00:00",
+      "query": "0000000000000008ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:45+00:00",
+      "query": "0000000000000009ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:50+00:00",
+      "query": "000000000000000aab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:11:55+00:00",
+      "query": "000000000000000bab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:00+00:00",
+      "query": "000000000000000cab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:05+00:00",
+      "query": "000000000000000dab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:10+00:00",
+      "query": "000000000000000eab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:15+00:00",
+      "query": "000000000000000fab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:20+00:00",
+      "query": "0000000000000010ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:25+00:00",
+      "query": "0000000000000011ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:30+00:00",
+      "query": "0000000000000012ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:35+00:00",
+      "query": "0000000000000013ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:40+00:00",
+      "query": "0000000000000014ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:45+00:00",
+      "query": "0000000000000015ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:50+00:00",
+      "query": "0000000000000016ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:12:55+00:00",
+      "query": "0000000000000017ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:00+00:00",
+      "query": "0000000000000018ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:05+00:00",
+      "query": "0000000000000019ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:10+00:00",
+      "query": "000000000000001aab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:15+00:00",
+      "query": "000000000000001bab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:20+00:00",
+      "query": "000000000000001cab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:25+00:00",
+      "query": "000000000000001dab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:30+00:00",
+      "query": "000000000000001eab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:35+00:00",
+      "query": "000000000000001fab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:40+00:00",
+      "query": "0000000000000020ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:45+00:00",
+      "query": "0000000000000021ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:50+00:00",
+      "query": "0000000000000022ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:13:55+00:00",
+      "query": "0000000000000023ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:00+00:00",
+      "query": "0000000000000024ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:05+00:00",
+      "query": "0000000000000025ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:10+00:00",
+      "query": "0000000000000026ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:15+00:00",
+      "query": "0000000000000027ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:20+00:00",
+      "query": "0000000000000028ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:25+00:00",
+      "query": "0000000000000029ab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:30+00:00",
+      "query": "000000000000002aab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:35+00:00",
+      "query": "000000000000002bab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:40+00:00",
+      "query": "000000000000002cab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:45+00:00",
+      "query": "000000000000002dab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:50+00:00",
+      "query": "000000000000002eab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    },
+    {
+      "timestamp": "2026-09-06T08:14:55+00:00",
+      "query": "000000000000002fab3f92c7d1e4ab3f92c7d1e4.tunnel-x9.example",
+      "query_type": "TXT"
+    }
+  ],
+  "labels": {
+    "verdict": "true_positive",
+    "techniques": [
+      "T1071.004",
+      "T1048.003"
+    ],
+    "should_escalate": false,
+    "why": "Forty-eight unique high-entropy labels under one parent in four minutes, all TXT. That is a DNS tunnel and Bishop has a detector for exactly it.",
+    "synthetic": true,
+    "holdout": true
+  }
+}
