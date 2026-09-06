@@ -13,6 +13,7 @@ the only place the defect exists: the code was correct, the image was wrong.
 from __future__ import annotations
 
 import ast
+import importlib
 import json
 import re
 from pathlib import Path
@@ -163,3 +164,84 @@ class TestTheCommittedSuffixListIsIntact:
         data = self.suffixes()
         assert "publicsuffix.org" in data["_source"]
         assert "Mozilla Public License" in data["_licence"]
+
+
+CONSOLE_TYPES = REPO_ROOT / "console" / "lib" / "types.ts"
+
+
+def declared_fields(interface: str) -> set[str]:
+    """The field names one `export interface` declares, ignoring nested shapes.
+
+    Nested object literals are skipped by brace depth, so `verdict: {...}`
+    contributes `verdict` and not its members — those belong to a different
+    payload and are checked separately where it matters.
+    """
+    source = CONSOLE_TYPES.read_text(encoding="utf-8")
+    match = re.search(rf"export interface {interface} \{{(.*?)\n\}}", source, re.S)
+    assert match, f"no `export interface {interface}` in console/lib/types.ts"
+
+    fields: set[str] = set()
+    depth = 0
+    for line in match.group(1).splitlines():
+        stripped = line.strip()
+        if depth == 0 and (found := re.match(r"([A-Za-z_][A-Za-z0-9_]*)\??:", stripped)):
+            fields.add(found.group(1))
+        depth += (
+            stripped.count("{") + stripped.count("<") - stripped.count("}") - stripped.count(">")
+        )
+    return fields
+
+
+class TestTheConsoleContractMatchesTheApi:
+    """TypeScript describes the API; nothing was checking that it was right.
+
+    An API response is cast to these interfaces, not validated against them, so
+    a field the console declares and the server never sends reads as `undefined`
+    at runtime and `tsc` says nothing. `BlastRadius.timing_context` was declared
+    required, never sent, never set and never read — a contract that promised
+    Bishop knew whether an action was happening at 03:00 on a Sunday.
+    """
+
+    def approval_request(self) -> dict:
+        import time
+
+        from fastapi.testclient import TestClient
+
+        app = importlib.import_module("bishop.api.app").app
+        client = TestClient(app)
+        run = client.post("/runs", json={"alert_id": "TP-01-credential-dumping"}).json()
+        for _ in range(200):
+            state = client.get(f"/runs/{run['run_id']}").json()
+            if state["status"] != "running":
+                break
+            time.sleep(0.02)
+        assert state["approval_request"], "the gate produced no approval request to check"
+        return state["approval_request"]
+
+    def test_every_declared_approval_field_is_sent(self):
+        request = self.approval_request()
+        missing = declared_fields("ApprovalRequest") - set(request)
+        assert not missing, f"console declares {sorted(missing)}; the API does not send them"
+
+    def test_every_declared_verdict_field_is_sent(self):
+        verdict = self.approval_request()["verdict"]
+        expected = {"label", "confidence", "rationale", "counter_arguments", "technique_ids"}
+        assert expected <= set(verdict)
+
+    def test_every_declared_blast_radius_field_is_sent(self):
+        action = self.approval_request()["actions"][0]
+        missing = declared_fields("BlastRadius") - set(action["blast_radius"])
+        assert not missing, f"console declares {sorted(missing)}; the API does not send them"
+
+    def test_every_declared_action_field_is_sent(self):
+        action = self.approval_request()["actions"][0]
+        expected = {
+            "action_id",
+            "action_type",
+            "target",
+            "rationale",
+            "irreversible",
+            "rollback",
+            "blast_radius",
+        }
+        assert expected <= set(action)

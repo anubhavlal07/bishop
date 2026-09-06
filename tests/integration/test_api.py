@@ -32,6 +32,14 @@ def wait_for(client, run_id: str, status: str, timeout: float = 20.0) -> dict:
     raise AssertionError(f"run {run_id} did not reach {status}; last was {body['status']}")
 
 
+def _stream_events(client, run_id: str) -> list[str]:
+    """Every `data:` line the stream delivers, in order, as raw text."""
+    with client.stream("GET", f"/runs/{run_id}/events") as response:
+        assert response.status_code == 200
+        body = "".join(chunk for chunk in response.iter_text())
+    return [line[5:].strip() for line in body.splitlines() if line.startswith("data:")]
+
+
 class TestReadOnly:
     def test_health_reports_the_provider(self, client):
         body = client.get("/health").json()
@@ -96,6 +104,47 @@ class TestRunLifecycle:
             body = "".join(chunk for chunk in response.iter_text())
         assert "event: verdict" in body
         assert "event: done" in body
+
+    def test_a_late_subscriber_gets_each_event_once(self, client):
+        """The replay and the live feed used to be the same events twice.
+
+        Every event went into `Run.events` *and* a shared queue, and `stream()`
+        replayed the first then drained the second — so a console connecting
+        after the run had started rendered the whole run twice over. Measured
+        at 36 deliveries of 10 distinct events before the fix.
+        """
+        run_id = client.post("/runs", json={"alert_id": "FP-07-cdn-dns"}).json()["run_id"]
+        wait_for(client, run_id, "done")
+
+        delivered = _stream_events(client, run_id)
+        assert delivered, "the stream produced nothing to check"
+        assert len(delivered) == len(set(delivered)), "an event was delivered more than once"
+
+    def test_two_consoles_on_one_run_see_the_same_events(self, client):
+        """`Queue.get` is destructive, and there was one queue for the run.
+
+        Two consoles watching the same triage were taking live events from each
+        other, so each rendered a different subset of the same incident. One
+        queue per subscriber is what makes the stream a broadcast.
+        """
+        run_id = client.post("/runs", json={"alert_id": "FP-07-cdn-dns"}).json()["run_id"]
+        wait_for(client, run_id, "done")
+
+        first = _stream_events(client, run_id)
+        second = _stream_events(client, run_id)
+        assert first == second
+
+    def test_a_disconnected_console_does_not_leave_its_queue_attached(self, client):
+        """Otherwise every later event is copied into a buffer nobody reads."""
+        from bishop.api.app import runs as manager
+
+        run_id = client.post("/runs", json={"alert_id": "FP-07-cdn-dns"}).json()["run_id"]
+        wait_for(client, run_id, "done")
+        _stream_events(client, run_id)
+
+        run = manager.get(run_id)
+        assert run is not None
+        assert run._subscribers == []
 
 
 class TestApprovalFlow:

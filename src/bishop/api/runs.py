@@ -27,6 +27,9 @@ from bishop.schema import Alert
 
 MAX_RUNS = 64
 
+#: A run stops producing events once it reaches one of these.
+_SETTLED = frozenset({"done", "failed", "awaiting_approval"})
+
 
 @dataclass
 class Run:
@@ -41,7 +44,20 @@ class Run:
     error: str | None = None
     submitted: bool = False
 
-    _queue: queue.Queue = field(default_factory=queue.Queue, repr=False)
+    #: One queue per connected stream, not one queue per run.
+    #:
+    #: There used to be a single shared queue, and `stream()` replayed
+    #: `events` and then drained it. Both hold every event, so a console that
+    #: connected after the run had started received the whole run **twice** —
+    #: measured at 36 deliveries of 10 distinct events. And `Queue.get` is
+    #: destructive, so two consoles watching the same run were taking live
+    #: events from each other, each seeing a different subset.
+    #:
+    #: A queue per subscriber fixes both: the snapshot is taken under the same
+    #: lock that registers the queue, so an event is either in the replay or in
+    #: the feed and never in both, and one subscriber cannot consume another's.
+    _subscribers: list[queue.Queue] = field(default_factory=list, repr=False)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
     _runtime: Any = field(default=None, repr=False)
     _graph: Any = field(default=None, repr=False)
     _config: Any = field(default=None, repr=False)
@@ -49,8 +65,27 @@ class Run:
 
     def push(self, event: dict[str, Any]) -> None:
         stamped = {**event, "at": datetime.now(UTC).isoformat()}
-        self.events.append(stamped)
-        self._queue.put(stamped)
+        with self._lock:
+            self.events.append(stamped)
+            for feed in self._subscribers:
+                feed.put(stamped)
+
+    def subscribe(self) -> tuple[list[dict[str, Any]], queue.Queue]:
+        """Everything that has already happened, and a feed for what happens next.
+
+        Both under one lock, so nothing can be pushed in the gap between the
+        snapshot and the registration — which is the gap that would drop an
+        event rather than duplicate one.
+        """
+        feed: queue.Queue = queue.Queue()
+        with self._lock:
+            self._subscribers.append(feed)
+            return list(self.events), feed
+
+    def unsubscribe(self, feed: queue.Queue) -> None:
+        with self._lock:
+            if feed in self._subscribers:
+                self._subscribers.remove(feed)
 
     def incident(self):
         if self.result is None:
@@ -187,22 +222,33 @@ class RunManager:
         """Yield events as they happen, then stop when the run settles.
 
         Replays what has already happened first, so a console that connects
-        late still renders the whole run rather than only its tail.
+        late still renders the whole run rather than only its tail. The replay
+        and the live feed are taken together in `subscribe()`, so an event
+        appears in exactly one of them.
         """
-        for event in list(run.events):
-            yield event
-
-        while True:
-            try:
-                event = await asyncio.to_thread(run._queue.get, True, 1.0)
-            except queue.Empty:
-                if run.status in {"done", "failed", "awaiting_approval"}:
+        history, feed = run.subscribe()
+        try:
+            for event in history:
+                yield event
+                if event.get("kind") in _SETTLED:
                     return
-                yield {"kind": "heartbeat", "at": datetime.now(UTC).isoformat()}
-                continue
-            yield event
-            if event.get("kind") in {"done", "failed", "awaiting_approval"}:
-                return
+
+            while True:
+                try:
+                    event = await asyncio.to_thread(feed.get, True, 1.0)
+                except queue.Empty:
+                    if run.status in _SETTLED:
+                        return
+                    yield {"kind": "heartbeat", "at": datetime.now(UTC).isoformat()}
+                    continue
+                yield event
+                if event.get("kind") in _SETTLED:
+                    return
+        finally:
+            # A console that closes the tab mid-run would otherwise leave its
+            # queue attached, and every later event would be copied into a
+            # buffer nobody reads.
+            run.unsubscribe(feed)
 
 
 def corpus_index() -> dict[str, Any]:

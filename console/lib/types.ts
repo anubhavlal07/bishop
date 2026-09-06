@@ -111,7 +111,6 @@ export interface BlastRadius {
   hosts_affected: number;
   services_affected: string[];
   summary: string;
-  timing_context: string;
 }
 
 export interface ResponseAction {
@@ -163,6 +162,7 @@ export interface RunCost {
 }
 
 export interface Incident {
+  created_at: string;
   incident_id: string;
   entity_key: string;
   alerts: Array<Record<string, unknown>>;

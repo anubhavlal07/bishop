@@ -55,7 +55,13 @@ class BlastRadius(BishopModel):
     hosts_affected: int = 0
     services_affected: list[str] = Field(default_factory=list)
     summary: str = ""
-    timing_context: str = "unknown"
+    # There was a `timing_context` here, defaulting to "unknown". Nothing ever
+    # set it, nothing ever read it, and the console declared it as a required
+    # field on a payload that never carried it. A field that is always the same
+    # placeholder is worse than an absent one: it implies Bishop knows whether
+    # this is 03:00 on a Sunday when it does not. Isolating a server at 09:00
+    # and at 03:00 really are different decisions — when there is a source for
+    # that, it comes back as data rather than as a string saying "unknown".
 
 
 class ResponseAction(BishopModel):
