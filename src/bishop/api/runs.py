@@ -17,7 +17,7 @@ import queue
 import threading
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from bishop.eval import load_corpus
@@ -27,8 +27,21 @@ from bishop.schema import Alert
 
 MAX_RUNS = 64
 
+#: How long a run may sit at the gate before it counts as abandoned.
+#:
+#: Refusing to evict pending runs is right and it cannot be unconditional,
+#: or a public demo where visitors start a triage and close the tab grows
+#: without bound. A day is far longer than the hours the design expects a
+#: human to take, so anything older is nobody's live decision.
+PENDING_TTL = timedelta(hours=24)
+
 #: A run stops producing events once it reaches one of these.
 _SETTLED = frozenset({"done", "failed", "awaiting_approval"})
+
+#: Runs that are finished with, and so safe to forget. `awaiting_approval`
+#: is deliberately absent: the stream is settled but the *run* is not, and
+#: it is the one state where forgetting loses a human's pending decision.
+_SETTLED_RUN = frozenset({"done", "failed"})
 
 
 @dataclass
@@ -114,11 +127,42 @@ class RunManager:
         return sorted(self._runs.values(), key=lambda r: r.created_at, reverse=True)
 
     def _evict(self) -> None:
-        if len(self._runs) <= MAX_RUNS:
+        """Drop old runs, but never one that is waiting for a human.
+
+        This used to evict the oldest runs outright. A run suspended at the
+        gate is *by design* the longest-lived thing here — the module docstring
+        says it can wait hours — so it was reliably the oldest, and ordinary
+        traffic silently deleted it. The analyst came back to approve and got a
+        404: no verdict, no decision, no audit close-out, and nothing written to
+        the store because nothing is persisted until a run completes.
+
+        A finished run has already been saved and losing its in-memory copy
+        costs a page refresh. A pending one is the whole product. So settled
+        runs go first, then pending ones older than `PENDING_TTL` that nobody
+        came back for, and if neither is enough the map is allowed over its
+        cap rather than throwing away a decision somebody is still making.
+        """
+        excess = len(self._runs) - MAX_RUNS
+        if excess <= 0:
             return
-        for run in sorted(self._runs.values(), key=lambda r: r.created_at)[
-            : len(self._runs) - MAX_RUNS
-        ]:
+
+        cutoff = (datetime.now(UTC) - PENDING_TTL).isoformat()
+
+        def rank(run: Run) -> tuple[int, str]:
+            """Settled runs go first, then pending ones nobody came back for."""
+            if run.status in _SETTLED_RUN:
+                return 0, run.created_at
+            return 1, run.created_at
+
+        evictable = sorted(
+            (
+                run
+                for run in self._runs.values()
+                if run.status in _SETTLED_RUN or run.created_at < cutoff
+            ),
+            key=rank,
+        )
+        for run in evictable[:excess]:
             self._runs.pop(run.run_id, None)
 
     def start(self, alert: Alert, *, alert_id: str, provider=None, submitted: bool = False) -> Run:

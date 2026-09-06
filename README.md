@@ -5,7 +5,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/LangGraph-supervisor%20%2B%20HITL-1C3C3C)
 ![ATT&CK v17.1](https://img.shields.io/badge/ATT%26CK-v17.1-B02A37)
-![tests](https://img.shields.io/badge/tests-1461%20passing-16a34a)
+![tests](https://img.shields.io/badge/tests-1464%20passing-16a34a)
 ![bring your own key](https://img.shields.io/badge/model-bring%20your%20own%20key-8b5cf6)
 
 An **autonomous SOC analyst** built on **LangGraph** — and a study in what it takes to let a

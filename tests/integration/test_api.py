@@ -221,6 +221,77 @@ class TestApprovalFlow:
         )
         assert second.status_code == 409
 
+    def test_a_run_waiting_for_a_human_survives_ordinary_traffic(self, client, monkeypatch):
+        """Eviction used to drop the oldest run, whatever it was doing.
+
+        A run suspended at the gate is by design the longest-lived thing in the
+        manager, so it was reliably the oldest — and ordinary traffic deleted
+        it. The analyst came back to approve and got a 404: no verdict, no
+        decision, no audit close-out, and nothing in the store, because nothing
+        is persisted until a run completes.
+        """
+        import bishop.api.runs as runs_module
+
+        monkeypatch.setattr(runs_module, "MAX_RUNS", 3)
+
+        pending = self._run_to_gate(client)
+        actions = client.get(f"/runs/{pending}").json()["approval_request"]["actions"]
+
+        for _ in range(6):
+            other = client.post("/runs", json={"alert_id": "FP-07-cdn-dns"}).json()["run_id"]
+            wait_for(client, other, "done")
+
+        assert client.get(f"/runs/{pending}").status_code == 200, (
+            "the run waiting for a human was evicted by traffic behind it"
+        )
+        decided = client.post(
+            f"/runs/{pending}/decision",
+            json={
+                "decision": "approved",
+                "approved_action_ids": [a["action_id"] for a in actions],
+                "decided_by": "test-analyst",
+            },
+        )
+        assert decided.status_code == 200
+
+    def test_finished_runs_are_still_evicted(self, client, monkeypatch):
+        """The cap has to keep meaning something. A completed run is already in
+        the store, so forgetting it costs a page refresh."""
+        import bishop.api.runs as runs_module
+
+        monkeypatch.setattr(runs_module, "MAX_RUNS", 2)
+
+        finished = []
+        for _ in range(6):
+            run_id = client.post("/runs", json={"alert_id": "FP-07-cdn-dns"}).json()["run_id"]
+            wait_for(client, run_id, "done")
+            finished.append(run_id)
+
+        assert client.get(f"/runs/{finished[0]}").status_code == 404
+        assert client.get(f"/runs/{finished[-1]}").status_code == 200
+
+    def test_an_abandoned_pending_run_is_eventually_evicted(self, client, monkeypatch):
+        """Refusing to evict pending runs cannot be unconditional.
+
+        A public demo where visitors start a triage and close the tab would
+        grow without bound. A day is far longer than the hours a human is
+        expected to take, so anything older is nobody's live decision.
+        """
+        import datetime as dt
+
+        import bishop.api.runs as runs_module
+
+        # One slot, and no finished run to give it up — so the cap can only be
+        # met by evicting a pending run that has aged out.
+        monkeypatch.setattr(runs_module, "MAX_RUNS", 1)
+        monkeypatch.setattr(runs_module, "PENDING_TTL", dt.timedelta(seconds=-1))
+
+        abandoned = self._run_to_gate(client)
+        live = self._run_to_gate(client)
+
+        assert client.get(f"/runs/{abandoned}").status_code == 404
+        assert client.get(f"/runs/{live}").status_code == 200
+
     def test_deciding_on_an_unknown_run_is_404(self, client):
         response = client.post(
             "/runs/run-does-not-exist/decision",
