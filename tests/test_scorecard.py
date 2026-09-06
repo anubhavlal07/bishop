@@ -76,3 +76,19 @@ class TestTheCardNamesTheModelThatAnsweredIt:
 
         card = run_scorecard(corpus_dir=one_alert)
         assert not any("genuinely $0.00" in note for note in card.notes)
+
+    def test_a_model_with_no_published_price_says_so(self, one_alert, monkeypatch):
+        """`cost_usd` returns 0 for a model it has no rates for, and its
+        docstring has always claimed the scorecard would say so. Nothing did, so
+        a live run printed "$0.000000 per alert" and read as free."""
+        monkeypatch.setenv("BISHOP_MODEL_PROVIDER", "gemini")
+        monkeypatch.setenv("GEMINI_API_KEY", "AQ." + "x" * 30)
+
+        card = run_scorecard(corpus_dir=one_alert)
+        assert any("not because the run was free" in note for note in card.notes)
+
+    def test_a_priced_model_gets_no_such_note(self, one_alert):
+        card = run_scorecard(
+            provider=NamedProvider("anthropic", "claude-sonnet-5"), corpus_dir=one_alert
+        )
+        assert not any("not because the run was free" in note for note in card.notes)

@@ -28,6 +28,11 @@ eval/results/*.json
 # result that can be quietly re-run and replaced is not a held-out result.
 !eval/results/holdout-*.json
 
+# A live-model run is committed for the same reason plus a cheaper one: it costs
+# money and twelve minutes to reproduce, and the README quotes it. A dated file
+# nobody can overwrite is what makes the quote checkable.
+!eval/results/live-*.json
+
 # ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

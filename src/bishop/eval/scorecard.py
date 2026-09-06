@@ -39,7 +39,7 @@ from typing import Any
 
 from bishop.eval.corpus import LabelledAlert, load_corpus
 from bishop.graph import build_graph, build_runtime, initial_state, runtime_config
-from bishop.models import ModelProvider
+from bishop.models import PRICING, ModelProvider
 from bishop.schema import EvidenceKind, VerdictLabel
 
 RESULTS_DIR = Path(__file__).resolve().parents[3] / "eval" / "results"
@@ -291,6 +291,17 @@ def _notes(card: Scorecard) -> list[str]:
             "Run against the deterministic mock provider, so cost is genuinely $0.00 and "
             "latency measures Bishop's own code rather than a model round trip. Verdicts "
             "come from arithmetic over detector scores — see src/bishop/models/mock.py."
+        )
+    elif card.model not in PRICING:
+        # `cost_usd` has always returned 0 for a model it has no rates for, and
+        # its docstring has always said the scorecard would say so. Nothing did,
+        # so a live Gemini run printed "$0.000000 per alert" and read as free.
+        # Publishing a rate table for every vendor would go stale and a wrong
+        # price is worse than none, so the honest answer is to name the gap.
+        notes.append(
+            f"Cost is reported as $0.00 because Bishop ships no price for {card.model!r}, "
+            f"not because the run was free. It made {card.total_model_calls} model calls. "
+            f"Rates live in `PRICING` in src/bishop/models/base.py."
         )
     if card.corpus_size < 50:
         notes.append(

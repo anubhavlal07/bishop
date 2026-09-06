@@ -5,7 +5,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/LangGraph-supervisor%20%2B%20HITL-1C3C3C)
 ![ATT&CK v17.1](https://img.shields.io/badge/ATT%26CK-v17.1-B02A37)
-![tests](https://img.shields.io/badge/tests-1476%20passing-16a34a)
+![tests](https://img.shields.io/badge/tests-1478%20passing-16a34a)
 ![bring your own key](https://img.shields.io/badge/model-bring%20your%20own%20key-8b5cf6)
 
 An **autonomous SOC analyst** built on **LangGraph** — and a study in what it takes to let a
@@ -343,15 +343,42 @@ error to point.
 
 ### Measured against a live model
 
-The deterministic model is the default, so the live path was code-reviewed but
-unrun for a long time. It has now been exercised against **Gemini 3.8 Flash**
-over six alerts: **5 of 6 correct**, ~21 s and ~19k tokens per triage, 5 model
-calls each. The one miss is a label disagreement rather than a failure — the
-model called an admin PowerShell session `benign_true_positive` where the corpus
-says `false_positive`, and it grounded that on a mitigating detector.
+The deterministic model is the default, so the live path went unrun for a long
+time. The whole 33-alert corpus has now been put through **Gemini 3.8 Flash**
+three times — 179 model calls a run, ~20 s a triage. The committed result is
+`eval/results/live-gemini-2026-09-06.json`.
 
-Running it live found four bugs the deterministic model could never surface, all
-now fixed and covered by tests:
+| | Mock | Gemini 3.8 Flash |
+|---|---|---|
+| Verdict accuracy | 100% | **81.8%** |
+| False-negative rate on true positives | 0% | **0%** |
+| False-positive rate | 0% | **0%** |
+| Benign-TP accuracy | 100% | **100%** |
+| Escalation precision / recall | 100% / 100% | **16.7% / 100%** |
+| Injection caught / escalated as IOC | 2 / 2 | **2 / 2** |
+| Invalid technique IDs | 0 | **0** |
+| Median time to triage | 0.04 s | **20.4 s** |
+
+**Every error is in the safe direction.** Five of the six misses are a confirmed
+true positive being escalated instead of concluded — more human review, nothing
+buried. The false-negative rate, the number this scorecard flags as the one that
+matters, is zero.
+
+**One number is quoted as a range, because it is one.** The three runs scored
+66.7%, 84.9% and 81.8%. The first was before a prompt fix described below; the
+last two differ only by run-to-run variance in the model, and they disagree
+about *which* true positives get escalated. Four cases escalate in every run;
+the rest move. Quoting a single figure from a non-deterministic system as though
+it were the measurement would be the same overclaim this README exists to avoid.
+
+**Escalation precision of 16.7% is a calibration finding, and I have left it
+alone.** The 0.45 confidence threshold was tuned against the mock's arithmetic;
+a live model returns lower confidence on the same evidence and falls under it.
+Lowering the threshold would improve the number and mean less.
+
+Running live, and running deployed, have now found **ten** bugs between them —
+nine of which the deterministic model could never surface. All are fixed and
+covered by tests. The first four came from the model refusing to answer at all:
 
 - **A valid key was rejected before any request.** The Gemini key pattern
   matched only the historical `AIza…` form, not the `AQ.` keys AI Studio now
@@ -408,8 +435,25 @@ than something Bishop resolves on their behalf. The regression asserts it across
 the whole corpus, so a new detector wired to no containment branch fails the
 suite rather than shipping a plan that promises what it does not do.
 
-Each is the same shape of defect: a model asserting something its own
-measurements do not support — the failure the grounding rules exist for.
+**The seventh was mine, and the live run is the only thing that could have found
+it.** The synthesis prompt defined `benign_true_positive` as *"a sanctioned
+pentest, an admin script, a backup job"* — and the corpus labels the
+admin-PowerShell and backup-archive alerts `false_positive`. The prompt and the
+ground truth disagreed, and the model was marked wrong for following the
+instruction it was given. It cost five of thirty-three verdicts; correcting the
+definitions moved accuracy from 66.7% to ~82%. The mock could never surface it,
+because it computes labels from detector arithmetic and never reads that prose.
+
+Three more came out of measuring the live path rather than the model: the eval
+harness could build only `anthropic`, so three of the four advertised providers
+could not be scored at all; a live card labelled itself `provider mock (mock)`
+while making 179 calls, because `cmd_eval` passed no provider and `build_runtime`
+resolved one behind it; and a live run reported `$0.000000 per alert`, because
+`cost_usd` returns zero for a model it has no rates for and its docstring
+promised a caveat that nothing emitted.
+
+Each is the same shape of defect: something asserting a property that nothing
+underneath it implements — the failure the grounding rules exist for.
 
 Both corpora are synthetic. Real SOC data is either licence-encumbered or full of somebody's
 real hostnames, and a golden set has to be labelled. That buys honest labels and costs any
