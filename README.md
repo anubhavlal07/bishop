@@ -507,9 +507,14 @@ again.
 The honest list. If any of these matters to you, it needs building before Bishop is the right
 tool for the job.
 
-- **No per-user accounts or roles.** Every valid API key has identical authority, including
-  approving containment. The chain records `decided_by` as whatever the client sent — it
-  *attributes* a decision without *authenticating* who made it.
+- **Per-user accounts exist and the public demo runs without them.** There are accounts, scrypt
+  password hashing, server-side sessions and four roles, and `approver` is required to approve
+  containment — an analyst gets a `403` and a rejection still works, because refusing to act is
+  never the privileged operation. Turn it on with `BISHOP_REQUIRE_ACCOUNTS=true` and
+  `bishop useradd`. The live deployment has it **off**, because it is a bring-your-own-key demo
+  and a login wall on a demo just stops people looking. So the caveat that matters: with
+  accounts off, every caller has identical authority and the chain records `decided_by` as
+  whatever the client sent — it *attributes* a decision without *authenticating* it.
 - **Bishop covers 36 ATT&CK techniques of 823.** Outside those it escalates rather than
   guessing. That is correct behaviour and still means a human does the work.
 - **It triages what the SIEM gives it.** It inherits every gap in the detection layer above it
